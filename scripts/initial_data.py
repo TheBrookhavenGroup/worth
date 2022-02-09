@@ -3,6 +3,7 @@ from django.db import transaction
 from accounts.models import Account
 from markets.models import Market, Ticker
 
+
 @transaction.atomic
 def add_accounts():
     data = [
@@ -15,6 +16,7 @@ def add_accounts():
     ]
     for n, o, b, a in data:
         Account(name=n, owner=o, broker=b, broker_account=a).save()
+
 
 @transaction.atomic
 def add_markets():
@@ -43,7 +45,6 @@ def add_markets():
         Market(symbol=s, name=n, ib_exchange=ie, yahoo_exchange=ye, cs=cs, commission=c,
                ib_price_factor=ipf, yahoo_price_factor=ypf, pprec=pprec).save()
 
-
     data = [
         ['ZM', 'ZM'],
         ['BEVVF', 'BEVVF'],
@@ -71,3 +72,12 @@ def add_markets():
         t = Ticker(ticker=t)
         t.market = m
         t.save()
+
+
+def add_trades():
+    pass
+
+
+# add_accounts()
+# add_markets()
+add_trades()

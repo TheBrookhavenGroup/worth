@@ -2,6 +2,7 @@ from django.db import models
 from markets.models import Ticker
 from accounts.models import Account
 
+
 class Trade(models.Model):
     dt = models.DateTimeField(null=False, blank=False)
     account = models.ForeignKey(Account, on_delete=models.CASCADE)
@@ -22,4 +23,3 @@ class Trade(models.Model):
 
     def calc_commission(self):
         return self.q * self.ticker.market.commission
-

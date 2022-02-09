@@ -5,7 +5,6 @@ EXCHANGES = [(i, i) for i in NOT_FUTURES_EXCHANGES + ['CME', 'NYM', 'NYBOT', 'NY
 MAX_EXCHANGES_LEN = max([len(i[0]) for i in EXCHANGES]) + 1
 
 
-
 class Market(models.Model):
     symbol = models.CharField(max_length=20, unique=True, blank=False, null=False)
     name = models.CharField(max_length=50)
@@ -53,3 +52,17 @@ class Ticker(models.Model):
         else:
             y = None
         return y
+
+
+class DailyBar(models.Model):
+    ticker = models.ForeignKey(Ticker, on_delete=models.CASCADE)
+    d = models.DateField(null=False)
+    o = models.FloatField()
+    h = models.FloatField()
+    l = models.FloatField()
+    c = models.FloatField()
+    v = models.FloatField()
+    oi = models.FloatField()
+
+    def __str__(self):
+        return f"{self.o}|{self.h}|{self.l}|{self.c}|{self.v}|{self.oi}"
