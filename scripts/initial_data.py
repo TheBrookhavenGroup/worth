@@ -1,7 +1,10 @@
+import re
 
 from django.db import transaction
+from project.utils import yyyymmdd2dt
 from accounts.models import Account
 from markets.models import Market, Ticker
+from trades.models import Trade
 
 
 @transaction.atomic
@@ -21,6 +24,8 @@ def add_accounts():
 @transaction.atomic
 def add_markets():
     data = [
+        ['_CASH_', 'Cash Account', '_CASH_', '_CASH_', 1, 0, 1, 1, 4],
+        ['_NOCASH_', 'Placeholder for accounts  non cash accounts', '_CASH_', '_CASH_', 1, 0, 1, 1, 4],
         ['ZM', 'Zoom', 'ARCA', 'STOCK', 1, 0, 1, 1, 4],
         ['BEVVF', 'Bee Vectoring ADR', 'SMART', 'STOCK', 1, 0, 1, 1, 4],
         ['NFLX', 'Netflix', 'ARCA', 'STOCK', 1, 0, 1, 1, 4],
@@ -46,6 +51,8 @@ def add_markets():
                ib_price_factor=ipf, yahoo_price_factor=ypf, pprec=pprec).save()
 
     data = [
+        ['_CASH_', '_CASH_'],
+        ['_NOCASH_', '_NOCASH_'],
         ['ZM', 'ZM'],
         ['BEVVF', 'BEVVF'],
         ['NFLX', 'NFLX'],
@@ -74,10 +81,72 @@ def add_markets():
         t.save()
 
 
+def add_account(a):
+    if Account.objects.filter(name=a).exists():
+        account = Account.objects.get(name=a)
+    else:
+        account = Account(name=a, owner='MSRK', broker='', broker_account=a, description='')
+        account.save()
+    return account
+
+
+def add_ticker(t):
+    if Ticker.objects.filter(ticker=t).exists():
+        ticker = Ticker.objects.get(ticker=t)
+    else:
+        m = Market(symbol=t, name=t)
+        m.save()
+
+        ticker = Ticker(ticker=t, market=m)
+        ticker.save()
+
+    return ticker
+
+
+@transaction.atomic
 def add_trades():
-    pass
+    # Remember that the old cash account is now ticker=_CASH_
+    # If ca = "none" then use ticker = _NOCASH_
+    cash = Ticker.objects.get(ticker='_CASH_')
+
+    fn = '/Users/ms/data/trades.dat'
+    with open(fn) as fh:
+        lines = fh.readlines()
+        for line in lines:
+            line = re.sub(r'\!.*\n', r'\n', line)
+            line = line.replace('\n', '')
+            if not line:
+                continue
+
+            print(line)
+            a, t, ca, d, r_f, q, p, c, c_f, note, junk = line.split('|')
+
+            a = add_account(a)
+            if t == 'Cash':
+                t = cash
+            else:
+                t = add_ticker(t)
+
+            dt = yyyymmdd2dt(d)
+
+            r_f = r_f == '1'
+
+            q = float(q)
+            p = float(p)
+            if c == '':
+                c = 0.0
+            else:
+                c = float(c)
+
+            if ca == 'none':
+                if note:
+                    note += ''
+                note += 'ca=none'
+
+            trade = Trade(dt=dt, account=a, ticker=t, reinvest=r_f, q=q, p=p, commission=c, note=note)
+            trade.save()
 
 
 # add_accounts()
 # add_markets()
-add_trades()
+# add_trades()

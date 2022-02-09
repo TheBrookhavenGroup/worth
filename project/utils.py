@@ -11,4 +11,6 @@ def our_now():
 
 
 def yyyymmdd2dt(d):
-    return datetime.strptime(str(d), '%Y%m%d')
+    tz = pytz.timezone(settings.TIME_ZONE)
+    dt = datetime.datetime.strptime(str(d), '%Y%m%d')
+    return tz.localize(dt)
