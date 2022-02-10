@@ -9,4 +9,7 @@ class AccountAdmin(admin.ModelAdmin):
 
 @admin .register(CashRecord)
 class CashRecordAdmin(admin.ModelAdmin):
-    list_display = ('account', 'd', 'description', 'amt')
+    list_display = ('account', 'd', 'description', 'amt', 'cleared_f')
+    list_filter = ('account', )
+    search_fields = ('account', 'd', 'descripton')
+    ordering = ('account', '-d')
