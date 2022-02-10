@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block title %}Checking{% endblock title %}
+
+{% block page_style %}
+    <style>
+        body {background-color: lightyellow;}
+        .center {
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        p {text-align: center;}
+        font Verdana, Arial, Helvetica, sans-serif;
+    </style>
+{% endblock page_style %}
+
+{% block content %}
+
+    <p>Account: {{ account }}</p>
+
+{% endblock content %}
