@@ -2,12 +2,11 @@ import re
 
 from django.db import transaction
 from project.utils import yyyymmdd2dt
-from accounts.models import Account
+from accounts.models import Account, CashRecord
 from markets.models import Market, Ticker
 from trades.models import Trade
 
 
-@transaction.atomic
 def add_accounts():
     data = [
         ['TDA', 'MSRK', 'TDA', '232-304102'],
@@ -21,11 +20,8 @@ def add_accounts():
         Account(name=n, owner=o, broker=b, broker_account=a).save()
 
 
-@transaction.atomic
 def add_markets():
     data = [
-        ['_CASH_', 'Cash Account', '_CASH_', '_CASH_', 1, 0, 1, 1, 4],
-        ['_NOCASH_', 'Placeholder for accounts  non cash accounts', '_CASH_', '_CASH_', 1, 0, 1, 1, 4],
         ['ZM', 'Zoom', 'ARCA', 'STOCK', 1, 0, 1, 1, 4],
         ['BEVVF', 'Bee Vectoring ADR', 'SMART', 'STOCK', 1, 0, 1, 1, 4],
         ['NFLX', 'Netflix', 'ARCA', 'STOCK', 1, 0, 1, 1, 4],
@@ -51,8 +47,6 @@ def add_markets():
                ib_price_factor=ipf, yahoo_price_factor=ypf, pprec=pprec).save()
 
     data = [
-        ['_CASH_', '_CASH_'],
-        ['_NOCASH_', '_NOCASH_'],
         ['ZM', 'ZM'],
         ['BEVVF', 'BEVVF'],
         ['NFLX', 'NFLX'],
@@ -74,10 +68,8 @@ def add_markets():
     ]
 
     for s, t in data:
-        print(s)
         m = Market.objects.get(symbol=s)
-        t = Ticker(ticker=t)
-        t.market = m
+        t = Ticker(ticker=t, market=m)
         t.save()
 
 
@@ -105,10 +97,6 @@ def add_ticker(t):
 
 @transaction.atomic
 def add_trades():
-    # Remember that the old cash account is now ticker=_CASH_
-    # If ca = "none" then use ticker = _NOCASH_
-    cash = Ticker.objects.get(ticker='_CASH_')
-
     fn = '/Users/ms/data/trades.dat'
     with open(fn) as fh:
         lines = fh.readlines()
@@ -122,31 +110,62 @@ def add_trades():
             a, t, ca, d, r_f, q, p, c, c_f, note, junk = line.split('|')
 
             a = add_account(a)
-            if t == 'Cash':
-                t = cash
-            else:
-                t = add_ticker(t)
-
             dt = yyyymmdd2dt(d)
-
-            r_f = r_f == '1'
-
             q = float(q)
             p = float(p)
+            r_f = r_f == '1'
             if c == '':
                 c = 0.0
             else:
                 c = float(c)
 
-            if ca == 'none':
-                if note:
-                    note += ''
-                note += 'ca=none'
+            if t == 'Cash':
+                CashRecord(account=a, d=dt.date(), description=note, amt=q).save()
+                continue
 
+            if ca == 'none' and not r_f:
+                description = f'Stub to cover {t} purchase.'
+                CashRecord(account=a, d=dt.date(), description=description,
+                           category=CashRecord.DE, amt=q * p).save()
+
+            t = add_ticker(t)
             trade = Trade(dt=dt, account=a, ticker=t, reinvest=r_f, q=q, p=p, commission=c, note=note)
             trade.save()
 
 
-# add_accounts()
-# add_markets()
-# add_trades()
+def bofa():
+    a = add_account('BofA')
+    fn = '/Users/ms/data/bofa.csv'
+    with open(fn) as fh:
+        lines = fh.readlines()
+        for line in lines:
+            line = re.sub(r'\!.*\n', r'\n', line)
+            line = line.replace('\n', '')
+            if not line:
+                continue
+
+            print(line)
+            category, typ, d, description, amount, cleared = line.split(',')
+
+            cleared_f = (len(cleared) > 0 and 'x' == cleared)
+
+            dt = yyyymmdd2dt(d)
+            amt = float(amount)
+
+            CashRecord(account=a, d=dt.date(), description=description,
+                       category=category, amt=amt, cleared_f=cleared_f).save()
+
+
+@transaction.atomic()
+def do_trades_dat():
+    add_accounts()
+    add_markets()
+    add_trades()
+
+
+@transaction.atomic()
+def do_bofa_dat():
+    bofa()
+
+
+do_bofa_dat()
