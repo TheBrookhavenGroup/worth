@@ -4,7 +4,11 @@ from .models import Trade
 
 @admin.register(Trade)
 class MarketAdmin(admin.ModelAdmin):
-    list_display = ('dt', 'account', 'ticker', 'q', 'p')
-    list_filter = ('account', 'ticker')
-    search_fields = ('dt', 'note')
+    def time_date(self, obj):
+        return obj.dt.date()
+    time_date.short_description = 'Date'
+
+    list_display = ('time_date', 'account', 'ticker', 'q', 'p', 'note')
+    list_filter = ('account', )
+    search_fields = ('account__name', 'dt', 'note', 'ticker__ticker')
     ordering = ('account', '-dt')
