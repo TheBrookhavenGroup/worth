@@ -15,4 +15,5 @@ class TickerAdmin(admin.ModelAdmin):
 
 @admin .register(DailyBar)
 class DailyBarAdmin(admin.ModelAdmin):
+    date_hierarchy = 'd'
     list_display = ('ticker', 'c')

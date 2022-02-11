@@ -1,5 +1,7 @@
 {% extends 'base.html' %}
 
+{% load humanize %}
+
 {% block title %}Checking{% endblock title %}
 
 {% block page_style %}
@@ -17,6 +19,11 @@
 
 {% block content %}
 
-    <p>Account: {{ account }}</p>
+    <p>
+        Account: {{ account }} <br>
+        Balance: {{ balance|floatformat:2|intcomma }} <br>
+        Statement Balance: {{ statement_balance|floatformat:2|intcomma }} <br>
+    </p>
+
 
 {% endblock content %}

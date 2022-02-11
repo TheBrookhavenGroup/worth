@@ -8,6 +8,8 @@ class MarketAdmin(admin.ModelAdmin):
         return obj.dt.date()
     time_date.short_description = 'Date'
 
+    date_hierarchy = 'dt'
+
     list_display = ('time_date', 'account', 'ticker', 'q', 'p', 'note')
     list_filter = ('account', )
     search_fields = ('account__name', 'dt', 'note', 'ticker__ticker')
