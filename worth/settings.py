@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+# Build paths inside the worth like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
@@ -21,8 +21,7 @@ ALLOWED_HOSTS = ['127.0.0.1']
 # Application definition
 
 INSTALLED_APPS = [
-    'project.apps.WorthAdminConfig',
-    #'django.contrib.admin',
+    'worth.apps.WorthAdminConfig',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -45,12 +44,12 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'project.urls'
+ROOT_URLCONF = 'worth.urls'
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'project/templates')],
+        'DIRS': [os.path.join(BASE_DIR, 'worth/templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -64,7 +63,7 @@ TEMPLATES = [
 ]
 
 
-WSGI_APPLICATION = 'project.wsgi.application'
+WSGI_APPLICATION = 'worth.wsgi.application'
 
 DATABASES = {
     'default': {
