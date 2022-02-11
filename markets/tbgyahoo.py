@@ -4,6 +4,20 @@ import urllib
 import requests
 
 
+def yahoo_get(url):
+    with requests.session():
+        header = {'Connection': 'keep-alive',
+                  'Expires': '-1',
+                  'Upgrade-Insecure-Requests': '1',
+                  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) \
+                           AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.99 Safari/537.36'
+                  }
+
+        website = requests.get(url, headers=header)
+
+    return website.text
+
+
 def yahooHistory(ticker, multiplier=1.0, p=4):
     """
       Get historical yahoo prices for the given ticker symbol.
@@ -11,7 +25,7 @@ def yahooHistory(ticker, multiplier=1.0, p=4):
     """
     t = datetime.now().strftime('%s')
     url = 'https://query1.finance.yahoo.com/v8/finance/chart/' + ticker + '?interval=1d&period1=0&period2=' + t
-    data = urllib.urlopen(url).read()
+    data = yahoo_get(url)
     data = json.loads(data)
     data = data['chart']['result'][0]
     times = data['timestamp']
@@ -38,18 +52,7 @@ def yahooHistory(ticker, multiplier=1.0, p=4):
 
 def yahooQuote(ticker, multiplier=1, p=4):
     url = 'https://query1.finance.yahoo.com/v6/finance/quote?region=US&lang=en&symbols=' + ticker
-
-    with requests.session():
-        header = {'Connection': 'keep-alive',
-                  'Expires': '-1',
-                  'Upgrade-Insecure-Requests': '1',
-                  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) \
-                           AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.99 Safari/537.36'
-                  }
-
-        website = requests.get(url, headers=header)
-
-    data = website.text
+    data = yahoo_get(url)
     data = json.loads(data)
     data = data['quoteResponse']['result'][0]
     return data['regularMarketPrice'] * multiplier, data['regularMarketPreviousClose'] * multiplier

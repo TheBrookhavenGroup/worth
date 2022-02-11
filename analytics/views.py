@@ -1,6 +1,5 @@
 from django.views.generic.base import TemplateView
 from .cash import cash_sums
-from markets.tbgyahoo import yahooQuote
 
 
 class CheckingView(TemplateView):
@@ -13,5 +12,4 @@ class CheckingView(TemplateView):
         balance, statement_balance = cash_sums(account_name)
         context['balance'] = balance
         context['statement_balance'] = statement_balance
-        context['aapl_price'], context['aapl_close'] = yahooQuote('AAPL')
         return context

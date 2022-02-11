@@ -53,6 +53,10 @@ class Ticker(models.Model):
             y = None
         return y
 
+    @property
+    def yahoo_ticker(self):
+        return self.ticker
+
 
 class DailyBar(models.Model):
     ticker = models.ForeignKey(Ticker, on_delete=models.CASCADE)
