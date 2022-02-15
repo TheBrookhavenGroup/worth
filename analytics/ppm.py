@@ -40,11 +40,12 @@ def get_balances():
             portfolio = {}
             balances[a] = portfolio
 
-        cash_amount = -q * p - c
-        if 'cash' not in portfolio:
-            portfolio['cash'] = cash_amount
-        else:
-            portfolio['cash'] += cash_amount
+        if not reinvest:
+            cash_amount = -q * p - c
+            if 'cash' not in portfolio:
+                portfolio['cash'] = cash_amount
+            else:
+                portfolio['cash'] += cash_amount
 
         if ticker not in portfolio:
             portfolio[ticker] = q
@@ -59,6 +60,12 @@ def get_balances():
                 portfolio['cash'] = q
             else:
                 portfolio['cash'] += q
+
+    empty_accounts = [a for a in balances if abs(balances[a]['cash']) < 0.001]
+    for a in empty_accounts:
+        del balances[a]['cash']
+        if len(balances[a].keys()) == 0:
+            del balances[a]
 
     return balances
 
@@ -78,6 +85,8 @@ def valuations():
             else:
                 p = get_price(ticker)
             value = q * p
+
+            print('valuations_debug: ', a, ticker, q, p)
 
             nsig = 9 if q > 900e3 else None
             qstr = cround(q, 3, 15, nsig=nsig) if q else 15 * ' '

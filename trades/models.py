@@ -10,7 +10,7 @@ class Trade(models.Model):
     reinvest = models.BooleanField(default=True, blank=False, null=False)
     q = models.FloatField(blank=False, null=False)
     p = models.FloatField(blank=False, null=False)
-    commission = models.FloatField(blank=True, null=False)
+    commission = models.FloatField(default=0.0)
     note = models.CharField(max_length=180, blank=True, null=True)
 
     def __str__(self):
