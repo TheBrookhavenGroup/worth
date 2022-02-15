@@ -136,6 +136,12 @@ def add_trades():
 
             print(line)
             a, t, ca, d, r_f, q, p, c, c_f, note, junk = line.split('|')
+            if t in ['FBroker', 'FDRXX']:
+                t = 'cash'
+
+            if ca in ['FBroker', 'FDRXX']:
+                ca = 'cash'
+
             dt = yyyymmdd2dt(d)
 
             if ca.lower() == 'none':
