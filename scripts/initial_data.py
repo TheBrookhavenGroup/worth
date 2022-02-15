@@ -126,7 +126,7 @@ def add_trades():
             if ca == 'none' and not r_f:
                 description = f'Stub to cover {t} purchase.'
                 CashRecord(account=a, d=dt.date(), description=description,
-                           category=CashRecord.DE, amt=q * p).save()
+                           category=CashRecord.DE, amt=-q * p).save()
 
             t = add_ticker(t)
             trade = Trade(dt=dt, account=a, ticker=t, reinvest=r_f, q=q, p=p, commission=c, note=note)

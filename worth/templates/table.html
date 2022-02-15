@@ -1,4 +1,4 @@
-<table id="table_id" class="display" style="width:10%">
+<table id="{{ table_id }}" class="display" style="width:10%">
     <thead>
         <tr>
             {% for h in headings %}
@@ -20,6 +20,6 @@
 
 <script>
 $(document).ready(function () {
-    $('#table_id').DataTable();
+    $('#{{ table_id }}').DataTable();
 });
 </script>

@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block table_formatting %}
+{% block javascript_imports %}
     {% include 'jquery_table.html' %}
 {% endblock %}
 
@@ -8,19 +8,6 @@
 
 {% block title %}PPM{% endblock title %}
 
-{% block page_style %}
-    <style>
-        body {background-color: lightyellow;}
-        .center {
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        p {text-align: center;}
-        font Verdana, Arial, Helvetica, sans-serif;
-    </style>
-{% endblock page_style %}
-
 {% block content %}
-    {% include 'table.html' %}
+    {% include 'table.html' with table_id="table_id1" data=data1 headings=headings1 %}
 {% endblock content %}

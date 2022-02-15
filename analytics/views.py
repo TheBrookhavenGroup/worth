@@ -21,5 +21,5 @@ class PPMView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['headings'], context['data'] = valuations()
+        context['headings1'], context['data1'] = valuations()
         return context
