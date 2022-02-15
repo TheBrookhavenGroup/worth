@@ -167,5 +167,5 @@ def do_trades_dat():
 def do_bofa_dat():
     bofa()
 
-
+do_trades_dat()
 do_bofa_dat()
