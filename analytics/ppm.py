@@ -1,3 +1,4 @@
+from django.db.models import Sum
 from markets.tbgyahoo import yahooQuote
 from collections import defaultdict
 from functools import cache
@@ -52,14 +53,19 @@ def get_balances():
         else:
             portfolio[ticker] += q
 
-    qs = CashRecord.objects.values_list('account__name', 'amt')
-    for a, q in qs:
-        if a in balances:
-            portfolio = balances[a]
-            if 'cash' not in portfolio:
-                portfolio['cash'] = q
-            else:
-                portfolio['cash'] += q
+    qs = CashRecord.objects.values('account__name').order_by('account__name').annotate(total=Sum('amt'))
+    for result in qs:
+        total = result['total']
+        if abs(total) < 0.001:
+            continue
+        a = result['account__name']
+        if a not in balances:
+            balances[a] = {}
+        portfolio = balances[a]
+        if 'cash' not in portfolio:
+            portfolio['cash'] = total
+        else:
+            portfolio['cash'] += total
 
     empty_accounts = [a for a in balances if abs(balances[a]['cash']) < 0.001]
     for a in empty_accounts:
@@ -74,6 +80,7 @@ def valuations():
     headings = ['Account', 'Ticker', 'Q', 'P', 'Value']
     data = []
     balances = get_balances()
+    total_worth = 0
     for a in balances.keys():
         portfolio = balances[a]
         for ticker in portfolio.keys():
@@ -85,8 +92,7 @@ def valuations():
             else:
                 p = get_price(ticker)
             value = q * p
-
-            print('valuations_debug: ', a, ticker, q, p)
+            total_worth += value
 
             nsig = 9 if q > 900e3 else None
             qstr = cround(q, 3, 15, nsig=nsig) if q else 15 * ' '
@@ -94,5 +100,6 @@ def valuations():
             vstr = cround(value, 3, 15)
 
             data.append([a, ticker, qstr, pstr, vstr])
+    data.append(['AAA Total', '', '', '', cround(total_worth, 3, 15)])
 
     return headings, data
