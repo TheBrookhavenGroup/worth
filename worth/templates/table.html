@@ -1,0 +1,25 @@
+<table id="table_id" class="display" style="width:10%">
+    <thead>
+        <tr>
+            {% for h in headings %}
+                <th>{{ h }}</th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+
+    {% for rec in data %}
+        <tr>
+            {% for x in rec %}
+                <td>{{ x }}</td>
+            {% endfor %}
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+<script>
+$(document).ready(function () {
+    $('#table_id').DataTable();
+});
+</script>

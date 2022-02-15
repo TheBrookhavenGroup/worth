@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block table_formatting %}
+    {% include 'jquery_table.html' %}
+{% endblock %}
+
+{% load humanize %}
+
+{% block title %}PPM{% endblock title %}
+
+{% block page_style %}
+    <style>
+        body {background-color: lightyellow;}
+        .center {
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        p {text-align: center;}
+        font Verdana, Arial, Helvetica, sans-serif;
+    </style>
+{% endblock page_style %}
+
+{% block content %}
+    {% include 'table.html' %}
+{% endblock content %}

@@ -1,5 +1,6 @@
 from django.views.generic.base import TemplateView
-from .cash import cash_sums
+from analytics.cash import cash_sums
+from analytics.ppm import valuations
 
 
 class CheckingView(TemplateView):
@@ -12,4 +13,13 @@ class CheckingView(TemplateView):
         balance, statement_balance = cash_sums(account_name)
         context['balance'] = balance
         context['statement_balance'] = statement_balance
+        return context
+
+
+class PPMView(TemplateView):
+    template_name = 'analytics/ppm.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['headings'], context['data'] = valuations()
         return context
