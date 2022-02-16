@@ -12,6 +12,10 @@ class Account(models.Model):
         return f"{self.name}"
 
 
+def get_bofa_account():
+    return Account.objects.get(name='BofA')
+
+
 class CashRecord(models.Model):
     UNSPECIFIED = 'U'
     ATM = 'A'
@@ -92,7 +96,6 @@ class CashRecord(models.Model):
         (SA, 'Savings'),
         (SB, 'Sailboat'),
         (TA, 'Taxes and Accounting'),
-        (TX, 'Taxes and Accounting'),
         (UT, 'Utilities'),
         (VA, 'Vacation'),
         (WA, 'Wages from tutoring'),
@@ -101,7 +104,7 @@ class CashRecord(models.Model):
         (GU, 'Gila UTMA')
     ]
 
-    account = models.ForeignKey(Account, on_delete=models.CASCADE)
+    account = models.ForeignKey(Account, on_delete=models.CASCADE, default=get_bofa_account)
     ignored = models.BooleanField(default=False)
     d = models.DateField()
     type = models.CharField(max_length=1, choices=TYPE_CHOICES, default=UNSPECIFIED)
