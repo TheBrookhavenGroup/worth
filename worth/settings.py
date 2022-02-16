@@ -3,7 +3,9 @@ from os import environ as env
 from pathlib import Path
 
 
-PPM_FACTOR = float(env.get('PPM_FACTOR', False))
+PPM_FACTOR = eval(env.get('PPM_FACTOR', 'False'))
+
+USE_PRICE_FEED = eval(env.get('USE_PRICE_FEED', 'True'))
 
 
 # Build paths inside the worth like this: BASE_DIR / 'subdir'.

@@ -1,3 +1,4 @@
+import json
 from django.db.models import Sum
 from django.utils.safestring import mark_safe
 from django.conf import settings
@@ -28,6 +29,8 @@ default_prices = dict([
 
 @ttl_cache(maxsize=128, ttl=60)
 def get_price(ticker):
+    if not settings.USE_PRICE_FEED:
+        return 1.0
     if ticker in default_prices:
         p = default_prices[ticker]
     else:
@@ -63,8 +66,9 @@ def get_balances(account=None, ticker=None):
         if len(balances[a].keys()) == 0:
             del balances[a]
 
+    # Scale results for demo purposes.  PPM_FACTOR defaults to False.
     factor = settings.PPM_FACTOR
-    if factor:
+    if factor is not False:
         for k, v in balances.items():
             for j in v.keys():
                 v[j] *= factor
@@ -73,6 +77,11 @@ def get_balances(account=None, ticker=None):
 
 
 def valuations(account=None, ticker=None):
+    formats = json.dumps({'columnDefs': [{'targets': [2, 3, 4], 'className': 'dt-body-right'}],
+                          # 'ordering': False
+                          })
+    print(formats)
+
     headings = ['Account', 'Ticker', 'Q', 'P', 'Value']
     data = []
     balances = get_balances(account, ticker)
@@ -89,12 +98,12 @@ def valuations(account=None, ticker=None):
             total_worth += value
 
             nsig = 9 if q > 900e3 else None
-            qstr = cround(q, 3, 15, nsig=nsig) if q else 15 * ' '
-            pstr = cround(p, 3, 15) if q else 15 * ' '
-            vstr = cround(value, 3, 15)
+            qstr = cround(q, 3)
+            pstr = cround(p, 3)
+            vstr = cround(value, 3)
 
             data.append([a, ticker, qstr, pstr, vstr])
-    data.append(['AAA Total', '', '', '', cround(total_worth, 3, 15)])
+    data.append(['AAA Total', '', '', '', cround(total_worth, 3)])
     data.append([mark_safe('<a href=https://commonologygame.com>commonology</a>'), '', '', '', ''])
 
-    return headings, data
+    return headings, data, formats

@@ -19,6 +19,10 @@
 </table>
 
 <script>
+const FORMATS = eval({{ formats | safe }})
+console.log(FORMATS)
+$.extend( true, $.fn.dataTable.defaults, FORMATS)
+
 $(document).ready(function () {
     $('#{{ table_id }}').DataTable();
 });
