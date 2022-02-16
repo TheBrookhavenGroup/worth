@@ -1,4 +1,5 @@
-from django.views.generic.base import TemplateView
+from django.views.generic.base import View, TemplateView
+from django.shortcuts import render
 from analytics.cash import cash_sums
 from analytics.ppm import valuations
 
@@ -19,7 +20,17 @@ class CheckingView(TemplateView):
 class PPMView(TemplateView):
     template_name = 'analytics/ppm.html'
 
+    # def get(self, request, *args, **kwargs):
+    #     ticker = kwargs.get('ticker')
+    #     print(ticker)
+    #     context = {}
+    #     context['headings1'], context['data1'] = valuations()
+    #     return render(request, self.template_name, context)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['headings1'], context['data1'] = valuations()
+        getter = self.request.GET.get
+        ticker = getter('ticker')
+        account = getter('account')
+        context['headings1'], context['data1'] = valuations(account=account, ticker=ticker)
         return context

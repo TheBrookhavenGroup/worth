@@ -1,4 +1,6 @@
 from django.db.models import Sum
+from django.utils.safestring import mark_safe
+from django.conf import settings
 from markets.tbgyahoo import yahooQuote
 from collections import defaultdict
 from cachetools.func import ttl_cache
@@ -33,7 +35,7 @@ def get_price(ticker):
     return p
 
 
-def get_balances():
+def get_balances(account=None, ticker=None):
     # balances[<account>]->[<symbol>]-><qty>
     balances = defaultdict(lambda: defaultdict(lambda: 0.0))
 
@@ -61,13 +63,19 @@ def get_balances():
         if len(balances[a].keys()) == 0:
             del balances[a]
 
+    factor = settings.PPM_FACTOR
+    if factor:
+        for k, v in balances.items():
+            for j in v.keys():
+                v[j] *= factor
+
     return balances
 
 
-def valuations():
+def valuations(account=None, ticker=None):
     headings = ['Account', 'Ticker', 'Q', 'P', 'Value']
     data = []
-    balances = get_balances()
+    balances = get_balances(account, ticker)
     total_worth = 0
     for a in balances.keys():
         portfolio = balances[a]
@@ -87,5 +95,6 @@ def valuations():
 
             data.append([a, ticker, qstr, pstr, vstr])
     data.append(['AAA Total', '', '', '', cround(total_worth, 3, 15)])
+    data.append([mark_safe('<a href=https://commonologygame.com>commonology</a>'), '', '', '', ''])
 
     return headings, data
