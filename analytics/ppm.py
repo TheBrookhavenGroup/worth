@@ -2,30 +2,13 @@ import json
 from django.db.models import Sum
 from django.utils.safestring import mark_safe
 from django.conf import settings
-from markets.tbgyahoo import yahooQuote
 from collections import defaultdict
-from cachetools.func import ttl_cache
 
 from worth.utils import cround
 from trades.models import Trade
 from accounts.models import CashRecord
 from worth.utils import is_near_zero
-from markets.models import Ticker
-
-
-@ttl_cache(maxsize=128, ttl=60)
-def get_price(ticker):
-    if not settings.USE_PRICE_FEED:
-        return 1.0
-
-    t = Ticker.objects.get(ticker=ticker.upper())
-
-    if t.fixed_price is None:
-        p = yahooQuote(ticker)[0]
-    else:
-        p = t.fixed_price
-
-    return p
+from markets.utils import get_price
 
 
 def get_balances(account=None, ticker=None):
