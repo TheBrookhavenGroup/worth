@@ -7,6 +7,7 @@ from .utils import populate_historical_price_data
 class MarketAdmin(admin.ModelAdmin):
     list_display = ('symbol', 'name')
     list_filter = ('ib_exchange', )
+    search_fields = list_display
 
 
 def get_historical_prices(modeladmin, request, qs):

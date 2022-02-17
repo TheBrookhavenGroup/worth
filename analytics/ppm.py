@@ -10,31 +10,21 @@ from worth.utils import cround
 from trades.models import Trade
 from accounts.models import CashRecord
 from worth.utils import is_near_zero
-
-
-default_prices = dict([
-    ('V-NPI', 0.0),
-    ('V-KOL', 0.0),
-    ('V-MED', 0.0),
-    ('V-CAR', 0.0),
-    ('V-CAD', 0.0),
-    ('V-FND', 0.0),
-    ('V-TSA', 0.0),
-    ('cash', 1.0),
-    ('SNAXX', 1.0),
-    ('FBroker', 1.0),
-    ('FDRXX', 1.0)
-])
+from markets.models import Ticker
 
 
 @ttl_cache(maxsize=128, ttl=60)
 def get_price(ticker):
     if not settings.USE_PRICE_FEED:
         return 1.0
-    if ticker in default_prices:
-        p = default_prices[ticker]
-    else:
+
+    t = Ticker.objects.get(ticker=ticker.upper())
+
+    if t.fixed_price is None:
         p = yahooQuote(ticker)[0]
+    else:
+        p = t.fixed_price
+
     return p
 
 
