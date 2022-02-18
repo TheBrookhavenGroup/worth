@@ -57,7 +57,13 @@ class Ticker(models.Model):
 
     @property
     def yahoo_ticker(self):
-        return self.ticker
+        ticker = self.ticker
+        e = self.market.yahoo_exchange
+        if e in ('STOCK', 'CASH'):
+            return ticker
+
+        ticker = ticker[:-4] + ticker[-2:] + '.' + e
+        return ticker
 
 
 class DailyBar(models.Model):

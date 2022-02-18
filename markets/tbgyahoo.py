@@ -50,11 +50,12 @@ def yahooHistory(ticker, multiplier=1.0, p=4):
     return data
 
 
-def yahooQuote(ticker, multiplier=1, p=4):
-    url = 'https://query1.finance.yahoo.com/v6/finance/quote?region=US&lang=en&symbols=' + ticker
+def yahooQuote(ticker):
+    url = 'https://query1.finance.yahoo.com/v6/finance/quote?region=US&lang=en&symbols=' + ticker.yahoo_ticker
     data = yahoo_get(url)
     data = json.loads(data)
     data = data['quoteResponse']['result'][0]
+    multiplier = ticker.market.yahoo_price_factor
     return data['regularMarketPrice'] * multiplier, data['regularMarketPreviousClose'] * multiplier
 
 

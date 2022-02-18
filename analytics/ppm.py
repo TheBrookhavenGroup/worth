@@ -7,6 +7,7 @@ from collections import defaultdict
 from worth.utils import cround
 from trades.models import Trade
 from accounts.models import CashRecord
+from markets.models import Ticker
 from worth.utils import is_near_zero
 from markets.utils import get_price
 
@@ -62,17 +63,17 @@ def valuations(account=None, ticker=None):
     for a in balances.keys():
         portfolio = balances[a]
         for ticker in portfolio.keys():
+            t = Ticker.objects.get(ticker=ticker.upper())
             q = portfolio[ticker]
             if is_near_zero(q):
                 continue
 
-            p = get_price(ticker)
+            p = get_price(t)
             value = q * p
             total_worth += value
 
-            nsig = 9 if q > 900e3 else None
             qstr = cround(q, 3)
-            pstr = cround(p, 3)
+            pstr = cround(p, t.market.pprec)
             vstr = cround(value, 3)
 
             data.append([a, ticker, qstr, pstr, vstr])
