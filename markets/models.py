@@ -1,4 +1,6 @@
 from django.db import models
+from django.dispatch import receiver
+from django.db.models.signals import pre_save
 
 NOT_FUTURES_EXCHANGES = ['CASH', 'STOCK', 'ARCA', 'SMART']
 EXCHANGES = [(i, i) for i in NOT_FUTURES_EXCHANGES + ['CME', 'NYM', 'NYBOT', 'NYB']]
@@ -28,6 +30,11 @@ class Market(models.Model):
     @property
     def is_futures(self):
         return self.ib_exchange not in NOT_FUTURES_EXCHANGES
+
+
+@receiver(pre_save, sender=Market)
+def upcase_symbol(sender, instance, **kwargs):
+    instance.symbol = instance.symbol.upper()
 
 
 class Ticker(models.Model):
@@ -78,3 +85,8 @@ class DailyBar(models.Model):
 
     def __str__(self):
         return f"{self.o}|{self.h}|{self.l}|{self.c}|{self.v}|{self.oi}"
+
+
+@receiver(pre_save, sender=Ticker)
+def upcase_ticker(sender, instance, **kwargs):
+    instance.ticker = instance.ticker.upper()
