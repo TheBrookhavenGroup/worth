@@ -18,6 +18,7 @@ def get_historical_prices(modeladmin, request, qs):
 @admin .register(Ticker)
 class TickerAdmin(admin.ModelAdmin):
     list_display = ('ticker', 'market')
+    list_filter = ('market', )
     search_fields = ('ticker', )
     actions = [get_historical_prices, ]
 

@@ -17,33 +17,6 @@ def get_bofa_account():
 
 
 class CashRecord(models.Model):
-    UNSPECIFIED = 'U'
-    ATM = 'A'
-    BILL_PAY = 'B'
-    CELL_PHONE_DEPOSIT = 'C'
-    AUTO_DEDUCTED = 'D'
-    ELECTRONIC_TRANSFER = 'E'
-    PAID_ON_IRS_SITE = 'I'
-    DEBIT_CARD = 'M'
-    TRANSFER_TO_SAVINGS = 'S'
-    PAYPAL = 'P'
-    TRANSFER = 'T'
-    ZELLE = 'Z'
-
-    TYPE_CHOICES = [
-        (UNSPECIFIED, ''),
-        (ATM, 'ATM'),
-        (BILL_PAY, 'Bill Pay'),
-        (CELL_PHONE_DEPOSIT, 'Cell Phone Depoist'),
-        (AUTO_DEDUCTED, 'Auto Deducted'),
-        (ELECTRONIC_TRANSFER, 'Electronic Transfer'),
-        (PAID_ON_IRS_SITE, 'Paid on IRS Site'),
-        (DEBIT_CARD, 'Debit Card'),
-        (TRANSFER_TO_SAVINGS, 'Transfer to Savings'),
-        (PAYPAL, 'PayPal'),
-        (TRANSFER, 'Transfer'),
-        (ZELLE, 'Zelle')
-    ]
 
     AB = 'AB'
     AV = 'AV'
@@ -105,10 +78,9 @@ class CashRecord(models.Model):
     ]
 
     account = models.ForeignKey(Account, on_delete=models.CASCADE, default=get_bofa_account)
-    ignored = models.BooleanField(default=False)
     d = models.DateField()
-    type = models.CharField(max_length=1, choices=TYPE_CHOICES, default=UNSPECIFIED)
     category = models.CharField(max_length=3, choices=CATEGORY_CHOICES, default=GN)
     description = models.CharField(max_length=180)
     amt = models.FloatField()
     cleared_f = models.BooleanField(default=False)
+    ignored = models.BooleanField(default=False)

@@ -2,7 +2,7 @@ from django.db import models
 from django.dispatch import receiver
 from django.db.models.signals import pre_save
 
-NOT_FUTURES_EXCHANGES = ['CASH', 'STOCK', 'ARCA', 'SMART']
+NOT_FUTURES_EXCHANGES = ['CASH', 'STOCK', 'BOND', 'ARCA', 'SMART']
 EXCHANGES = [(i, i) for i in NOT_FUTURES_EXCHANGES + ['CME', 'NYM', 'NYBOT', 'NYB']]
 MAX_EXCHANGES_LEN = max([len(i[0]) for i in EXCHANGES]) + 1
 
