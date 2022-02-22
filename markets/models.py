@@ -66,11 +66,15 @@ class Ticker(models.Model):
     def yahoo_ticker(self):
         ticker = self.ticker
         e = self.market.yahoo_exchange
-        if e in ('STOCK', 'CASH'):
+        if e in NOT_FUTURES_EXCHANGES:
             return ticker
 
         ticker = ticker[:-4] + ticker[-2:] + '.' + e
         return ticker
+
+    @property
+    def is_futures(self):
+        return self.market.yahoo_exchange not in NOT_FUTURES_EXCHANGES
 
 
 class DailyBar(models.Model):

@@ -54,7 +54,6 @@ def valuations(account=None, ticker=None):
     formats = json.dumps({'columnDefs': [{'targets': [2, 3, 4], 'className': 'dt-body-right'}],
                           # 'ordering': False
                           })
-    print(formats)
 
     headings = ['Account', 'Ticker', 'Q', 'P', 'Value']
     data = []
