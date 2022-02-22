@@ -1,6 +1,22 @@
 from django.contrib import admin
+from django.contrib.admin import SimpleListFilter
 from .models import Account, CashRecord
 from worth.utils import our_now
+
+
+class ActiveAccountFilter(SimpleListFilter):
+    title = "Active Accounts"
+    parameter_name = 'active'
+
+    def lookups(self, request, model_admin):
+        active = Account.objects.filter(active_f=True).all()
+        return [(a.id, a.name) for a in active]
+
+    def queryset(self, request, queryset):
+        if self.value():
+            return queryset.filter(account__id=self.value())
+        else:
+            return queryset
 
 
 @admin .register(Account)
@@ -18,7 +34,7 @@ def duplicate_record(modeladmin, request, qs):
     d = our_now().date()
     for rec in qs:
         new_rec = CashRecord(d=d, description=rec.description, account=rec.account,
-                             type=rec.type, category=rec.category, amt=rec.amt)
+                             category=rec.category, amt=rec.amt)
         new_rec.save()
 
 
@@ -26,7 +42,7 @@ def duplicate_record(modeladmin, request, qs):
 class CashRecordAdmin(admin.ModelAdmin):
     date_hierarchy = 'd'
     list_display = ('account', 'd', 'description', 'amt', 'cleared_f')
-    list_filter = ('cleared_f', 'account')
+    list_filter = ('cleared_f', ActiveAccountFilter)
     search_fields = ('account', 'description')
     ordering = ('account', '-d')
     actions = [duplicate_record, set_cleared_flag]
