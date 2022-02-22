@@ -1,4 +1,5 @@
-from accounts.models import Account, CashRecord
+from accounts.models import CashRecord
+from analytics.ppm import get_balances
 
 
 def cash_sums(account_name):
@@ -11,3 +12,15 @@ def cash_sums(account_name):
         if rec.cleared_f:
             total_cleared += a
     return total, total_cleared
+
+
+def total_cash():
+    total = 0.0
+    balances = get_balances()
+    for a in balances.keys():
+        portfolio = balances[a]
+        if 'cash' in portfolio:
+            cash = portfolio['cash']
+            print(a, cash)
+            total += cash
+    return total

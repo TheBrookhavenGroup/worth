@@ -1,6 +1,5 @@
-from django.views.generic.base import View, TemplateView
-from django.shortcuts import render
-from analytics.cash import cash_sums
+from django.views.generic.base import TemplateView
+from analytics.cash import cash_sums, total_cash
 from analytics.ppm import valuations
 
 
@@ -27,4 +26,14 @@ class PPMView(TemplateView):
         account = getter('account')
         context['headings1'], context['data1'], context['formats'] = \
             valuations(account=account, ticker=ticker)
+        return context
+
+
+class TotalCashView(TemplateView):
+    template_name = 'analytics/total_cash.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        getter = self.request.GET.get
+        context['total_cash'] = total_cash()
         return context
