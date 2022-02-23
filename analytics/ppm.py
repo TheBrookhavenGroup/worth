@@ -16,27 +16,45 @@ def get_balances(account=None, ticker=None):
     # balances[<account>]->[<symbol>]-><qty>
     balances = defaultdict(lambda: defaultdict(lambda: 0.0))
 
-    qs = Trade.objects.values_list('account__name', 'ticker__ticker', 'reinvest', 'q', 'p', 'commission')
-    for a, ticker, reinvest, q, p, c in qs:
+    qs = Trade.objects
+    if account is not None:
+        account = account.upper()
+        qs = qs.filter(account__name=account)
+
+    cash_f = False
+    if ticker is not None:
+        ticker = ticker.upper()
+        if ticker == 'CASH':
+            cash_f = True
+        else:
+            qs = qs.filter(ticker__ticker=ticker)
+
+    qs = qs.values_list('account__name', 'ticker__ticker', 'reinvest', 'q', 'p', 'commission')
+    for a, ti, reinvest, q, p, c in qs:
         portfolio = balances[a]
 
         if not reinvest:
             cash_amount = -q * p - c
-            portfolio['cash'] += cash_amount
+            portfolio['CASH'] += cash_amount
 
-        portfolio[ticker] += q
+        if not cash_f:
+            portfolio[ti] += q
 
-    qs = CashRecord.objects.values('account__name').order_by('account__name').annotate(total=Sum('amt'))
+    qs = CashRecord.objects
+    if account is not None:
+        qs = qs.filter(account__name=account)
+
+    qs = qs.values('account__name').order_by('account__name').annotate(total=Sum('amt'))
     for result in qs:
         total = result['total']
         if abs(total) < 0.001:
             continue
         a = result['account__name']
-        balances[a]['cash'] += total
+        balances[a]['CASH'] += total
 
-    empty_accounts = [a for a in balances if abs(balances[a]['cash']) < 0.001]
+    empty_accounts = [a for a in balances if abs(balances[a]['CASH']) < 0.001]
     for a in empty_accounts:
-        del balances[a]['cash']
+        del balances[a]['CASH']
         if len(balances[a].keys()) == 0:
             del balances[a]
 

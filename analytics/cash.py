@@ -19,8 +19,8 @@ def total_cash():
     balances = get_balances()
     for a in balances.keys():
         portfolio = balances[a]
-        if 'cash' in portfolio:
-            cash = portfolio['cash']
+        if 'CASH' in portfolio:
+            cash = portfolio['CASH']
             print(a, cash)
             total += cash
     return total
