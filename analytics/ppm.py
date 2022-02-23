@@ -120,7 +120,12 @@ def valuations(account=None, ticker=None):
             pstr = cround(p, t.market.pprec)
             vstr = cround(value, 3)
 
-            data.append([a, yahoo_url(t), qstr, pstr, vstr])
+            if ticker == 'CASH':
+                url = 'CASH'
+            else:
+                url = yahoo_url(t)
+
+            data.append([a, url, qstr, pstr, vstr])
 
     futures_balances = get_futures_balances()
     for ticker in futures_balances:
