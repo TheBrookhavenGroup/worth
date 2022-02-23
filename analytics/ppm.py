@@ -16,18 +16,9 @@ def get_balances(account=None, ticker=None):
     # balances[<account>]->[<symbol>]-><qty>
     balances = defaultdict(lambda: defaultdict(lambda: 0.0))
 
-    qs = Trade.objects
-    if account is not None:
-        account = account.upper()
-        qs = qs.filter(account__name=account)
+    qs = Trade.equity_trades(account, ticker)
 
-    cash_f = False
-    if ticker is not None:
-        ticker = ticker.upper()
-        if ticker == 'CASH':
-            cash_f = True
-        else:
-            qs = qs.filter(ticker__ticker=ticker)
+    cash_f = (ticker is not None) and (ticker == 'CASH')
 
     qs = qs.values_list('account__name', 'ticker__ticker', 'reinvest', 'q', 'p', 'commission')
     for a, ti, reinvest, q, p, c in qs:
@@ -68,6 +59,12 @@ def get_balances(account=None, ticker=None):
     return balances
 
 
+def get_futures_balances(balances, account=None, ticker=None):
+    qs = Trade.futures_trades(account, ticker)
+
+    return balances
+
+
 def valuations(account=None, ticker=None):
     formats = json.dumps({'columnDefs': [{'targets': [2, 3, 4], 'className': 'dt-body-right'}],
                           # 'ordering': False
@@ -76,6 +73,7 @@ def valuations(account=None, ticker=None):
     headings = ['Account', 'Ticker', 'Q', 'P', 'Value']
     data = []
     balances = get_balances(account, ticker)
+    balances = get_futures_balances(balances, account, ticker)
     total_worth = 0
     for a in balances.keys():
         portfolio = balances[a]

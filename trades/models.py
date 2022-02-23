@@ -1,5 +1,6 @@
 from django.db import models
-from markets.models import Ticker
+from django.db.models import Q
+from markets.models import Ticker, NOT_FUTURES_EXCHANGES
 from accounts.models import Account
 
 
@@ -23,3 +24,24 @@ class Trade(models.Model):
 
     def calc_commission(self):
         return self.q * self.ticker.market.commission
+
+    @classmethod
+    def more_filtering(cls, q, account, ticker):
+        qs = Trade.objects.filter(q)
+        if account is not None:
+            account = account.upper()
+            qs = qs.filter(account__name=account)
+
+        if ticker is not None:
+            ticker = ticker.upper()
+            qs = qs.filter(ticker__ticker=ticker)
+
+        return qs
+
+    @classmethod
+    def futures_trades(cls, account=None, ticker=None):
+        return cls.more_filtering(~Q(ticker__market__ib_exchange__in=(NOT_FUTURES_EXCHANGES)), account, ticker)
+
+    @classmethod
+    def equity_trades(cls, account=None, ticker=None):
+        return cls.more_filtering(Q(ticker__market__ib_exchange__in=(NOT_FUTURES_EXCHANGES)), account, ticker)

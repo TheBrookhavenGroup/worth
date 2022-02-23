@@ -17,6 +17,12 @@ def yyyymmdd2dt(d):
     return tz.localize(dt)
 
 
+def dt2dt(dt):
+    tz = pytz.timezone(settings.TIME_ZONE)
+    dt = datetime.datetime.fromisoformat(dt)
+    return tz.localize(dt)
+
+
 # Taken from http://pleac.sourceforge.net/pleac_python/numbers.html
 commify_re = re.compile(r"(\d\d\d)(?=\d)(?!\d*\.)")
 
