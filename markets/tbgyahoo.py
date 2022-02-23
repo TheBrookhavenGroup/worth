@@ -1,7 +1,7 @@
 from datetime import datetime
 import json
-import urllib
 import requests
+from django.utils.safestring import mark_safe
 
 
 def yahoo_get(url):
@@ -57,6 +57,12 @@ def yahooQuote(ticker):
     data = data['quoteResponse']['result'][0]
     multiplier = ticker.market.yahoo_price_factor
     return data['regularMarketPrice'] * multiplier, data['regularMarketPreviousClose'] * multiplier
+
+
+def yahoo_url(ticker):
+    url = mark_safe(f'https://finance.yahoo.com/quote/{ticker.yahoo_ticker}/')
+    url = mark_safe(f'<a href="{url}" target="_blank">{ticker.ticker}</a>')
+    return url
 
 
 # ####################

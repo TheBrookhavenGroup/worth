@@ -42,6 +42,9 @@ x_nan = float('nan')
 
 
 def cround(x, p=2, w=0, symbol=None, nsig=None):
+    if str == type(x):
+        return x
+
     if x is None:
         return 'N/A'
     if list == type(x) or tuple == type(x):

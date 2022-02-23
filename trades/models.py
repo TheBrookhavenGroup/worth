@@ -26,8 +26,8 @@ class Trade(models.Model):
         return self.q * self.ticker.market.commission
 
     @classmethod
-    def more_filtering(cls, q, account, ticker):
-        qs = Trade.objects.filter(q)
+    def more_filtering(cls, account, ticker):
+        qs = Trade.objects
         if account is not None:
             account = account.upper()
             qs = qs.filter(account__name=account)
@@ -40,8 +40,10 @@ class Trade(models.Model):
 
     @classmethod
     def futures_trades(cls, account=None, ticker=None):
-        return cls.more_filtering(~Q(ticker__market__ib_exchange__in=(NOT_FUTURES_EXCHANGES)), account, ticker)
+        qs = cls.more_filtering(account, ticker)
+        return qs.filter(~Q(ticker__market__ib_exchange__in=(NOT_FUTURES_EXCHANGES)))
 
     @classmethod
     def equity_trades(cls, account=None, ticker=None):
-        return cls.more_filtering(Q(ticker__market__ib_exchange__in=(NOT_FUTURES_EXCHANGES)), account, ticker)
+        qs = cls.more_filtering(account, ticker)
+        return qs.filter(ticker__market__ib_exchange__in=(NOT_FUTURES_EXCHANGES))
