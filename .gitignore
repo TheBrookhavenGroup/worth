@@ -13,3 +13,5 @@ foo.py
 --logfile
 junk.txt
 redis_dumps
+environment.env
+

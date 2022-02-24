@@ -13,9 +13,10 @@ class Trade(models.Model):
     p = models.FloatField(blank=False, null=False)
     commission = models.FloatField(default=0.0)
     note = models.CharField(max_length=180, blank=True, null=True)
+    trade_id = models.IntegerField(blank=True, null=True)
 
     def __str__(self):
-        return f"{self.dt} {self.ticker.ticker} {self.q} @ {self.p}"
+        return f"{self.account} {self.dt} {self.ticker.ticker} {self.q} @ {self.p} c={self.commission} id={self.trade_id}"
 
     def save(self, *args, **kwargs):
         if self.commission is None:

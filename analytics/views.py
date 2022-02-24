@@ -1,6 +1,7 @@
 from django.views.generic.base import TemplateView
 from analytics.cash import cash_sums, total_cash
 from analytics.ppm import valuations
+from trades.ib_flex import get_trades
 
 
 class CheckingView(TemplateView):
@@ -17,7 +18,7 @@ class CheckingView(TemplateView):
 
 
 class PPMView(TemplateView):
-    template_name = 'analytics/ppm.html'
+    template_name = 'analytics/table.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -26,6 +27,7 @@ class PPMView(TemplateView):
         account = getter('account')
         context['headings1'], context['data1'], context['formats'] = \
             valuations(account=account, ticker=ticker)
+        context['title'] = 'PPM'
         return context
 
 
@@ -36,4 +38,17 @@ class TotalCashView(TemplateView):
         context = super().get_context_data(**kwargs)
         getter = self.request.GET.get
         context['total_cash'] = total_cash()
+        return context
+
+
+class GetIBTradesView(TemplateView):
+    template_name = 'analytics/table.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        getter = self.request.GET.get
+        ticker = getter('ticker')
+        account = getter('account')
+        context['headings1'], context['data1'], context['formats'] = get_trades()
+        context['title'] = 'IB Futures Trades'
         return context

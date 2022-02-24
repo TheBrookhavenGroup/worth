@@ -4,6 +4,7 @@ from worth.utils import yyyymmdd2dt
 from accounts.models import Account, CashRecord
 from markets.models import Market, Ticker
 from trades.models import Trade
+from markets.utils import add_ticker
 
 
 def add_accounts():
@@ -79,19 +80,6 @@ def get_account(a):
         account = Account(name=a, owner='MSRK', broker='', broker_account=a, description='')
         account.save()
     return account
-
-
-def add_ticker(t):
-    if Ticker.objects.filter(ticker=t).exists():
-        ticker = Ticker.objects.get(ticker=t)
-    else:
-        m = Market(symbol=t, name=t)
-        m.save()
-
-        ticker = Ticker(ticker=t, market=m)
-        ticker.save()
-
-    return ticker
 
 
 def cash_balance(account):

@@ -1,8 +1,9 @@
 from cachetools.func import ttl_cache
 from django.conf import settings
+from worth.utils import y1_to_y4
 from markets.tbgyahoo import yahooHistory, yahooQuote
 from markets.models import DailyBar
-from markets.models import Ticker
+from markets.models import Ticker, Market
 
 
 def populate_historical_price_data(ticker, d_i=None, d_f=None):
@@ -27,3 +28,25 @@ def get_price(ticker):
         p = ticker.fixed_price
 
     return p
+
+
+def add_ticker(t):
+    if Ticker.objects.filter(ticker=t).exists():
+        ticker = Ticker.objects.get(ticker=t)
+    else:
+        m = Market(symbol=t, name=t)
+        m.save()
+
+        ticker = Ticker(ticker=t, market=m)
+        ticker.save()
+
+    return ticker
+
+
+def ib_symbol2ticker(symbol):
+    symbol, mo, yr = symbol[:-2], symbol[-2:-1], symbol[-1:]
+    m = Market.objects.get(symbol=symbol)
+    yr = y1_to_y4(yr)
+    ticker = f"{symbol}{mo}{yr}"
+    ticker = Ticker.objects.get_or_create(ticker=ticker, market=m)
+    return ticker[0]

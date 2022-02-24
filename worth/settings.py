@@ -4,6 +4,7 @@ from pathlib import Path
 
 
 PPM_FACTOR = eval(env.get('PPM_FACTOR', 'False'))
+FLEX_TOKEN = env.get('FLEX_TOKEN')
 
 USE_PRICE_FEED = eval(env.get('USE_PRICE_FEED', 'True'))
 
