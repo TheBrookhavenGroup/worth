@@ -8,6 +8,7 @@
 {% block title %}{{ title }}{% endblock title %}
 
 {% block content %}
+    {% include "admin/quick_links.html" with show_changelinks=True %}
     <p>
     <a href="/admin">Admin</a>
     </p>
