@@ -11,10 +11,14 @@ def our_now():
     return datetime.datetime.now(tz=pytz.timezone(settings.TIME_ZONE))
 
 
-def yyyymmdd2dt(d):
+def set_tz(dt):
     tz = pytz.timezone(settings.TIME_ZONE)
-    dt = datetime.datetime.strptime(str(d), '%Y%m%d')
     return tz.localize(dt)
+
+
+def yyyymmdd2dt(d):
+    dt = datetime.datetime.strptime(str(d), '%Y%m%d')
+    return set_tz(dt)
 
 
 def dt2dt(dt):

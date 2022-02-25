@@ -4,8 +4,8 @@ from .models import PPMResult
 
 @admin.register(PPMResult)
 class PPMResultAdmin(admin.ModelAdmin):
-    list_display = ('dt', 'formatted_total')
+    list_display = ('dt', 'total')
     ordering = ('-dt', )
 
-    def formatted_total(self, obj):
-        return f"{obj.total/1.e6:.3f}M"
+    def total(self, obj):
+        return f"{obj.value/1.e6:.3f}M"
