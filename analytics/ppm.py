@@ -10,6 +10,7 @@ from markets.models import Ticker
 from worth.utils import is_near_zero
 from markets.utils import get_price
 from markets.tbgyahoo import yahooQuote, yahoo_url
+from analytics.models import PPMResult
 
 
 def get_balances(account=None, ticker=None):
@@ -131,11 +132,14 @@ def valuations(account=None, ticker=None):
     for ticker in futures_balances:
         t = Ticker.objects.get(ticker=ticker)
         position, pnl, p = futures_balances[ticker]
+        total_worth += pnl
         qstr = cround(position, 3)
         pstr = cround(p, t.market.pprec)
         vstr = cround(pnl, 3)
         data.append(['FUTURES', yahoo_url(t), qstr, pstr, vstr])
 
     data.append(['AAA Total', '', '', '', cround(total_worth, 3)])
+
+    PPMResult.objects.create(total=total_worth)
 
     return headings, data, formats
