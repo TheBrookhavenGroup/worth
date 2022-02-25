@@ -21,6 +21,5 @@ def total_cash():
         portfolio = balances[a]
         if 'CASH' in portfolio:
             cash = portfolio['CASH']
-            print(a, cash)
             total += cash
     return total
