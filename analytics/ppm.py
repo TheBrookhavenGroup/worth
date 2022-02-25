@@ -140,6 +140,6 @@ def valuations(account=None, ticker=None):
 
     data.append(['AAA Total', '', '', '', cround(total_worth, 3)])
 
-    PPMResult.objects.create(total=total_worth)
+    PPMResult.objects.create(value=total_worth)
 
     return headings, data, formats
