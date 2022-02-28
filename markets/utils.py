@@ -1,6 +1,6 @@
 from cachetools.func import ttl_cache
 from django.conf import settings
-from worth.utils import y1_to_y4
+from worth.dt import y1_to_y4
 from markets.tbgyahoo import yahooHistory, yahooQuote
 from markets.models import DailyBar
 from markets.models import Ticker, Market

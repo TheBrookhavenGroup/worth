@@ -1,7 +1,7 @@
 import json
 from django.conf import settings
 from ib_insync.flexreport import FlexReport
-from worth.utils import dt2dt
+from worth.dt import dt2dt
 from accounts.models import Account
 from trades.models import Trade
 from markets.utils import ib_symbol2ticker
