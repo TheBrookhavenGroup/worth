@@ -61,40 +61,6 @@ def get_balances(account=None, ticker=None):
     return balances
 
 
-def get_futures_balances(account=None, ticker=None):
-    # result[<ticker>]=[<position>, <pnl>, <current_price>]
-    result = defaultdict(lambda: [0.0, 0.0])
-    # sums[<ticker>]->[<sum q>, <sum q*p>, <sum c>]
-    sums = defaultdict(lambda: [0.0, 0.0, 0.0])
-
-    qs = Trade.futures_trades(account, ticker)
-    qs = qs.values_list('ticker__ticker', 'q', 'p', 'commission', 'ticker__market__ib_price_factor')
-    for ti, q, p, c, f in qs:
-        s = sums[ti]
-        s[0] += q
-        s[1] += q * p * f
-        s[2] += c
-
-    for ti in sums:
-        position, pnl, c_sum = sums[ti]
-
-        ticker = Ticker.objects.get(ticker=ti)
-        pnl *= ticker.market.ib_price_factor
-
-        if not is_near_zero(position):
-            p = get_price(ticker)
-            pnl += -position * p
-        else:
-            p = ''
-
-        pnl *= -ticker.market.cs
-        pnl -= c_sum
-
-        result[ti] = [position, pnl, p]
-
-    return result
-
-
 def get_futures_pnl():
     a = Account.objects.get(name='FUTURES')
     # dt = set_tz(datetime(2022, 2, 15, 0, 0, 0))
@@ -166,15 +132,13 @@ def valuations(account=None, ticker=None):
 
             data.append([a, url, qstr, pstr, vstr])
 
-    futures_balances = get_futures_balances()
-    for ticker in futures_balances:
-        t = Ticker.objects.get(ticker=ticker)
-        position, pnl, p = futures_balances[ticker]
-        total_worth += pnl
-        qstr = cround(position, 3)
-        pstr = cround(p, t.market.pprec)
+    futures, total = get_futures_pnl()
+
+    for ticker, pos, price, pnl in [i for i in futures if i[1] != 0]:
+        qstr = cround(pos, 3)
+        pstr = cround(price, ticker.market.pprec)
         vstr = cround(pnl, 3)
-        data.append(['FUTURES', yahoo_url(t), qstr, pstr, vstr])
+        data.append(['FUTURES', yahoo_url(ticker), qstr, pstr, vstr])
 
     data.append(['AAA Total', '', '', '', cround(total_worth, 3)])
 

@@ -95,7 +95,13 @@ def cround(x, p=2, w=0, symbol=None, nsig=None):
     y = str(y)
     if ('inf' == y) or ('nan' == y):
         return y
-    whole_part, frac_part = y.split('.')
+
+    if '.' in y:
+        whole_part, frac_part = y.split('.')
+    else:
+        whole_part = y
+        frac_part = '0'
+
     if 0 == p:
         y = whole_part
     else:
