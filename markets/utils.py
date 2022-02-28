@@ -54,3 +54,20 @@ def ib_symbol2ticker(symbol):
     ticker = f"{symbol}{mo}{yr}"
     ticker = Ticker.objects.get_or_create(ticker=ticker, market=m)
     return ticker[0]
+
+
+def tbg_ticker2ticker(ticker):
+    symbol, exchange = ticker.split('.')
+    symbol, mo, yr = symbol[:-3], symbol[-3:-2], symbol[-2:]
+    m = Market.objects.get(symbol=symbol)
+
+    yr = int(yr)
+    if yr > 80:
+        yr = 1900 + yr
+    else:
+        yr = 2000 + yr
+
+    ticker = f"{symbol}{mo}{yr}"
+
+    ticker = Ticker.objects.get_or_create(ticker=ticker, market=m)
+    return ticker[0]
