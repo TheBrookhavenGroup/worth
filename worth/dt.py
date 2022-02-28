@@ -36,3 +36,220 @@ def y1_to_y4(y):
         while yr - y > 10:
             y += 1
     return y
+
+
+def is_week_end(d):
+    return d.weekday() > 4
+
+
+# Butcher's algorithm http://code.activestate.com/recipes/576517-calculate-easter-western-given-a-year/
+def easter(year):
+    #  Returns Easter as a date object.
+    a = year % 19
+    b = year // 100
+    c = year % 100
+    d = (19 * a + b - b // 4 - ((b - (b + 8) // 25 + 1) // 3) + 15) % 30
+    e = (32 + 2 * (b % 4) + 2 * (c // 4) - d - (c % 4)) % 7
+    f = d + e - 7 * ((a + 11 * d + 22 * e) // 451) + 114
+    month = f // 31
+    day = f % 31 + 1
+    return datetime.date(year, month, day)
+
+
+def good_friday(year):
+    d = easter(year)
+    return d - datetime.timedelta(days=2)
+
+
+def which_holiday(dte, weekend_f=True):
+    if weekend_f and is_week_end(dte):
+        return 'Weekend'
+
+    y, m, d, wd = dte.year, dte.month, dte.day, dte.weekday()
+
+    if 1 == m:
+        if 1 == d:
+            return 'New Years Day'
+        elif (2 == d) and (0 == wd):
+            # It is Monday the 2nd so the first was a Sunday.
+            return 'New Years Day observed'
+        elif (0 == wd) and (d > 14) and (d < 22) and (y > 1985):
+            return 'MLK Day'
+    elif 2 == m:
+        # Presidents day - third Monday of February
+        if (0 == wd) and (d > 14) and (d < 22):
+            return 'Presidents Day'
+    elif 5 == m:
+        # Memorial day is the last Monday in May
+        if (0 == wd) and (d > 24):
+            return 'Memorial Day'
+    elif 7 == m:
+        # Independence day
+        if 4 == d:
+            return 'Independence Day'
+        elif (3 == d) and (4 == wd):
+            # It is the 3rd of the month and a Friday so the 4th is Saturday
+            # This happens in 2020.
+            return 'Independence Day Observed'
+        elif (5 == d) and (0 == wd):
+            # It is the 5th of the month and a Monday so the 4th is Sunday.
+            return 'Independence Day Observed'
+    elif 9 == m:
+        # Labor day
+        if (0 == wd) and (d < 8):
+            return 'Labor Day'
+    elif 11 == m:
+        # Thanksgiving - fourth Thursday of November
+        if (3 == wd) and (d > 21) and (d < 29):
+            return 'Thanksgiving Day'
+    elif 12 == m:
+        if 25 == d:
+            # Christmas
+            return 'Christmas'
+        elif (24 == d) and (4 == wd):
+            # It is Friday the 24th so Christmas is on Saturday
+            return 'Christmas observed'
+        elif (26 == d) and (0 == wd):
+            # It is Monday the 26th so Christmas is on Sunday
+            return 'Christmas observed'
+        elif (31 == d) and (4 == wd):
+            # It is Friday the 31st so Saturday is New Years.
+            return 'New Years Day observed'
+
+    gf = good_friday(y)
+    if dte == good_friday(y):
+        return 'Good Friday'
+
+    return None
+
+
+def is_holiday_observed(dte, weekend_f=True):
+    return which_holiday(dte, weekend_f=weekend_f) is not None
+
+
+def test_is_holiday_observed():
+    expected = [[20140101, 'Wednesday New Years Day'],
+                [20140120, 'Monday MLK Day'],
+                [20140217, 'Monday Presidents Day'],
+                [20140418, 'Friday Easter Friday'],
+                [20140526, 'Monday Memorial Day'],
+                [20140704, 'Friday Independence Day'],
+                [20140901, 'Monday Labor Day'],
+                [20141127, 'Thursday Thanksgiving Day'],
+                [20141225, 'Thursday Christmas Day'],
+                [20150101, 'Thursday New Years Day'],
+                [20150119, 'Monday MLK Day'],
+                [20150216, 'Monday Presidents Day'],
+                [20150403, 'Friday Easter Friday'],
+                [20150525, 'Monday Memorial Day'],
+                [20150703, 'Friday Independence Day'],
+                [20150704, 'Saturday Independence Day'],
+                [20150907, 'Monday Labor Day'],
+                [20151126, 'Thursday Thanksgiving Day'],
+                [20151225, 'Friday Christmas Day'],
+                [20160101, 'Friday New Years Day'],
+                [20160118, 'Monday MLK Day'],
+                [20160215, 'Monday Presidents Day'],
+                [20160325, 'Friday Easter Friday'],
+                [20160530, 'Monday Memorial Day'],
+                [20160704, 'Monday Independence Day'],
+                [20160905, 'Monday Labor Day'],
+                [20161124, 'Thursday Thanksgiving Day'],
+                [20161225, 'Sunday Christmas Day'],
+                [20161226, 'Monday Christmas Day'],
+                [20170101, 'Sunday New Years Day'],
+                [20170102, 'Monday New Years Day'],
+                [20170116, 'Monday MLK Day'],
+                [20170220, 'Monday Presidents Day'],
+                [20170414, 'Friday Easter Friday'],
+                [20170529, 'Monday Memorial Day'],
+                [20170704, 'Tuesday Independence Day'],
+                [20170904, 'Monday Labor Day'],
+                [20171123, 'Thursday Thanksgiving Day'],
+                [20171225, 'Monday Christmas Day'],
+                [20180101, 'Monday New Years Day'],
+                [20180115, 'Monday MLK Day'],
+                [20180219, 'Monday Presidents Day'],
+                [20180330, 'Friday Easter Friday'],
+                [20180528, 'Monday Memorial Day'],
+                [20180704, 'Wednesday Independence Day'],
+                [20180903, 'Monday Labor Day'],
+                [20181122, 'Thursday Thanksgiving Day'],
+                [20181225, 'Tuesday Christmas Day'],
+                [20190101, 'Tuesday New Years Day'],
+                [20190121, 'Monday MLK Day'],
+                [20190218, 'Monday Presidents Day'],
+                [20190419, 'Friday Easter Friday'],
+                [20190527, 'Monday Memorial Day'],
+                [20190704, 'Thursday Independence Day'],
+                [20190902, 'Monday Labor Day'],
+                [20191128, 'Thursday Thanksgiving Day'],
+                [20191225, 'Wednesday Christmas Day'],
+                [20200101, 'Wednesday New Years Day'],
+                [20200120, 'Monday MLK Day'],
+                [20200217, 'Monday Presidents Day'],
+                [20200410, 'Friday Easter Friday'],
+                [20200525, 'Monday Memorial Day'],
+                [20200703, 'Friday Independence Day'],
+                [20200704, 'Saturday Independence Day'],
+                [20200907, 'Monday Labor Day'],
+                [20201126, 'Thursday Thanksgiving Day'],
+                [20201225, 'Friday Christmas Day'],
+                [20210101, 'Friday New Years Day'],
+                [20210118, 'Monday MLK Day'],
+                [20210215, 'Monday Presidents Day'],
+                [20210402, 'Friday Easter Friday'],
+                [20210531, 'Monday Memorial Day'],
+                [20210704, 'Sunday Independence Day'],
+                [20210705, 'Monday Independence Day'],
+                [20210906, 'Monday Labor Day'],
+                [20211125, 'Thursday Thanksgiving Day'],
+                [20211224, 'Friday Christmas Day'],
+                [20211225, 'Saturday Christmas Day'],
+                [20211231, 'Friday New Years Day'],
+                [20220101, 'Saturday New Years Day'],
+                [20220117, 'Monday MLK Day'],
+                [20220221, 'Monday Presidents Day'],
+                [20220415, 'Friday Easter Friday'],
+                [20220530, 'Monday Memorial Day'],
+                [20220704, 'Monday Independence Day'],
+                [20220905, 'Monday Labor Day'],
+                [20221124, 'Thursday Thanksgiving Day'],
+                [20221225, 'Sunday Christmas Day'],
+                [20221226, 'Monday Christmas Day'],
+                [20230101, 'Sunday New Years Day'],
+                [20230102, 'Monday New Years Day'],
+                [20230116, 'Monday MLK Day'],
+                [20230220, 'Monday Presidents Day'],
+                [20230407, 'Friday Easter Friday'],
+                [20230529, 'Monday Memorial Day'],
+                [20230704, 'Tuesday Independence Day'],
+                [20230904, 'Monday Labor Day'],
+                [20231123, 'Thursday Thanksgiving Day'],
+                [20231225, 'Monday Christmas Day'],
+                [20240101, 'Monday New Years Day']]
+
+    expected = [yyyymmdd2dt(i).date() for i, j in expected]
+    d = yyyymmdd2dt(20140101).date()
+    flag = True
+    for i in range(3657):
+        if is_holiday_observed(d, weekend_f=False):
+            if d not in expected:
+                flag = False
+
+        d = d + datetime.timedelta(days=1)
+
+    return flag
+
+
+def lbd_of_month(y, m):
+    if m == 12:
+        d = datetime.date(y + 1, 1, 1)
+    else:
+        d = datetime.date(y, m + 1, 1)
+    d -= datetime.timedelta(days=1)
+
+    while is_holiday_observed(d):
+        d -= datetime.timedelta(days=1)
+
+    return d
