@@ -56,9 +56,6 @@ class GetIBTradesView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        getter = self.request.GET.get
-        ticker = getter('ticker')
-        account = getter('account')
         context['headings1'], context['data1'], context['formats'] = get_trades()
         context['title'] = 'IB Futures Trades'
         return context

@@ -30,8 +30,6 @@ def get_trades(report_id='224849'):
         t = dt2dt(i.dateTime)
         ticker = ib_symbol2ticker(i.symbol)
         q = i.quantity
-        if i.buySell == 'SELL':
-            q *= -1
         try:
             trade = Trade.objects.get(trade_id=i.tradeID)
             trade.dt = t
