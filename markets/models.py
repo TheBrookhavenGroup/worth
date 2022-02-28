@@ -102,7 +102,7 @@ class DailyBar(models.Model):
         constraints = [models.UniqueConstraint(fields=['ticker', 'd'], name='unique_daily_bar')]
 
     def __str__(self):
-        return f"{self.o}|{self.h}|{self.l}|{self.c}|{self.v}|{self.oi}"
+        return f"{self.d}|{self.o}|{self.h}|{self.l}|{self.c}|{self.v}|{self.oi}"
 
 
 @receiver(pre_save, sender=Ticker)
