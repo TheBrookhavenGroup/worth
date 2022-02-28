@@ -48,19 +48,23 @@ class Ticker(models.Model):
 
     @property
     def year(self):
-        if market.is_futures:
-            y = int(market.symbol[-4:])
+        if self.market.is_futures:
+            y = int(self.ticker[-4:])
         else:
             y = None
         return y
 
     @property
     def month(self):
-        if market.is_futures:
-            y = int(market.symbol[-5:-4])
+        if self.market.is_futures:
+            m = self.ticker[-5:-4]
         else:
-            y = None
-        return y
+            m = None
+        return m
+
+    @property
+    def symbol(self):
+        return self.market.symbol
 
     @property
     def yahoo_ticker(self):
@@ -71,6 +75,13 @@ class Ticker(models.Model):
 
         ticker = ticker[:-4] + ticker[-2:] + '.' + e
         return ticker
+
+    def __lt__(self, other):
+        return (self.symbol, self.year, self.month) < (other.symbol, other.year, other.month)
+
+    @staticmethod
+    def key_sorting(obj):
+        return (obj.record.code, obj.code)
 
     @property
     def is_futures(self):

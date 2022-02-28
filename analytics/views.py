@@ -1,6 +1,6 @@
 from django.views.generic.base import TemplateView
 from analytics.cash import cash_sums, total_cash
-from analytics.ppm import valuations
+from analytics.ppm import valuations, futures_pnl
 from trades.ib_flex import get_trades
 
 
@@ -28,6 +28,16 @@ class PPMView(TemplateView):
         context['headings1'], context['data1'], context['formats'] = \
             valuations(account=account, ticker=ticker)
         context['title'] = 'PPM'
+        return context
+
+
+class FuturesPnLView(TemplateView):
+    template_name = 'analytics/table.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['headings1'], context['data1'], context['formats'] = futures_pnl()
+        context['title'] = 'Futures PnL'
         return context
 
 

@@ -120,9 +120,17 @@ def get_futures_pnl():
         pnl *= market.cs
         pnl -= commission
         total += pnl
-        result.append((ticker.ticker, pos, price, pnl))
+        result.append((ticker, pos, price, pnl))
 
     return result, total
+
+
+def futures_pnl():
+    formats = json.dumps({'columnDefs': [{'targets': [1, 2, 3], 'className': 'dt-body-right'}], 'ordering': False})
+    headings = ['Ticker', 'Pos', 'Price', 'PnL']
+    data = get_futures_pnl()[0]
+    data.sort()
+    return headings, data, formats
 
 
 def valuations(account=None, ticker=None):
