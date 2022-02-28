@@ -1,13 +1,14 @@
+from datetime import datetime
 import json
-from django.db.models import Sum
+from django.db.models import Sum, Max, F
 from django.conf import settings
 from collections import defaultdict
 
 from worth.utils import cround
 from trades.models import Trade
-from accounts.models import CashRecord
+from accounts.models import CashRecord, Account
 from markets.models import Ticker
-from worth.utils import is_near_zero
+from worth.utils import is_near_zero, set_tz
 from markets.utils import get_price
 from markets.tbgyahoo import yahooQuote, yahoo_url
 from analytics.models import PPMResult
@@ -61,17 +62,17 @@ def get_balances(account=None, ticker=None):
 
 
 def get_futures_balances(account=None, ticker=None):
-    # result[<ticker>]=[<position>, <pnl>]
+    # result[<ticker>]=[<position>, <pnl>, <current_price>]
     result = defaultdict(lambda: [0.0, 0.0])
     # sums[<ticker>]->[<sum q>, <sum q*p>, <sum c>]
     sums = defaultdict(lambda: [0.0, 0.0, 0.0])
 
     qs = Trade.futures_trades(account, ticker)
-    qs = qs.values_list('ticker__ticker', 'q', 'p', 'commission')
-    for ti, q, p, c in qs:
+    qs = qs.values_list('ticker__ticker', 'q', 'p', 'commission', 'ticker__market__ib_price_factor')
+    for ti, q, p, c, f in qs:
         s = sums[ti]
         s[0] += q
-        s[1] += q * p
+        s[1] += q * p * f
         s[2] += c
 
     for ti in sums:
@@ -81,18 +82,47 @@ def get_futures_balances(account=None, ticker=None):
         pnl *= ticker.market.ib_price_factor
 
         if not is_near_zero(position):
-            p = yahooQuote(ticker)[0]
+            p = get_price(ticker)
             pnl += -position * p
         else:
             p = ''
 
         pnl *= -ticker.market.cs
-
         pnl -= c_sum
 
         result[ti] = [position, pnl, p]
 
     return result
+
+
+def get_futures_pnl():
+    a = Account.objects.get(name='FUTURES')
+    # dt = set_tz(datetime(2022, 2, 15, 0, 0, 0))
+
+    qs = Trade.objects.values_list('ticker__ticker').filter(account=a)
+    # qs = qs.filter(dt__gt=dt)
+    qs = qs.annotate(pos=Sum(F('q')),
+                     qp=Sum(F('q') * F('p')),
+                     c=Sum(F('commission')))
+    result = []
+    total = 0.0
+    for ti, pos, qp, commission in qs:
+        ticker = Ticker.objects.get(ticker=ti)
+        market = ticker.market
+        pos = int(pos)
+        pnl = -qp * market.ib_price_factor
+        if pos == 0:
+            price = 0
+        else:
+            price = get_price(ticker)
+            pnl += pos * price
+
+        pnl *= market.cs
+        pnl -= commission
+        total += pnl
+        result.append((ticker.ticker, pos, price, pnl))
+
+    return result, total
 
 
 def valuations(account=None, ticker=None):

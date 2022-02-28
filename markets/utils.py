@@ -22,8 +22,12 @@ def get_price(ticker):
     if not settings.USE_PRICE_FEED:
         return 1.0
 
+    if type(ticker) == str:
+        ticker = Ticker.objects.get(ticker=ticker)
+
     if ticker.fixed_price is None:
         p = yahooQuote(ticker)[0]
+        p *= ticker.market.yahoo_price_factor
     else:
         p = ticker.fixed_price
 
