@@ -3,7 +3,7 @@ from analytics.ppm import get_balances
 
 
 def cash_sums(account_name):
-    qs = CashRecord.objects.filter(account__name=account_name).order_by('d').all()
+    qs = CashRecord.objects.filter(account__name=account_name).filter(ignored=False).order_by('d').all()
     total = 0
     total_cleared = 0
     for rec in qs:

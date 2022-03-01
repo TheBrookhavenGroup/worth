@@ -19,10 +19,9 @@ def get_balances(account=None, ticker=None):
     # balances[<account>]->[<ticker>]-><qty>
     balances = defaultdict(lambda: defaultdict(lambda: 0.0))
 
-    qs = Trade.equity_trades(account, ticker)
-
     cash_f = (ticker is not None) and (ticker == 'CASH')
 
+    qs = Trade.equity_trades(account, ticker)
     qs = qs.values_list('account__name', 'ticker__ticker', 'reinvest', 'q', 'p', 'commission')
     for a, ti, reinvest, q, p, c in qs:
         portfolio = balances[a]
@@ -34,7 +33,7 @@ def get_balances(account=None, ticker=None):
         if not cash_f:
             portfolio[ti] += q
 
-    qs = CashRecord.objects
+    qs = CashRecord.objects.filter(ignored=False)
     if account is not None:
         qs = qs.filter(account__name=account)
 
@@ -183,6 +182,11 @@ def valuations(account=None, ticker=None):
     data = []
     balances = get_balances(account, ticker)
 
+    d = lbd_prior_month(our_now().date())
+
+    futures_total = get_futures_pnl(d=d)[1]
+    balances['MSRKIB']['CASH'] += futures_total
+
     total_worth = 0
     for a in balances.keys():
         portfolio = balances[a]
@@ -206,14 +210,6 @@ def valuations(account=None, ticker=None):
                 url = yahoo_url(t)
 
             data.append([a, url, qstr, pstr, vstr])
-
-    futures, total = get_futures_pnl()
-
-    for ticker, pos, price, pnl in [i for i in futures if i[1] != 0]:
-        qstr = cround(pos, 3)
-        pstr = cround(price, ticker.market.pprec)
-        vstr = cround(pnl, 3)
-        data.append(['FUTURES', yahoo_url(ticker), qstr, pstr, vstr])
 
     data.append(['AAA Total', '', '', '', cround(total_worth, 3)])
 

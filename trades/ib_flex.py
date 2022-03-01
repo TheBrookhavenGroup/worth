@@ -29,17 +29,20 @@ def get_trades(report_id='224849'):
     for i in trades:
         t = dt2dt(i.dateTime)
         ticker = ib_symbol2ticker(i.symbol)
+
+        # do not need to scale i.price by tickers.ib_price_factor, flex already converted it to dollars.
+        p = i.price
         q = i.quantity
         try:
             trade = Trade.objects.get(trade_id=i.tradeID)
             trade.dt = t
             trade.ticker = ticker
             trade.q = q
-            trade.p = i.price
+            trade.p = p
             trade.commission = i.commission
         except Trade.DoesNotExist:
             trade = Trade(dt=t, account=account, ticker=ticker, reinvest=True,
-                          q=q, p=i.price, commission=i.commission,
+                          q=q, p=p, commission=i.commission,
                           trade_id=i.tradeID)
         trade.save()
         data.append([str(trade)])
