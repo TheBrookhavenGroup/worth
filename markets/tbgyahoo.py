@@ -18,13 +18,13 @@ def yahoo_get(url):
     return website.text
 
 
-def yahooHistory(ticker, multiplier=1.0, p=4):
+def yahooHistory(ticker):
     """
       Get historical yahoo prices for the given ticker symbol.
       ticker can be KCH22.NYB or ^GSPC or MSFT
     """
     t = datetime.now().strftime('%s')
-    url = 'https://query1.finance.yahoo.com/v8/finance/chart/' + ticker + '?interval=1d&period1=0&period2=' + t
+    url = 'https://query1.finance.yahoo.com/v8/finance/chart/' + ticker.yahoo_ticker + '?interval=1d&period1=0&period2=' + t
     data = yahoo_get(url)
     data = json.loads(data)
     data = data['chart']['result'][0]
@@ -42,6 +42,9 @@ def yahooHistory(ticker, multiplier=1.0, p=4):
         return True
 
     data = [i for i in data if is_data_good(*i)]
+
+    multiplier = ticker.market.yahoo_price_factor
+    p = ticker.market.pprec
 
     def scale(x):
         return round(x * multiplier, ndigits=p)

@@ -7,12 +7,14 @@ from markets.models import Ticker, Market
 
 
 @ttl_cache(maxsize=1000, ttl=60)
-def get_yahoo_history(yahoo_ticker):
-    return yahooHistory(yahoo_ticker)
+def get_yahoo_history(ticker):
+    if type(ticker) == str:
+        ticker = Ticker.objects.get(ticker=ticker)
+    return yahooHistory(ticker)
 
 
 def populate_historical_price_data(ticker, d_i=None, d_f=None, lbd_f=True):
-    data = get_yahoo_history(ticker.yahoo_ticker)
+    data = get_yahoo_history(ticker)
     for d, o, h, l, c, v, oi in data:
         if lbd_f and not is_lbd_of_month(d):
             continue
@@ -24,7 +26,7 @@ def populate_historical_price_data(ticker, d_i=None, d_f=None, lbd_f=True):
 
 
 def get_historical_bar(ticker, d):
-    data = get_yahoo_history(ticker.yahoo_ticker)
+    data = get_yahoo_history(ticker)
     bar = next(filter(lambda x: x[0] >= d, data), None)
     if bar:
         if d == bar[0]:
