@@ -27,4 +27,4 @@ class TickerAdmin(admin.ModelAdmin):
 class DailyBarAdmin(admin.ModelAdmin):
     date_hierarchy = 'd'
     list_display = ('ticker', 'd', 'c')
-    search_fields = ('=ticker__ticker', )
+    search_fields = ('ticker__ticker', )

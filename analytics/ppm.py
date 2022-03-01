@@ -9,9 +9,8 @@ from trades.models import Trade
 from accounts.models import CashRecord, Account
 from markets.models import Ticker
 from worth.utils import is_near_zero
-from worth.dt import set_tz
 from markets.utils import get_price
-from markets.tbgyahoo import yahooQuote, yahoo_url
+from markets.tbgyahoo import yahoo_url
 from analytics.models import PPMResult
 
 

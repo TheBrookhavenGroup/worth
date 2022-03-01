@@ -1,24 +1,47 @@
 from cachetools.func import ttl_cache
 from django.conf import settings
-from worth.dt import y1_to_y4
+from worth.dt import y1_to_y4, is_lbd_of_month
 from markets.tbgyahoo import yahooHistory, yahooQuote
 from markets.models import DailyBar
 from markets.models import Ticker, Market
 
 
-def populate_historical_price_data(ticker, d_i=None, d_f=None):
-    data = yahooHistory(ticker.yahoo_ticker)
-    print(ticker)
+@ttl_cache(maxsize=1000, ttl=60)
+def get_yahoo_history(yahoo_ticker):
+    return yahooHistory(yahoo_ticker)
+
+
+def populate_historical_price_data(ticker, d_i=None, d_f=None, lbd_f=True):
+    data = get_yahoo_history(ticker.yahoo_ticker)
     for d, o, h, l, c, v, oi in data:
+        if lbd_f and not is_lbd_of_month(d):
+            continue
         if (d_i is not None) and (d < d_i):
             continue
         if (d_f is not None) and (d > d_f):
             continue
-        DailyBar(ticker=ticker, d=d, o=o, h=h, l=l, c=c, v=v, oi=oi).save()
+        DailyBar.objects.create(ticker=ticker, d=d, o=o, h=h, l=l, c=c, v=v, oi=oi)
 
 
-@ttl_cache(maxsize=128, ttl=60)
-def get_price(ticker):
+def get_historical_bar(ticker, d):
+    data = get_yahoo_history(ticker.yahoo_ticker)
+    bar = next(filter(lambda x: x[0] >= d, data), None)
+    if bar:
+        if d == bar[0]:
+            return bar
+
+        # Get last bar prior to d
+        i = data.index(bar)
+        if i >= 0:
+            return data[i - 1]
+
+        return None
+
+    return None
+
+
+@ttl_cache(maxsize=1000, ttl=60)
+def get_price(ticker, d=None):
     if not settings.USE_PRICE_FEED:
         return 1.0
 
@@ -26,8 +49,21 @@ def get_price(ticker):
         ticker = Ticker.objects.get(ticker=ticker)
 
     if ticker.fixed_price is None:
-        p = yahooQuote(ticker)[0]
-        p *= ticker.market.yahoo_price_factor
+        if d is None:
+            p = yahooQuote(ticker)[0]
+            p *= ticker.market.yahoo_price_factor
+        else:
+            if DailyBar.objects.filter(ticker=ticker).filter(d=d).exists():
+                p = DailyBar.objects.filter(ticker=ticker).filter(d=d).first()
+                p = p.c
+            else:
+                bar = get_historical_bar(ticker, d)
+                d, o, h, l, c, v, oi = bar
+                if bar is None:
+                    p = 0.0
+                else:
+                    DailyBar.objects.create(ticker=ticker, d=d, o=o, h=h, l=l, c=c, v=v, oi=oi)
+                    p = c
     else:
         p = ticker.fixed_price
 

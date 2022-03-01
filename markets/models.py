@@ -99,7 +99,7 @@ class DailyBar(models.Model):
     oi = models.FloatField()
 
     class Meta:
-        constraints = [models.UniqueConstraint(fields=['ticker', 'd'], name='unique_daily_bar')]
+        unique_together = [["ticker", "d"]]
 
     def __str__(self):
         return f"{self.d}|{self.o}|{self.h}|{self.l}|{self.c}|{self.v}|{self.oi}"

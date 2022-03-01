@@ -253,3 +253,7 @@ def lbd_of_month(y, m):
         d -= datetime.timedelta(days=1)
 
     return d
+
+
+def is_lbd_of_month(d):
+    return d == lbd_of_month(d.year, d.month)
