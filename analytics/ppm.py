@@ -1,14 +1,15 @@
-from datetime import datetime
+import datetime
 import json
-from django.db.models import Sum, Max, F
+from datetime import date
+from django.db.models import Sum, F
 from django.conf import settings
 from collections import defaultdict
 
-from worth.utils import cround
+from worth.utils import cround, is_near_zero
+from worth.dt import our_now, lbd_prior_month, prior_business_day, set_tz
 from trades.models import Trade
 from accounts.models import CashRecord, Account
 from markets.models import Ticker
-from worth.utils import is_near_zero
 from markets.utils import get_price
 from markets.tbgyahoo import yahoo_url
 from analytics.models import PPMResult
@@ -61,12 +62,14 @@ def get_balances(account=None, ticker=None):
     return balances
 
 
-def get_futures_pnl():
+def get_futures_pnl(d=None):
     a = Account.objects.get(name='FUTURES')
-    # dt = set_tz(datetime(2022, 2, 15, 0, 0, 0))
 
     qs = Trade.objects.values_list('ticker__ticker').filter(account=a)
-    # qs = qs.filter(dt__gt=dt)
+    # qs = qs.filter(ticker__ticker='ESM2022')
+    if d is not None:
+        dt = set_tz(d + datetime.timedelta(1))
+        qs = qs.filter(dt__lt=dt)
     qs = qs.annotate(pos=Sum(F('q')),
                      qp=Sum(F('q') * F('p')),
                      c=Sum(F('commission')))
@@ -80,7 +83,7 @@ def get_futures_pnl():
         if pos == 0:
             price = 0
         else:
-            price = get_price(ticker)
+            price = get_price(ticker, d)
             pnl += pos * price
 
         pnl *= market.cs
@@ -91,11 +94,73 @@ def get_futures_pnl():
     return result, total
 
 
+def futures_pnl_ymd():
+
+    today = our_now().date()
+    yesterday = prior_business_day(today)
+
+    eoy = lbd_prior_month(date(today.year, 1, 1))
+    lm = lbd_prior_month(today)
+
+    def to_dict(x):
+        return dict([(i[0].ticker, i[1:]) for i in x])
+
+    pnl_total, total = get_futures_pnl()
+    pnl_total = to_dict(pnl_total)
+    pnl_yesterday = to_dict(get_futures_pnl(yesterday)[0])
+    pnl_prior_month = to_dict(get_futures_pnl(lm)[0])
+    pnl_end_of_year = to_dict(get_futures_pnl(eoy)[0])
+
+    return pnl_end_of_year, pnl_prior_month, pnl_yesterday, pnl_total
+
+
 def futures_pnl():
-    formats = json.dumps({'columnDefs': [{'targets': [1, 2, 3], 'className': 'dt-body-right'}], 'ordering': False})
-    headings = ['Ticker', 'Pos', 'Price', 'PnL']
-    data = get_futures_pnl()[0]
-    data.sort()
+    formats = json.dumps({'columnDefs': [{'targets': [1, 2, 3, 4, 5, 6],
+                                          'className': 'dt-body-right'}], 'ordering': False})
+    headings = ['Ticker', 'Pos', 'Price', 'PnL', 'Today', 'MTD', 'YTD']
+
+    pnl_end_of_year, pnl_prior_month, pnl_yesterday, pnl_total = futures_pnl_ymd()
+
+    tickers = set(pnl_total.keys()).\
+        union(set(pnl_yesterday.keys())).\
+        union(set(pnl_prior_month.keys())).\
+        union(set(pnl_end_of_year.keys()))
+
+    tickers = list(tickers)
+
+    data = []
+    for ticker in tickers:
+        pos, price, pnl = pnl_total[ticker]
+
+        if ticker in pnl_yesterday:
+            daily = pnl_yesterday[ticker][2]
+            daily = pnl - daily
+        else:
+            daily = pnl
+
+        if ticker in pnl_prior_month:
+            mtd = pnl_prior_month[ticker][2]
+            mtd = pnl - mtd
+        else:
+            mtd = pnl
+
+        if ticker in pnl_end_of_year:
+            ytd = pnl_end_of_year[ticker][2]
+            ytd = pnl - ytd
+        else:
+            ytd = pnl
+
+        t = Ticker.objects.get(ticker=ticker)
+
+        pos = cround(pos, 0)
+        price = cround(price, t.market.pprec)
+        pnl = cround(pnl, 0)
+        daily = cround(daily, 0)
+        mtd = cround(mtd, 0)
+        ytd = cround(ytd, 0)
+
+        data.append([ticker, pos, price, pnl, daily, mtd, ytd])
+
     return headings, data, formats
 
 

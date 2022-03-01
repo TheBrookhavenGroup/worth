@@ -11,6 +11,8 @@ def our_now():
 
 
 def set_tz(dt):
+    if type(dt) == datetime.date:
+        dt = datetime.datetime(dt.year, dt.month, dt.day)
     tz = pytz.timezone(settings.TIME_ZONE)
     return tz.localize(dt)
 
@@ -242,11 +244,7 @@ def test_is_holiday_observed():
     return flag
 
 
-def lbd_of_month(y, m):
-    if m == 12:
-        d = datetime.date(y + 1, 1, 1)
-    else:
-        d = datetime.date(y, m + 1, 1)
+def prior_business_day(d):
     d -= datetime.timedelta(days=1)
 
     while is_holiday_observed(d):
@@ -255,5 +253,22 @@ def lbd_of_month(y, m):
     return d
 
 
+def lbd_of_month(d):
+    y = d.year
+    m = d.month
+    if m == 12:
+        d = datetime.date(y + 1, 1, 1)
+    else:
+        d = datetime.date(y, m + 1, 1)
+
+    return prior_business_day(d)
+
+
 def is_lbd_of_month(d):
-    return d == lbd_of_month(d.year, d.month)
+    return d == lbd_of_month(d)
+
+
+def lbd_prior_month(d):
+    d = datetime.date(d.year, d.month, 1)
+    d -= datetime.timedelta(days=1)
+    return lbd_of_month(d)
