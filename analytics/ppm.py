@@ -114,7 +114,7 @@ def futures_pnl_ymd():
     return pnl_end_of_year, pnl_prior_month, pnl_yesterday, pnl_total
 
 
-def futures_pnl():
+def futures_pnl(current_year=True):
     formats = json.dumps({'columnDefs': [{'targets': [1, 2, 3, 4, 5, 6],
                                           'className': 'dt-body-right'}], 'ordering': False})
     headings = ['Ticker', 'Pos', 'Price', 'PnL', 'Today', 'MTD', 'YTD']
@@ -129,6 +129,7 @@ def futures_pnl():
     tickers = list(tickers)
 
     data = []
+    ytd_total = mtd_total = today_total = 0.0
     for ticker in tickers:
         pos, price, pnl = pnl_total[ticker]
 
@@ -152,6 +153,13 @@ def futures_pnl():
 
         t = Ticker.objects.get(ticker=ticker)
 
+        if is_near_zero(ytd):
+            continue
+
+        ytd_total += ytd
+        mtd_total += mtd
+        today_total += daily
+
         pos = cround(pos, 0)
         price = cround(price, t.market.pprec)
         pnl = cround(pnl, 0)
@@ -160,6 +168,8 @@ def futures_pnl():
         ytd = cround(ytd, 0)
 
         data.append([ticker, pos, price, pnl, daily, mtd, ytd])
+
+    data.append(['TOTAL', '', '', '', cround(today_total, 0), cround(mtd_total, 0), cround(ytd_total, 0)])
 
     return headings, data, formats
 
