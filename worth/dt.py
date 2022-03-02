@@ -18,7 +18,8 @@ def set_tz(dt):
 
 
 def yyyymmdd2dt(d):
-    dt = datetime.datetime.strptime(str(d), '%Y%m%d')
+    if type(d) == str:
+        d = datetime.datetime.strptime(d, '%Y%m%d')
     return set_tz(dt)
 
 

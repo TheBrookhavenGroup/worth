@@ -64,10 +64,12 @@ def get_price(ticker, d=None):
                 p = p.c
             else:
                 bar = get_historical_bar(ticker, d)
-                d, o, h, l, c, v, oi = bar
                 if bar is None:
                     p = 0.0
                 else:
+                    d_bar, o, h, l, c, v, oi = bar
+                    if d_bar != d:
+                        print(f"Using price found on {d_bar} for {d} for {ticker}")
                     DailyBar.objects.create(ticker=ticker, d=d, o=o, h=h, l=l, c=c, v=v, oi=oi)
                     p = c
     else:

@@ -6,7 +6,7 @@ from django.conf import settings
 from collections import defaultdict
 
 from worth.utils import cround, is_near_zero
-from worth.dt import our_now, lbd_prior_month, prior_business_day, most_recent_business_day
+from worth.dt import our_now, lbd_prior_month, prior_business_day, most_recent_business_day, set_tz
 from trades.models import Trade
 from accounts.models import CashRecord
 from markets.models import Ticker
@@ -16,13 +16,17 @@ from analytics.models import PPMResult
 from trades.utils import get_futures_pnl, avg_open_price
 
 
-def get_balances(account=None, ticker=None):
+def get_balances(d=None, account=None, ticker=None):
     # balances[<account>]->[<ticker>]-><qty>
     balances = defaultdict(lambda: defaultdict(lambda: 0.0))
 
     cash_f = (ticker is not None) and (ticker == 'CASH')
 
     qs = Trade.more_filtering(account, ticker)
+    if d is not None:
+        dt = set_tz(d)
+        qs.filter(dt__lte=dt)
+
     qs = qs.values_list('account__name', 'ticker__ticker', 'reinvest', 'q', 'p',
                         'commission', 'ticker__market__cs', 'ticker__market__ib_exchange')
     futures_accounts = []
@@ -53,7 +57,7 @@ def get_balances(account=None, ticker=None):
         balances[a]['CASH'] += total
 
     for a in set(futures_accounts):
-        pnl, total = get_futures_pnl(a=a)
+        pnl, total = get_futures_pnl(d=d, a=a)
         balances[a]['CASH'] += total
 
     empty_accounts = [a for a in balances if abs(balances[a]['CASH']) < 0.001]
@@ -155,19 +159,18 @@ def futures_pnl(d=None):
     return headings, data, formats
 
 
-def valuations(account=None, ticker=None):
+def valuations(d=None, account=None, ticker=None):
     formats = json.dumps({'columnDefs': [{'targets': [2, 3, 4], 'className': 'dt-body-right'}],
                           # 'ordering': False
                           })
 
     headings = ['Account', 'Ticker', 'Q', 'P', 'Value']
     data = []
-    balances = get_balances(account, ticker)
 
-    d = lbd_prior_month(our_now().date())
+    if d is not None:
+        d = most_recent_business_day(d)
 
-    # futures_total = get_futures_pnl(d=d)[1]
-    # balances['MSRKIB']['CASH'] += futures_total
+    balances = get_balances(d, account, ticker)
 
     total_worth = 0
     for a in balances.keys():
@@ -179,7 +182,7 @@ def valuations(account=None, ticker=None):
             if is_near_zero(q):
                 continue
 
-            p = get_price(t)
+            p = get_price(t, d=d)
 
             if m.is_futures:
                 value = q * (p - avg_open_price(a, t)) * m.cs
@@ -201,6 +204,7 @@ def valuations(account=None, ticker=None):
 
     data.append(['AAA Total', '', '', '', cround(total_worth, 3)])
 
-    PPMResult.objects.create(value=total_worth)
+    if not d:
+        PPMResult.objects.create(value=total_worth)
 
     return headings, data, formats
