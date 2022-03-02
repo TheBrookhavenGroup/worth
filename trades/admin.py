@@ -11,7 +11,7 @@ class MarketAdmin(admin.ModelAdmin):
 
     date_hierarchy = 'dt'
 
-    list_display = ('time_date', 'account', 'ticker', 'q', 'p', 'commission', 'trade_id', 'note')
+    list_display = ('time_date', 'account', 'ticker', 'q', 'p', 'commission', 'reinvest', 'trade_id', 'note')
     list_filter = (ActiveAccountFilter, )
     search_fields = ('account__name', 'dt', 'note', 'ticker__ticker')
     ordering = ('account', '-dt')

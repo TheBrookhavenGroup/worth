@@ -1,18 +1,19 @@
-import datetime
+
 import json
 from datetime import date
-from django.db.models import Sum, F
+from django.db.models import Sum
 from django.conf import settings
 from collections import defaultdict
 
 from worth.utils import cround, is_near_zero
-from worth.dt import our_now, lbd_prior_month, prior_business_day, set_tz
+from worth.dt import our_now, lbd_prior_month, prior_business_day
 from trades.models import Trade
-from accounts.models import CashRecord, Account
+from accounts.models import CashRecord
 from markets.models import Ticker
 from markets.utils import get_price
 from markets.tbgyahoo import yahoo_url
 from analytics.models import PPMResult
+from trades.utils import get_futures_pnl, avg_open_price
 
 
 def get_balances(account=None, ticker=None):
@@ -21,13 +22,14 @@ def get_balances(account=None, ticker=None):
 
     cash_f = (ticker is not None) and (ticker == 'CASH')
 
-    qs = Trade.equity_trades(account, ticker)
-    qs = qs.values_list('account__name', 'ticker__ticker', 'reinvest', 'q', 'p', 'commission')
-    for a, ti, reinvest, q, p, c in qs:
+    qs = Trade.more_filtering(account, ticker)
+    #  qs = qs.filter(~Q(account=futures_account))
+    qs = qs.values_list('account__name', 'ticker__ticker', 'reinvest', 'q', 'p', 'commission', 'ticker__market__cs')
+    for a, ti, reinvest, q, p, c, cs in qs:
         portfolio = balances[a]
 
         if not reinvest:
-            cash_amount = -q * p - c
+            cash_amount = -q * p * cs - c
             portfolio['CASH'] += cash_amount
 
         if not cash_f:
@@ -59,38 +61,6 @@ def get_balances(account=None, ticker=None):
                 v[j] *= factor
 
     return balances
-
-
-def get_futures_pnl(d=None):
-    a = Account.objects.get(name='FUTURES')
-
-    qs = Trade.objects.values_list('ticker__ticker').filter(account=a)
-    # qs = qs.filter(ticker__ticker='ESM2022')
-    if d is not None:
-        dt = set_tz(d + datetime.timedelta(1))
-        qs = qs.filter(dt__lt=dt)
-    qs = qs.annotate(pos=Sum(F('q')),
-                     qp=Sum(F('q') * F('p')),
-                     c=Sum(F('commission')))
-    result = []
-    total = 0.0
-    for ti, pos, qp, commission in qs:
-        ticker = Ticker.objects.get(ticker=ti)
-        market = ticker.market
-        pos = int(pos)
-        pnl = -qp * market.ib_price_factor
-        if pos == 0:
-            price = 0
-        else:
-            price = get_price(ticker, d)
-            pnl += pos * price
-
-        pnl *= market.cs
-        pnl -= commission
-        total += pnl
-        result.append((ticker, pos, price, pnl))
-
-    return result, total
 
 
 def futures_pnl_ymd():
@@ -184,24 +154,30 @@ def valuations(account=None, ticker=None):
 
     d = lbd_prior_month(our_now().date())
 
-    futures_total = get_futures_pnl(d=d)[1]
-    balances['MSRKIB']['CASH'] += futures_total
+    # futures_total = get_futures_pnl(d=d)[1]
+    # balances['MSRKIB']['CASH'] += futures_total
 
     total_worth = 0
     for a in balances.keys():
         portfolio = balances[a]
         for ticker in portfolio.keys():
             t = Ticker.objects.get(ticker=ticker)
+            m = t.market
             q = portfolio[ticker]
             if is_near_zero(q):
                 continue
 
             p = get_price(t)
-            value = q * p
+
+            if m.is_futures:
+                value = q * (p - avg_open_price(a, t)) * m.cs
+            else:
+                value = q * p * m.cs
+
             total_worth += value
 
             qstr = cround(q, 3)
-            pstr = cround(p, t.market.pprec)
+            pstr = cround(p, m.pprec)
             vstr = cround(value, 3)
 
             if ticker == 'CASH':
