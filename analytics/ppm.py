@@ -6,7 +6,7 @@ from django.conf import settings
 from collections import defaultdict
 
 from worth.utils import cround, is_near_zero
-from worth.dt import our_now, lbd_prior_month, prior_business_day
+from worth.dt import our_now, lbd_prior_month, prior_business_day, most_recent_business_day
 from trades.models import Trade
 from accounts.models import CashRecord
 from markets.models import Ticker
@@ -72,32 +72,35 @@ def get_balances(account=None, ticker=None):
     return balances
 
 
-def futures_pnl_ymd():
+def futures_pnl_ymd(d=None):
+    if d is None:
+        d = our_now().date()
 
-    today = our_now().date()
-    yesterday = prior_business_day(today)
+    d = most_recent_business_day(d)
 
-    eoy = lbd_prior_month(date(today.year, 1, 1))
-    lm = lbd_prior_month(today)
+    yesterday = prior_business_day(d)
+
+    eoy = lbd_prior_month(date(d.year, 1, 1))
+    lm = lbd_prior_month(d)
 
     def to_dict(x):
         return dict([(i[0].ticker, i[1:]) for i in x])
 
-    pnl_total, total = get_futures_pnl()
+    pnl_total, total = get_futures_pnl(d=d)
     pnl_total = to_dict(pnl_total)
-    pnl_yesterday = to_dict(get_futures_pnl(yesterday)[0])
-    pnl_prior_month = to_dict(get_futures_pnl(lm)[0])
-    pnl_end_of_year = to_dict(get_futures_pnl(eoy)[0])
+    pnl_yesterday = to_dict(get_futures_pnl(d=yesterday)[0])
+    pnl_prior_month = to_dict(get_futures_pnl(d=lm)[0])
+    pnl_end_of_year = to_dict(get_futures_pnl(d=eoy)[0])
 
     return pnl_end_of_year, pnl_prior_month, pnl_yesterday, pnl_total
 
 
-def futures_pnl(current_year=True):
+def futures_pnl(d=None):
     formats = json.dumps({'columnDefs': [{'targets': [1, 2, 3, 4, 5, 6],
                                           'className': 'dt-body-right'}], 'ordering': False})
     headings = ['Ticker', 'Pos', 'Price', 'PnL', 'Today', 'MTD', 'YTD']
 
-    pnl_end_of_year, pnl_prior_month, pnl_yesterday, pnl_total = futures_pnl_ymd()
+    pnl_end_of_year, pnl_prior_month, pnl_yesterday, pnl_total = futures_pnl_ymd(d=d)
 
     tickers = set(pnl_total.keys()).\
         union(set(pnl_yesterday.keys())).\

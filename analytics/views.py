@@ -1,3 +1,5 @@
+import datetime
+
 from django.views.generic.base import TemplateView
 from analytics.cash import cash_sums, total_cash
 from analytics.ppm import valuations, futures_pnl
@@ -36,7 +38,13 @@ class FuturesPnLView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['headings1'], context['data1'], context['formats'] = futures_pnl()
+        getter = self.request.GET.get
+
+        d = getter('d')
+        if d is not None:
+            d = datetime.datetime.strptime(d, '%Y%m%d').date()
+
+        context['headings1'], context['data1'], context['formats'] = futures_pnl(d=d)
         context['title'] = 'Futures PnL'
         return context
 

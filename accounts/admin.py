@@ -42,7 +42,7 @@ def duplicate_record(modeladmin, request, qs):
 class CashRecordAdmin(admin.ModelAdmin):
     date_hierarchy = 'd'
     list_display = ('account', 'd', 'description', 'amt', 'cleared_f', 'ignored')
-    list_filter = ('cleared_f', ActiveAccountFilter)
+    list_filter = ('cleared_f', ActiveAccountFilter, 'ignored')
     search_fields = ('account', 'description')
     ordering = ('account', '-d')
     actions = [duplicate_record, set_cleared_flag]

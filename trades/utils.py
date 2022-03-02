@@ -18,7 +18,7 @@ def get_futures_pnl(d=None, a='MSRKIB'):
         filter(~Q(ticker__market__ib_exchange__in=NOT_FUTURES_EXCHANGES))
 
     if d is not None:
-        dt = set_tz(d + datetime.timedelta(1))
+        dt = set_tz(d + datetime.timedelta(microseconds=1))
         qs = qs.filter(dt__lt=dt)
     qs = qs.annotate(pos=Sum(F('q')),
                      qp=Sum(F('q') * F('p')),

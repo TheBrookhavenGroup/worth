@@ -253,6 +253,13 @@ def prior_business_day(d):
     return d
 
 
+def most_recent_business_day(d):
+    if is_holiday_observed(d):
+        return prior_business_day(d)
+    else:
+        return d
+
+
 def lbd_of_month(d):
     y = d.year
     m = d.month
