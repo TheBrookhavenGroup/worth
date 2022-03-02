@@ -10,7 +10,7 @@ from worth.dt import our_now, lbd_prior_month, prior_business_day
 from trades.models import Trade
 from accounts.models import CashRecord
 from markets.models import Ticker
-from markets.utils import get_price
+from markets.utils import get_price, is_futures
 from markets.tbgyahoo import yahoo_url
 from analytics.models import PPMResult
 from trades.utils import get_futures_pnl, avg_open_price
@@ -23,10 +23,15 @@ def get_balances(account=None, ticker=None):
     cash_f = (ticker is not None) and (ticker == 'CASH')
 
     qs = Trade.more_filtering(account, ticker)
-    #  qs = qs.filter(~Q(account=futures_account))
-    qs = qs.values_list('account__name', 'ticker__ticker', 'reinvest', 'q', 'p', 'commission', 'ticker__market__cs')
-    for a, ti, reinvest, q, p, c, cs in qs:
+    qs = qs.values_list('account__name', 'ticker__ticker', 'reinvest', 'q', 'p',
+                        'commission', 'ticker__market__cs', 'ticker__market__ib_exchange')
+    futures_accounts = []
+    for a, ti, reinvest, q, p, c, cs, e in qs:
         portfolio = balances[a]
+
+        if is_futures(e):
+            futures_accounts.append(a)
+            continue
 
         if not reinvest:
             cash_amount = -q * p * cs - c
@@ -45,6 +50,10 @@ def get_balances(account=None, ticker=None):
         if abs(total) < 0.001:
             continue
         a = result['account__name']
+        balances[a]['CASH'] += total
+
+    for a in set(futures_accounts):
+        pnl, total = get_futures_pnl(a=a)
         balances[a]['CASH'] += total
 
     empty_accounts = [a for a in balances if abs(balances[a]['CASH']) < 0.001]

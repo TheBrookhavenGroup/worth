@@ -1,18 +1,21 @@
 import datetime
+from cachetools.func import ttl_cache
 
 from django.db.models import Sum, F, Q
 from worth.utils import is_near_zero
 from worth.dt import set_tz
 from accounts.models import Account
-from markets.models import Ticker
+from markets.models import Ticker, NOT_FUTURES_EXCHANGES
 from trades.models import Trade
 from markets.utils import get_price
 
 
-def get_futures_pnl(d=None):
-    a = Account.objects.get(name='MSRKIB')
+@ttl_cache(maxsize=1000, ttl=30)
+def get_futures_pnl(d=None, a='MSRKIB'):
+    a = Account.objects.get(name=a)
 
-    qs = Trade.objects.values_list('ticker__ticker').filter(account=a)
+    qs = Trade.objects.values_list('ticker__ticker').filter(account=a).\
+        filter(~Q(ticker__market__ib_exchange__in=NOT_FUTURES_EXCHANGES))
 
     if d is not None:
         dt = set_tz(d + datetime.timedelta(1))
