@@ -1,7 +1,7 @@
 
 import json
 from datetime import date
-from django.db.models import Sum
+from django.db.models import Sum, Q
 from django.conf import settings
 from collections import defaultdict
 
@@ -9,7 +9,7 @@ from worth.utils import cround, is_near_zero
 from worth.dt import our_now, lbd_prior_month, prior_business_day, most_recent_business_day, day_start_next_day
 from trades.models import Trade
 from accounts.models import CashRecord
-from markets.models import Ticker
+from markets.models import Ticker, NOT_FUTURES_EXCHANGES
 from markets.utils import get_price, is_futures
 from markets.tbgyahoo import yahoo_url
 from analytics.models import PPMResult
@@ -20,33 +20,21 @@ def get_balances(d=None, account=None, ticker=None):
     # balances[<account>]->[<ticker>]-><qty>
     balances = defaultdict(lambda: defaultdict(lambda: 0.0))
 
-    cash_f = (ticker is not None) and (ticker == 'CASH')
-
     qs = Trade.more_filtering(account, ticker)
     if d is not None:
         dt = day_start_next_day(d)
         qs = qs.filter(dt__lt=dt)
 
-    qs = qs.values_list('id', 'account__name', 'ticker__ticker', 'reinvest', 'q', 'p',
-                        'commission', 'ticker__market__cs', 'ticker__market__ib_exchange')
-    futures_accounts = []
-    for id, a, ti, reinvest, q, p, c, cs, e in qs:
+    qs = qs.filter(ticker__market__ib_exchange__in=NOT_FUTURES_EXCHANGES, reinvest=False)
+    qs = qs.values_list('account__name', 'ticker__ticker', 'q', 'p', 'commission', 'ticker__market__cs')
+    for a, ti, q, p, c, cs in qs:
         portfolio = balances[a]
-
-        if is_futures(e):
-            futures_accounts.append(a)
-            continue
-
-        if not reinvest:
-            cash_amount = -q * p * cs - c
-            portfolio['CASH'] += cash_amount
-
-        if not cash_f:
-            portfolio[ti] += q
+        cash_amount = -q * p * cs - c
+        portfolio['CASH'] += cash_amount
 
     qs = CashRecord.objects.filter(ignored=False)
     if d is not None:
-        qs = qs.filter(d__lt=dt)
+        qs = qs.filter(d__lte=d)
     if account is not None:
         qs = qs.filter(account__name=account)
 
@@ -58,7 +46,12 @@ def get_balances(d=None, account=None, ticker=None):
         a = result['account__name']
         balances[a]['CASH'] += total
 
-    for a in set(futures_accounts):
+    qs = Trade.more_filtering(account, ticker).values_list('account__name')
+    if d is not None:
+        qs = qs.filter(dt__lt=dt)
+    futures_accounts = qs.filter(~Q(ticker__market__ib_exchange__in=NOT_FUTURES_EXCHANGES)).distinct()
+
+    for a in set([i[0] for i in futures_accounts]):
         pnl, total = get_futures_pnl(d=d, a=a)
         balances[a]['CASH'] += total
 

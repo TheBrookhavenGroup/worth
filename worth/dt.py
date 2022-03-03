@@ -268,20 +268,15 @@ def test_is_holiday_observed():
     return flag
 
 
-def prior_business_day(d):
-    d -= datetime.timedelta(days=1)
-
+def most_recent_business_day(d):
     while is_holiday_observed(d):
         d -= datetime.timedelta(days=1)
-
     return d
 
 
-def most_recent_business_day(d):
-    if is_holiday_observed(d):
-        return prior_business_day(d)
-    else:
-        return d
+def prior_business_day(d):
+    d -= datetime.timedelta(days=1)
+    return most_recent_business_day(d)
 
 
 def lbd_of_month(d):
