@@ -3,7 +3,7 @@ from cachetools.func import ttl_cache
 
 from django.db.models import Sum, F, Q
 from worth.utils import is_near_zero
-from worth.dt import set_tz
+from worth.dt import day_start_next_day
 from accounts.models import Account
 from markets.models import Ticker, NOT_FUTURES_EXCHANGES
 from trades.models import Trade
@@ -18,7 +18,7 @@ def get_futures_pnl(d=None, a='MSRKIB'):
         filter(~Q(ticker__market__ib_exchange__in=NOT_FUTURES_EXCHANGES))
 
     if d is not None:
-        dt = set_tz(d + datetime.timedelta(microseconds=1))
+        dt = day_start_next_day(d)
         qs = qs.filter(dt__lt=dt)
     qs = qs.annotate(pos=Sum(F('q')),
                      qp=Sum(F('q') * F('p')),
@@ -29,7 +29,7 @@ def get_futures_pnl(d=None, a='MSRKIB'):
         ticker = Ticker.objects.get(ticker=ti)
         market = ticker.market
         pos = int(pos)
-        pnl = -qp * market.ib_price_factor
+        pnl = -qp
         if pos == 0:
             price = 0
         else:

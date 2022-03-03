@@ -6,7 +6,7 @@ from django.conf import settings
 from collections import defaultdict
 
 from worth.utils import cround, is_near_zero
-from worth.dt import our_now, lbd_prior_month, prior_business_day, most_recent_business_day, set_tz
+from worth.dt import our_now, lbd_prior_month, prior_business_day, most_recent_business_day, day_start_next_day
 from trades.models import Trade
 from accounts.models import CashRecord
 from markets.models import Ticker
@@ -24,13 +24,13 @@ def get_balances(d=None, account=None, ticker=None):
 
     qs = Trade.more_filtering(account, ticker)
     if d is not None:
-        dt = set_tz(d)
-        qs.filter(dt__lte=dt)
+        dt = day_start_next_day(d)
+        qs = qs.filter(dt__lt=dt)
 
-    qs = qs.values_list('account__name', 'ticker__ticker', 'reinvest', 'q', 'p',
+    qs = qs.values_list('id', 'account__name', 'ticker__ticker', 'reinvest', 'q', 'p',
                         'commission', 'ticker__market__cs', 'ticker__market__ib_exchange')
     futures_accounts = []
-    for a, ti, reinvest, q, p, c, cs, e in qs:
+    for id, a, ti, reinvest, q, p, c, cs, e in qs:
         portfolio = balances[a]
 
         if is_futures(e):
@@ -45,6 +45,8 @@ def get_balances(d=None, account=None, ticker=None):
             portfolio[ti] += q
 
     qs = CashRecord.objects.filter(ignored=False)
+    if d is not None:
+        qs = qs.filter(d__lt=dt)
     if account is not None:
         qs = qs.filter(account__name=account)
 
@@ -148,13 +150,13 @@ def futures_pnl(d=None):
         pos = cround(pos, 0)
         price = cround(price, t.market.pprec)
         pnl = cround(pnl, 0)
-        daily = cround(daily, 0)
-        mtd = cround(mtd, 0)
+        daily = cround(daily, 2)
+        mtd = cround(mtd, 2)
         ytd = cround(ytd, 0)
 
         data.append([ticker, pos, price, pnl, daily, mtd, ytd])
 
-    data.append(['TOTAL', '', '', '', cround(today_total, 0), cround(mtd_total, 0), cround(ytd_total, 0)])
+    data.append(['TOTAL', '', '', '', cround(today_total, 2), cround(mtd_total, 2), cround(ytd_total, 0)])
 
     return headings, data, formats
 

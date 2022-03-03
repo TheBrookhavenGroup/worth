@@ -10,17 +10,40 @@ def our_now():
     return datetime.datetime.now(tz=pytz.timezone(settings.TIME_ZONE))
 
 
+def our_localize(t):
+    # Given datetime(2021, 10, 21, 0, 0, 0, 0) this will return the
+    # datetime when it is 0, 0, 0, 0 in the local time, say NY.
+    utc = pytz.timezone('UTC')
+    tz = pytz.timezone(settings.TIME_ZONE)
+    return tz.localize(t).astimezone(utc)
+
+
+def day_start(d):
+    # Return start of day in local time zone
+    t = datetime.datetime(d.year, d.month, d.day)
+    return our_localize(t)
+
+
+def day_start_next_day(d):
+    # Return start of next day in local time zone
+    # Good for finding all trades where dt is less than this for a given date.
+    t = datetime.datetime(d.year, d.month, d.day)
+    t += datetime.timedelta(days=1)
+    return our_localize(t)
+
+
 def set_tz(dt):
-    if type(dt) == datetime.date:
-        dt = datetime.datetime(dt.year, dt.month, dt.day)
+    # useful for output
     tz = pytz.timezone(settings.TIME_ZONE)
     return tz.localize(dt)
 
 
 def yyyymmdd2dt(d):
-    if type(d) == str:
-        d = datetime.datetime.strptime(d, '%Y%m%d')
-    return set_tz(dt)
+    if (type(d) == datetime.datetime) or (type(d) == datetime.date):
+        return d
+    d = datetime.datetime.strptime(str(d), '%Y%m%d')
+    d = set_tz(d)
+    return d
 
 
 def dt2dt(dt):

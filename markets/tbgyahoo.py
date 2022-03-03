@@ -27,7 +27,11 @@ def yahooHistory(ticker):
     url = 'https://query1.finance.yahoo.com/v8/finance/chart/' + ticker.yahoo_ticker + '?interval=1d&period1=0&period2=' + t
     data = yahoo_get(url)
     data = json.loads(data)
-    data = data['chart']['result'][0]
+    data = data['chart']['result']
+    if data is None:
+        return []
+    else:
+        data = data[0]
     times = data['timestamp']
     times = [datetime.fromtimestamp(t).date() for t in times]
     data = data['indicators']['quote'][0]

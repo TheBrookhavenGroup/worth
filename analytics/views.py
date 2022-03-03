@@ -1,7 +1,6 @@
 import datetime
 
 from django.views.generic.base import TemplateView
-from worth.dt import yyyymmdd2dt
 from analytics.cash import cash_sums, total_cash
 from analytics.ppm import valuations, futures_pnl
 from trades.ib_flex import get_trades
