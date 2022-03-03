@@ -78,7 +78,7 @@ def get_balances(d=None, account=None, ticker=None):
     return balances
 
 
-def futures_pnl_ymd(d=None):
+def futures_pnl_ymd(d=None, a='MSRKIB'):
     if d is None:
         d = our_now().date()
 
@@ -92,21 +92,21 @@ def futures_pnl_ymd(d=None):
     def to_dict(x):
         return dict([(i[0].ticker, i[1:]) for i in x])
 
-    pnl_total, total = get_futures_pnl(d=d)
+    pnl_total, total = get_futures_pnl(d=d, a=a)
     pnl_total = to_dict(pnl_total)
-    pnl_yesterday = to_dict(get_futures_pnl(d=yesterday)[0])
-    pnl_prior_month = to_dict(get_futures_pnl(d=lm)[0])
-    pnl_end_of_year = to_dict(get_futures_pnl(d=eoy)[0])
+    pnl_yesterday = to_dict(get_futures_pnl(d=yesterday, a=a)[0])
+    pnl_prior_month = to_dict(get_futures_pnl(d=lm, a=a)[0])
+    pnl_end_of_year = to_dict(get_futures_pnl(d=eoy, a=a)[0])
 
     return pnl_end_of_year, pnl_prior_month, pnl_yesterday, pnl_total
 
 
-def futures_pnl(d=None):
+def futures_pnl(d=None, a='MSRKIB'):
     formats = json.dumps({'columnDefs': [{'targets': [1, 2, 3, 4, 5, 6],
                                           'className': 'dt-body-right'}], 'ordering': False})
     headings = ['Ticker', 'Pos', 'Price', 'PnL', 'Today', 'MTD', 'YTD']
 
-    pnl_end_of_year, pnl_prior_month, pnl_yesterday, pnl_total = futures_pnl_ymd(d=d)
+    pnl_end_of_year, pnl_prior_month, pnl_yesterday, pnl_total = futures_pnl_ymd(d=d, a=a)
 
     tickers = set(pnl_total.keys()).\
         union(set(pnl_yesterday.keys())).\
@@ -157,6 +157,9 @@ def futures_pnl(d=None):
         data.append([ticker, pos, price, pnl, daily, mtd, ytd])
 
     data.append(['TOTAL', '', '', '', cround(today_total, 2), cround(mtd_total, 2), cround(ytd_total, 0)])
+
+    cash = get_balances(d=d, account=a)[a]['CASH']
+    data.append(['CASH', '', '', '', '', '', cround(cash, 2)])
 
     return headings, data, formats
 
