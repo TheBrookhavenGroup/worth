@@ -106,6 +106,9 @@ def futures_pnl(d=None, a='MSRKIB'):
                                           'className': 'dt-body-right'}], 'ordering': False})
     headings = ['Ticker', 'Pos', 'Price', 'PnL', 'Today', 'MTD', 'YTD']
 
+    if d is not None:
+        d = most_recent_business_day(d)
+
     pnl_end_of_year, pnl_prior_month, pnl_yesterday, pnl_total = futures_pnl_ymd(d=d, a=a)
 
     tickers = set(pnl_total.keys()).\
