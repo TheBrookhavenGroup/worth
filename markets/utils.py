@@ -2,7 +2,7 @@ from cachetools.func import ttl_cache
 from django.conf import settings
 from worth.dt import y1_to_y4, is_lbd_of_month
 from markets.tbgyahoo import yahooHistory, yahooQuote
-from markets.models import DailyBar
+from markets.models import DailyBar, TBGDailyBar
 from markets.models import Ticker, Market, NOT_FUTURES_EXCHANGES
 
 
@@ -65,6 +65,10 @@ def get_price(ticker, d=None):
             else:
                 bar = get_historical_bar(ticker, d)
                 if bar is None:
+                    if TBGDailyBar.objects.filter(ticker=ticker, d=d).exists():
+                        print("Bar exists in TBGDaily: {d} {ticker}")
+                    else:
+                        print("Cannot find bar in TBGDaily: {d} {ticker}")
                     p = 0.0
                 else:
                     d_bar, o, h, l, c, v, oi = bar

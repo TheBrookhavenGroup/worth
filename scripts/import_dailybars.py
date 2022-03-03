@@ -2,7 +2,7 @@ import re
 from datetime import datetime
 from cachetools import cached
 from django.db import IntegrityError
-from markets.models import DailyBar, Market, Ticker
+from markets.models import TBGDailyBar, Market, Ticker
 
 
 def tbg_ticker2ticker(ticker):
@@ -56,7 +56,7 @@ def process_line(line):
         print(f"No ticker for {ti}")
     else:
         try:
-            bar = DailyBar.objects.create(ticker=ticker, d=d, o=o, h=h, l=l, c=c, v=v, oi=oi)
+            bar = TBGDailyBar.objects.create(ticker=ticker, d=d, o=o, h=h, l=l, c=c, v=v, oi=oi)
         except IntegrityError:
             print(f'Could not add {line}')
 

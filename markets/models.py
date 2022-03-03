@@ -88,6 +88,11 @@ class Ticker(models.Model):
         return self.market.yahoo_exchange not in NOT_FUTURES_EXCHANGES
 
 
+@receiver(pre_save, sender=Ticker)
+def upcase_ticker(sender, instance, **kwargs):
+    instance.ticker = instance.ticker.upper()
+
+
 class DailyBar(models.Model):
     ticker = models.ForeignKey(Ticker, on_delete=models.CASCADE)
     d = models.DateField(null=False)
@@ -105,6 +110,18 @@ class DailyBar(models.Model):
         return f"{self.d}|{self.o}|{self.h}|{self.l}|{self.c}|{self.v}|{self.oi}"
 
 
-@receiver(pre_save, sender=Ticker)
-def upcase_ticker(sender, instance, **kwargs):
-    instance.ticker = instance.ticker.upper()
+class TBGDailyBar(models.Model):
+    ticker = models.ForeignKey(Ticker, on_delete=models.CASCADE)
+    d = models.DateField(null=False)
+    o = models.FloatField()
+    h = models.FloatField()
+    l = models.FloatField()
+    c = models.FloatField()
+    v = models.FloatField()
+    oi = models.FloatField()
+
+    class Meta:
+        unique_together = [["ticker", "d"]]
+
+    def __str__(self):
+        return f"{self.d}|{self.o}|{self.h}|{self.l}|{self.c}|{self.v}|{self.oi}"
