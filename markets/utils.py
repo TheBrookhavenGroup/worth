@@ -73,7 +73,7 @@ def get_price(ticker, d=None):
                         p = tb.c
                         DailyPrice.objects.create(ticker=ticker, d=d, c=p)
                     else:
-                        print(f"Cannot find bar in TBGDaily: {d} {ticker}")
+                        print(f"Cannot find price in TBGDaily: {d} {ticker}")
                         p = 0.0
                 else:
                     d_bar, o, h, l, c, v, oi = bar
