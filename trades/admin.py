@@ -14,10 +14,9 @@ class NoCommissionFilter(SimpleListFilter):
         return [('no', 'No Commission')]
 
     def queryset(self, request, queryset):
-        if 'all' == self.value():
-            return queryset
-        else:
+        if 'no' == self.value():
             return queryset.filter(commission__range=(-0.001, 0.001))
+        return queryset
 
 
 class ExchangeTypeFilter(SimpleListFilter):
@@ -29,12 +28,11 @@ class ExchangeTypeFilter(SimpleListFilter):
 
     def queryset(self, request, queryset):
         v = self.value()
-        if 'all' == v:
-            return queryset
-        elif 'futures' == v:
+        if 'futures' == v:
             return queryset.filter(~Q(ticker__market__ib_exchange__in=NOT_FUTURES_EXCHANGES))
-        else:
+        elif 'equities' == v:
             return queryset.filter(ticker__market__ib_exchange__in=NOT_FUTURES_EXCHANGES)
+        return queryset
 
 
 @admin.register(Trade)
