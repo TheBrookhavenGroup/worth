@@ -6,11 +6,11 @@ from django.conf import settings
 from collections import defaultdict
 
 from worth.utils import cround, is_near_zero
-from worth.dt import our_now, lbd_prior_month, prior_business_day, most_recent_business_day, day_start_next_day
+from worth.dt import our_now, lbd_prior_month, prior_business_day, day_start_next_day
 from trades.models import Trade
 from accounts.models import CashRecord
 from markets.models import Ticker, NOT_FUTURES_EXCHANGES
-from markets.utils import get_price, is_futures
+from markets.utils import get_price
 from markets.tbgyahoo import yahoo_url
 from analytics.models import PPMResult
 from trades.utils import get_futures_pnl, avg_open_price
@@ -35,7 +35,6 @@ def get_balances(d=None, account=None, ticker=None):
             portfolio['CASH'] += cash_amount
 
         portfolio[ti] += q
-
 
     qs = CashRecord.objects.filter(ignored=False)
     if d is not None:
@@ -80,8 +79,6 @@ def futures_pnl_ymd(d=None, a='MSRKIB'):
     if d is None:
         d = our_now().date()
 
-    d = most_recent_business_day(d)
-
     yesterday = prior_business_day(d)
 
     eoy = lbd_prior_month(date(d.year, 1, 1))
@@ -103,9 +100,6 @@ def futures_pnl(d=None, a='MSRKIB'):
     formats = json.dumps({'columnDefs': [{'targets': [1, 2, 3, 4, 5, 6],
                                           'className': 'dt-body-right'}], 'ordering': False})
     headings = ['Ticker', 'Pos', 'Price', 'PnL', 'Today', 'MTD', 'YTD']
-
-    if d is not None:
-        d = most_recent_business_day(d)
 
     pnl_end_of_year, pnl_prior_month, pnl_yesterday, pnl_total = futures_pnl_ymd(d=d, a=a)
 
@@ -172,9 +166,6 @@ def valuations(d=None, account=None, ticker=None):
 
     headings = ['Account', 'Ticker', 'Q', 'P', 'Value']
     data = []
-
-    if d is not None:
-        d = most_recent_business_day(d)
 
     balances = get_balances(d, account, ticker)
 
