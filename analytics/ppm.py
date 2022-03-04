@@ -36,7 +36,6 @@ def get_balances(d=None, account=None, ticker=None):
 
         portfolio[ti] += q
 
-
     qs = CashRecord.objects.filter(ignored=False)
     if d is not None:
         qs = qs.filter(d__lte=d)
