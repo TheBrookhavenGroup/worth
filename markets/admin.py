@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Market, Ticker, DailyBar, TBGDailyBar
+from .models import Market, Ticker, DailyPrice, TBGDailyBar
 from .utils import populate_historical_price_data
 
 
@@ -23,8 +23,8 @@ class TickerAdmin(admin.ModelAdmin):
     actions = [get_historical_prices, ]
 
 
-@admin .register(DailyBar)
-class DailyBarAdmin(admin.ModelAdmin):
+@admin .register(DailyPrice)
+class DailyPriceAdmin(admin.ModelAdmin):
     date_hierarchy = 'd'
     list_display = ('ticker', 'd', 'c')
     search_fields = ('ticker__ticker', )

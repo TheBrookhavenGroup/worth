@@ -93,21 +93,16 @@ def upcase_ticker(sender, instance, **kwargs):
     instance.ticker = instance.ticker.upper()
 
 
-class DailyBar(models.Model):
+class DailyPrice(models.Model):
     ticker = models.ForeignKey(Ticker, on_delete=models.CASCADE)
     d = models.DateField(null=False)
-    o = models.FloatField()
-    h = models.FloatField()
-    l = models.FloatField()
-    c = models.FloatField()
-    v = models.FloatField()
-    oi = models.FloatField()
+    c = models.FloatField(help_text='Closing Price')
 
     class Meta:
         unique_together = [["ticker", "d"]]
 
     def __str__(self):
-        return f"{self.d}|{self.o}|{self.h}|{self.l}|{self.c}|{self.v}|{self.oi}"
+        return f"{self.d} {self.c}"
 
 
 class TBGDailyBar(models.Model):
