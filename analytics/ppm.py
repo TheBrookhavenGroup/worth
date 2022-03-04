@@ -182,6 +182,7 @@ def valuations(d=None, account=None, ticker=None):
             p = get_price(t, d=d)
 
             if m.is_futures:
+                # Need this for futures trades made outside MSRKIB
                 value = q * (p - avg_open_price(a, t)) * m.cs
             else:
                 value = q * p * m.cs
