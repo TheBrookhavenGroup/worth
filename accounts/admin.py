@@ -15,8 +15,8 @@ class ActiveAccountFilter(SimpleListFilter):
     def queryset(self, request, queryset):
         if self.value():
             return queryset.filter(account__id=self.value())
-        else:
-            return queryset
+
+        return queryset
 
 
 @admin .register(Account)
@@ -43,6 +43,6 @@ class CashRecordAdmin(admin.ModelAdmin):
     date_hierarchy = 'd'
     list_display = ('account', 'd', 'description', 'amt', 'cleared_f', 'ignored')
     list_filter = ('cleared_f', ActiveAccountFilter, 'ignored')
-    search_fields = ('account', 'description')
+    search_fields = ('account__name', 'description')
     ordering = ('account', '-d')
     actions = [duplicate_record, set_cleared_flag]
