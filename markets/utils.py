@@ -2,7 +2,7 @@ from cachetools.func import ttl_cache
 from django.conf import settings
 from worth.dt import y1_to_y4, is_lbd_of_month, most_recent_business_day
 from markets.tbgyahoo import yahooHistory, yahooQuote
-from markets.models import DailyBar, TBGDailyBar
+from markets.models import DailyPrice, TBGDailyBar
 from markets.models import Ticker, Market, NOT_FUTURES_EXCHANGES
 
 
@@ -26,7 +26,7 @@ def populate_historical_price_data(ticker, d_i=None, d_f=None, lbd_f=True):
             continue
         if (d_f is not None) and (d > d_f):
             continue
-        DailyBar.objects.create(ticker=ticker, d=d, o=o, h=h, l=l, c=c, v=v, oi=oi)
+        DailyPrice.objects.create(ticker=ticker, d=d, c=c)
 
 
 def get_historical_bar(ticker, d):
@@ -61,17 +61,17 @@ def get_price(ticker, d=None):
             p = yahooQuote(ticker)[0]
             p *= ticker.market.yahoo_price_factor
         else:
-            if DailyBar.objects.filter(ticker=ticker).filter(d=d).exists():
-                p = DailyBar.objects.filter(ticker=ticker).filter(d=d).first()
+            if DailyPrice.objects.filter(ticker=ticker).filter(d=d).exists():
+                p = DailyPrice.objects.filter(ticker=ticker).filter(d=d).first()
                 p = p.c
             else:
                 bar = get_historical_bar(ticker, d)
                 if bar is None:
                     if TBGDailyBar.objects.filter(ticker=ticker, d=d).exists():
-                        print(f"Bar exists in TBGDaily, saving to DailyBar: {d} {ticker}")
+                        print(f"Bar exists in TBGDaily, saving to DailyPrice: {d} {ticker}")
                         tb = TBGDailyBar.objects.get(ticker=ticker, d=d)
                         p = tb.c
-                        DailyBar.objects.create(ticker=ticker, d=d, o=tb.o, h=tb.h, l=tb.l, c=p, v=tb.v, oi=tb.oi)
+                        DailyPrice.objects.create(ticker=ticker, d=d, c=p)
                     else:
                         print(f"Cannot find bar in TBGDaily: {d} {ticker}")
                         p = 0.0
@@ -79,7 +79,7 @@ def get_price(ticker, d=None):
                     d_bar, o, h, l, c, v, oi = bar
                     if d_bar != d:
                         print(f"Using price found on {d_bar} for {d} for {ticker}")
-                    DailyBar.objects.create(ticker=ticker, d=d, o=o, h=h, l=l, c=c, v=v, oi=oi)
+                    DailyPrice.objects.create(ticker=ticker, d=d, c=c)
                     p = c
     else:
         p = ticker.fixed_price
