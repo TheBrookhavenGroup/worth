@@ -1,10 +1,43 @@
 from django.contrib import admin
-from .models import Trade
+from django.contrib.admin import SimpleListFilter
+from django.db.models import Q
+from .models import Trade, NOT_FUTURES_EXCHANGES
 from accounts.admin import ActiveAccountFilter
 
 
+class NoCommissionFilter(SimpleListFilter):
+    title = "No Commission"
+    parameter_name = 'no_commission'
+
+    def lookups(self, request, model_admin):
+        return [('no', 'No Commission')]
+
+    def queryset(self, request, queryset):
+        if 'all' == self.value():
+            return queryset
+        else:
+            return queryset.filter(commission__range=(-0.001, 0.001))
+
+
+class ExchangeTypeFilter(SimpleListFilter):
+    title = "Exchange Type"
+    parameter_name = 'exchange_type'
+
+    def lookups(self, request, model_admin):
+        return [('futures', 'Futures'), ('equities', 'Equities')]
+
+    def queryset(self, request, queryset):
+        v = self.value()
+        if 'all' == v:
+            return queryset
+        elif 'futures' == v:
+            return queryset.filter(~Q(ticker__market__ib_exchange__in=NOT_FUTURES_EXCHANGES))
+        else:
+            return queryset.filter(ticker__market__ib_exchange__in=NOT_FUTURES_EXCHANGES)
+
+
 @admin.register(Trade)
-class MarketAdmin(admin.ModelAdmin):
+class TradeAdmin(admin.ModelAdmin):
     def time_date(self, obj):
         return obj.dt.date()
     time_date.short_description = 'Date'
@@ -12,6 +45,6 @@ class MarketAdmin(admin.ModelAdmin):
     date_hierarchy = 'dt'
 
     list_display = ('time_date', 'account', 'ticker', 'q', 'p', 'commission', 'reinvest', 'trade_id', 'note')
-    list_filter = (ActiveAccountFilter, )
+    list_filter = (NoCommissionFilter, ExchangeTypeFilter, ActiveAccountFilter)
     search_fields = ('account__name', 'dt', 'note', 'ticker__ticker')
     ordering = ('account', '-dt')
