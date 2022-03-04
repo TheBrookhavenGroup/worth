@@ -1,6 +1,6 @@
 from cachetools.func import ttl_cache
 from django.conf import settings
-from worth.dt import y1_to_y4, is_lbd_of_month
+from worth.dt import y1_to_y4, is_lbd_of_month, most_recent_business_day
 from markets.tbgyahoo import yahooHistory, yahooQuote
 from markets.models import DailyBar, TBGDailyBar
 from markets.models import Ticker, Market, NOT_FUTURES_EXCHANGES
@@ -48,6 +48,8 @@ def get_historical_bar(ticker, d):
 
 @ttl_cache(maxsize=1000, ttl=10)
 def get_price(ticker, d=None):
+    d = most_recent_business_day(d)
+
     if not settings.USE_PRICE_FEED:
         return 1.0
 

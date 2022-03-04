@@ -18,6 +18,18 @@ def our_localize(t):
     return tz.localize(t).astimezone(utc)
 
 
+def to_date(d):
+    if type(d) == str:
+        if '-' in d:
+            d = datetime.date.fromisoformat(d)
+        else:
+            d = datetime.datetime.strptime(d, '%Y%m%d').date()
+    elif d is None:
+        d = datetime.date.today()
+
+    return d
+
+
 def day_start(d):
     # Return start of day in local time zone
     t = datetime.datetime(d.year, d.month, d.day)
@@ -269,6 +281,7 @@ def test_is_holiday_observed():
 
 
 def most_recent_business_day(d):
+    d = to_date(d)
     while is_holiday_observed(d):
         d -= datetime.timedelta(days=1)
     return d
