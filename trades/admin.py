@@ -1,7 +1,8 @@
 from django.contrib import admin
 from django.contrib.admin import SimpleListFilter
 from django.db.models import Q
-from .models import Trade, NOT_FUTURES_EXCHANGES
+from markets.models import NOT_FUTURES_EXCHANGES
+from trades.models import Trade
 from accounts.admin import ActiveAccountFilter
 
 
