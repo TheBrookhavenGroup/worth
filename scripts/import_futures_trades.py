@@ -10,7 +10,7 @@ from trades.models import Trade
 account = Account.objects.get(name='FUTURES')
 
 
-@ttl_cache(maxsize=500, ttl=60)
+@ttl_cache(maxsize=500, ttl=10)
 def get_market(s):
     try:
         m = Market.objects.get(symbol=s)

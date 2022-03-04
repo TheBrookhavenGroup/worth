@@ -10,7 +10,7 @@ from trades.models import Trade
 from markets.utils import get_price
 
 
-@ttl_cache(maxsize=1000, ttl=30)
+@ttl_cache(maxsize=1000, ttl=10)
 def get_futures_pnl(d=None, a='MSRKIB'):
     a = Account.objects.get(name=a)
 

@@ -10,7 +10,7 @@ def is_futures(exchange):
     return exchange not in NOT_FUTURES_EXCHANGES
 
 
-@ttl_cache(maxsize=1000, ttl=30)
+@ttl_cache(maxsize=1000, ttl=10)
 def get_yahoo_history(ticker):
     if type(ticker) == str:
         ticker = Ticker.objects.get(ticker=ticker)
@@ -46,7 +46,7 @@ def get_historical_bar(ticker, d):
     return None
 
 
-@ttl_cache(maxsize=1000, ttl=60)
+@ttl_cache(maxsize=1000, ttl=10)
 def get_price(ticker, d=None):
     if not settings.USE_PRICE_FEED:
         return 1.0

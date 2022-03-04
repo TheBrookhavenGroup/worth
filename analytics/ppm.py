@@ -25,12 +25,17 @@ def get_balances(d=None, account=None, ticker=None):
         dt = day_start_next_day(d)
         qs = qs.filter(dt__lt=dt)
 
-    qs = qs.filter(ticker__market__ib_exchange__in=NOT_FUTURES_EXCHANGES, reinvest=False)
-    qs = qs.values_list('account__name', 'ticker__ticker', 'q', 'p', 'commission', 'ticker__market__cs')
-    for a, ti, q, p, c, cs in qs:
+    qs = qs.filter(ticker__market__ib_exchange__in=NOT_FUTURES_EXCHANGES)
+    qs = qs.values_list('account__name', 'ticker__ticker', 'q', 'p', 'commission', 'ticker__market__cs', 'reinvest')
+    for a, ti, q, p, c, cs, reinvest in qs:
         portfolio = balances[a]
-        cash_amount = -q * p * cs - c
-        portfolio['CASH'] += cash_amount
+
+        if not reinvest:
+            cash_amount = -q * p * cs - c
+            portfolio['CASH'] += cash_amount
+
+        portfolio[ti] += q
+
 
     qs = CashRecord.objects.filter(ignored=False)
     if d is not None:
