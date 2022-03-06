@@ -1,12 +1,12 @@
 import os
 from ftplib import FTP
+from django.conf import settings
 
 
 def ib_statements():
-    pw = os.environ['IB_FTP_PW']
-
-    user = 'msch73wib8'
-    server = 'ftp.interactivebrokers.com'
+    user = settings.IB_FTP_USER
+    pw = settings.IB_FTP_PW
+    server = settings.IB_FTP_SERVER
 
     ftp = FTP(server)
     ftp.login(user, pw)

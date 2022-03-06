@@ -19,7 +19,7 @@ def get_trades(report_id='224849'):
     headings = ['Trade']
     data = []
 
-    report = FlexReport(settings.FLEX_TOKEN, report_id)
+    report = FlexReport(settings.IB_FLEX_TOKEN, report_id)
 
     # print(report.topics())
     # {'TradeConfirm', 'FlexQueryResponse', 'FlexStatements', 'FlexStatement'}

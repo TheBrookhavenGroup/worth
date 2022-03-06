@@ -3,8 +3,13 @@ from os import environ as env
 from pathlib import Path
 
 
+IB_FTP_USER = env.get('IB_FTP_USER')
+IB_FTP_PW = env.get('IB_FTP_PW')
+IB_FTP_SERVER = env.get('IB_FTP_SERVER')
+IB_FLEX_TOKEN = env.get('IB_FLEX_TOKEN')
+
 PPM_FACTOR = eval(env.get('PPM_FACTOR', 'False'))
-FLEX_TOKEN = env.get('FLEX_TOKEN')
+
 
 USE_PRICE_FEED = eval(env.get('USE_PRICE_FEED', 'True'))
 

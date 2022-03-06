@@ -13,5 +13,6 @@ foo.py
 --logfile
 junk.txt
 redis_dumps
+secrets.ini
 
 
