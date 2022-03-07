@@ -1,5 +1,6 @@
 from cachetools.func import ttl_cache
 from django.conf import settings
+from datetime import date
 from worth.dt import y1_to_y4, is_lbd_of_month, most_recent_business_day
 from markets.tbgyahoo import yahooHistory, yahooQuote
 from markets.models import DailyPrice, TBGDailyBar
@@ -57,7 +58,7 @@ def get_price(ticker, d=None):
         ticker = Ticker.objects.get(ticker=ticker)
 
     if ticker.fixed_price is None:
-        if d is None:
+        if (d is None) or (d == date.today()):
             p = yahooQuote(ticker)[0]
             p *= ticker.market.yahoo_price_factor
         else:
