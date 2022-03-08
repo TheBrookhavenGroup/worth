@@ -1,7 +1,7 @@
 import json
 from django.conf import settings
 from ib_insync.flexreport import FlexReport
-from worth.dt import dt2dt
+from worth.dt import dt2dt, set_tz
 from accounts.models import Account
 from trades.models import Trade
 from markets.utils import ib_symbol2ticker
@@ -47,6 +47,7 @@ def get_trades(report_id='224849'):
                           q=q, p=p, commission=i.commission,
                           trade_id=i.tradeID)
         trade.save()
-        data.append([trade.dt, trade.ticker, trade.q, trade.p, trade.commission])
+
+        data.append([set_tz(trade.dt), trade.ticker, trade.q, trade.p, trade.commission])
 
     return headings, data, formats

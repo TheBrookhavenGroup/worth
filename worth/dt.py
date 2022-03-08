@@ -47,6 +47,8 @@ def day_start_next_day(d):
 def set_tz(dt):
     # useful for output
     tz = pytz.timezone(settings.TIME_ZONE)
+    if dt.tzinfo is not None:
+        return dt.astimezone(tz)
     return tz.localize(dt)
 
 
