@@ -12,11 +12,13 @@ last30days = '646507'
 
 
 def get_trades(report_id='224849'):
-    formats = json.dumps({'columnDefs': [{'targets': [1], 'className': 'dt-body-left'}],
+    formats = json.dumps({'columnDefs': [{"targets": [0], 'className': "dt-nowrap"},
+                                         {"targets": [1], 'className': "dt-body-left"},
+                                         {'targets': [2, 3, 4], 'className': 'dt-body-right'}],
                           # 'ordering': False
                           })
 
-    headings = ['Trade']
+    headings = ['Date-Time', 'Ticker', 'Q', 'P', 'Commission']
     data = []
 
     report = FlexReport(settings.IB_FLEX_TOKEN, report_id)
@@ -45,6 +47,6 @@ def get_trades(report_id='224849'):
                           q=q, p=p, commission=i.commission,
                           trade_id=i.tradeID)
         trade.save()
-        data.append([str(trade)])
+        data.append([trade.dt, trade.ticker, trade.q, trade.p, trade.commission])
 
     return headings, data, formats
