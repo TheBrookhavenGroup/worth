@@ -59,11 +59,9 @@ def get_balances(d=None, account=None, ticker=None):
         pnl, total = get_futures_pnl(d=d, a=a)
         balances[a]['CASH'] += total
 
-    empty_accounts = [a for a in balances if abs(balances[a]['CASH']) < 0.001]
-    for a in empty_accounts:
-        del balances[a]['CASH']
-        if len(balances[a].keys()) == 0:
-            del balances[a]
+    for a in balances:
+        balances[a] = {k: v for k, v in balances[a].items() if abs(v) > 0.001}
+    balances = {k: v for k, v in balances.items() if len(v.keys())}
 
     # Scale results for demo purposes.  PPM_FACTOR defaults to False.
     factor = settings.PPM_FACTOR
