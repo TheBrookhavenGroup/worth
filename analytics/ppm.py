@@ -154,7 +154,7 @@ def futures_pnl(d=None, a='MSRKIB'):
     data.append(['TOTAL', '', '', '', cround(today_total, 2), cround(mtd_total, 2), cround(ytd_total, 0)])
 
     cash = get_balances(d=d, account=a)[a]['CASH']
-    data.append(['CASH', '', '', '', '', '', cround(cash, 2)])
+    data.append(['CASH', cround(cash, 2), '', '', '', '', ''])
 
     return headings, data, formats
 
