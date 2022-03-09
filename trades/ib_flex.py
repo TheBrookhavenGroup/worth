@@ -48,6 +48,6 @@ def get_trades(report_id='224849'):
                           trade_id=i.tradeID)
         trade.save()
 
-        data.append([set_tz(trade.dt), trade.ticker, trade.q, trade.p, trade.commission])
+        data.append([set_tz(trade.dt).strftime("%Y%m%d %H:%M:%S"), trade.ticker, trade.q, trade.p, trade.commission])
 
     return headings, data, formats
