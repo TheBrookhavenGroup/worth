@@ -8,6 +8,7 @@ from markets.utils import ib_symbol2ticker
 
 
 daily = '224849'
+lbd = '224850'
 last30days = '646507'
 
 

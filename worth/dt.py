@@ -289,7 +289,9 @@ def most_recent_business_day(d):
     return d
 
 
-def prior_business_day(d):
+def prior_business_day(d=None):
+    if d is None:
+        d = our_now()
     d -= datetime.timedelta(days=1)
     return most_recent_business_day(d)
 
