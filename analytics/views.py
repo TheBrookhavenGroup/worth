@@ -2,7 +2,7 @@ import datetime
 
 from django.views.generic.base import TemplateView
 from analytics.cash import cash_sums, total_cash
-from analytics.ppm import valuations, futures_pnl
+from analytics.pnl import futures_pnl, ppm_pnl
 from trades.ib_flex import get_trades
 
 
@@ -33,7 +33,7 @@ class PPMView(TemplateView):
             d = datetime.datetime.strptime(d, '%Y%m%d').date()
 
         context['headings1'], context['data1'], context['formats'] = \
-            valuations(d=d, account=account, ticker=ticker)
+            ppm_pnl(d=d, account=account, ticker=ticker)
         context['title'] = 'PPM'
         return context
 

@@ -1,5 +1,5 @@
 from accounts.models import CashRecord
-from analytics.ppm import get_balances
+from trades.utils import get_balances
 
 
 def cash_sums(account_name):
