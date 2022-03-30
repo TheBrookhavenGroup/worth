@@ -1,5 +1,6 @@
 from django.db import models
 from django.db.models import Q
+from django.core.validators import MinValueValidator
 from markets.models import Ticker, NOT_FUTURES_EXCHANGES
 from accounts.models import Account
 
@@ -11,7 +12,7 @@ class Trade(models.Model):
     reinvest = models.BooleanField(default=True, blank=False, null=False)
     q = models.FloatField(blank=False, null=False)
     p = models.FloatField(blank=False, null=False)
-    commission = models.FloatField(default=0.0)
+    commission = models.FloatField(default=0.0, validators=[MinValueValidator(0.0)])
     note = models.CharField(max_length=180, blank=True, null=True)
     trade_id = models.IntegerField(blank=True, null=True)
 
@@ -22,9 +23,6 @@ class Trade(models.Model):
         if self.commission is None:
             self.commission = self.q * self.ticker.market.commission
         super().save(*args, **kwargs)
-
-    def calc_commission(self):
-        return self.q * self.ticker.market.commission
 
     @classmethod
     def more_filtering(cls, account, ticker):

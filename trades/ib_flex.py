@@ -42,7 +42,7 @@ def get_trades(report_id='224849'):
             trade.ticker = ticker
             trade.q = q
             trade.p = p
-            trade.commission = i.commission
+            trade.commission = -i.commission
         except Trade.DoesNotExist:
             trade = Trade(dt=t, account=account, ticker=ticker, reinvest=True,
                           q=q, p=p, commission=i.commission,
