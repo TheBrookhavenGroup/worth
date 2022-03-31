@@ -4,6 +4,7 @@ from worth.utils import cround, is_near_zero
 from worth.dt import our_now, lbd_prior_month, prior_business_day
 from markets.models import Ticker
 from analytics.models import PPMResult
+from analytics.utils import pcnt_change
 from trades.utils import valuations, get_futures_pnl, get_balances
 from markets.tbgyahoo import yahoo_url
 
@@ -166,8 +167,9 @@ def ppm_pnl(d=None, account=None, ticker=None):
 
         pos = cround(pos, 0)
         price = cround(price, pprec)
+        daily_pcnt = cround(pcnt_change(value - daily, delta=daily), 1, symbol='%')
         value = cround(value, vprec)
-        daily = cround(daily, 2)
+        daily = f"{cround(daily, 2)}  {daily_pcnt}"
         mtd = cround(mtd, 2)
         ytd = cround(ytd, 0)
 
