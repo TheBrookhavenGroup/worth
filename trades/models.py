@@ -21,7 +21,9 @@ class Trade(models.Model):
 
     def save(self, *args, **kwargs):
         if self.commission is None:
-            self.commission = self.q * self.ticker.market.commission
+            self.commission = abs(self.q * self.ticker.market.commission)
+        elif self.commission < 0:
+            self.commission = -self.commission
         super().save(*args, **kwargs)
 
     @classmethod
