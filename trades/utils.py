@@ -40,7 +40,7 @@ def valuations(d=None, account=None, ticker=None):
 
             data.append([a, ticker, q, p, value])
 
-    data.append(['AAA Total', '', '', '', total_worth])
+    data.append(['AAA Total', 'CASH', '', '', total_worth])
 
     return data
 

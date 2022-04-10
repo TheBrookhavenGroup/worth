@@ -152,14 +152,10 @@ def ppm_pnl(d=None, account=None, ticker=None):
         else:
             ytd = value
 
-        pprec = 4
-        vprec = 0
-        if a == 'AAA Total':
-            vprec = 3
-        else:
-            t = Ticker.objects.get(ticker=t)
-            pprec = t.market.pprec
-            t = yahoo_url(t)
+        t = Ticker.objects.get(ticker=t)
+        pprec = t.market.pprec
+        vprec = t.market.vprec
+        t = yahoo_url(t)
 
         ytd_total += ytd
         mtd_total += mtd
@@ -176,7 +172,7 @@ def ppm_pnl(d=None, account=None, ticker=None):
         data.append([a, t, pos, price, value, daily, mtd, ytd])
 
     if (account is None) and (ticker is None) and (not d or (d == date.today())):
-        total_worth = total_value[('AAA Total', '')][-1]
+        total_worth = total_value[('AAA Total', 'CASH')][-1]
         PPMResult.objects.create(value=total_worth)
 
     return headings, data, formats

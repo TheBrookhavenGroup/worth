@@ -19,6 +19,7 @@ class Market(models.Model):
     ib_price_factor = models.FloatField(default=1.0, blank=False)
     yahoo_price_factor = models.FloatField(default=1.0, blank=False)
     pprec = models.IntegerField(default=4, blank=False)
+    vprec = models.IntegerField(default=0, blank=False)
 
     def __str__(self):
         return f"{self.symbol}"
@@ -30,6 +31,10 @@ class Market(models.Model):
     @property
     def is_futures(self):
         return self.ib_exchange not in NOT_FUTURES_EXCHANGES
+
+    @property
+    def is_cash(self):
+        return self.symbol.lower() == 'cash'
 
 
 @receiver(pre_save, sender=Market)

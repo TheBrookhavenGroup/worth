@@ -67,8 +67,11 @@ def yahooQuote(ticker):
 
 
 def yahoo_url(ticker):
-    url = mark_safe(f'https://finance.yahoo.com/quote/{ticker.yahoo_ticker}/')
-    url = mark_safe(f'<a href="{url}" target="_blank">{ticker.ticker}</a>')
+    if ticker.market.is_cash:
+        url = ticker.ticker
+    else:
+        url = mark_safe(f'https://finance.yahoo.com/quote/{ticker.yahoo_ticker}/')
+        url = mark_safe(f'<a href="{url}" target="_blank">{ticker.ticker}</a>')
     return url
 
 
