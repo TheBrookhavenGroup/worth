@@ -57,6 +57,22 @@ class ExchangeTypeFilter(SimpleListFilter):
         return queryset
 
 
+class BuySellFilter(SimpleListFilter):
+    title = "Buy/Sell"
+    parameter_name = 'exchange_type'
+
+    def lookups(self, request, model_admin):
+        return [('buy', 'Buy'), ('sell', 'Sell')]
+
+    def queryset(self, request, queryset):
+        v = self.value()
+        if 'buy' == v:
+            return queryset.filter(q__gte=0.0)
+        elif 'sell' == v:
+            return queryset.filter(q__lt=0.0)
+        return queryset
+
+
 @admin.register(Trade)
 class TradeAdmin(admin.ModelAdmin):
     def time_date(self, obj):
@@ -66,6 +82,6 @@ class TradeAdmin(admin.ModelAdmin):
     date_hierarchy = 'dt'
 
     list_display = ('dt', 'account', 'ticker', 'q', 'p', 'commission', 'reinvest', 'trade_id', 'note')
-    list_filter = (GetTradesFilter, NoCommissionFilter, ExchangeTypeFilter, ActiveAccountFilter)
+    list_filter = (GetTradesFilter, NoCommissionFilter, BuySellFilter, ExchangeTypeFilter, ActiveAccountFilter)
     search_fields = ('account__name', 'dt', 'note', 'ticker__ticker')
     ordering = ('account', '-dt')

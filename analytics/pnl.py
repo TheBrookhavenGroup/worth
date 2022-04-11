@@ -164,7 +164,7 @@ def ppm_pnl(d=None, account=None, ticker=None):
         pos = cround(pos, 0)
         price = cround(price, pprec)
         daily_pcnt = cround(pcnt_change(value - daily, delta=daily), 1, symbol='%')
-        value = cround(value, vprec)
+        value = cround(value, vprec, symbol='#')
         daily = f"{cround(daily, 2)}  {daily_pcnt}"
         mtd = cround(mtd, 2)
         ytd = cround(ytd, 0)
