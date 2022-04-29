@@ -45,12 +45,13 @@ def valuations(d=None, account=None, ticker=None):
     return data
 
 
-@ttl_cache(maxsize=1000, ttl=10)
-def get_futures_pnl(d=None, a='MSRKIB'):
+def pnl_calculator(d=None, a='MSRKIB', trades_filter=None):
     a = Account.objects.get(name=a)
 
-    qs = Trade.objects.values_list('ticker__ticker').filter(account=a).\
-        filter(~Q(ticker__market__ib_exchange__in=NOT_FUTURES_EXCHANGES))
+    qs = Trade.objects.values_list('ticker__ticker').filter(account=a)
+
+    if trades_filter is not None:
+        qs = qs.filter(trades_filter)
 
     if d is not None:
         dt = day_start_next_day(d)
@@ -77,6 +78,11 @@ def get_futures_pnl(d=None, a='MSRKIB'):
         result.append((ticker, pos, price, pnl))
 
     return result, total
+
+
+@ttl_cache(maxsize=1000, ttl=10)
+def get_futures_pnl(d=None, a='MSRKIB'):
+    return pnl_calculator(d=d, a=a,trades_filter=~Q(ticker__market__ib_exchange__in=NOT_FUTURES_EXCHANGES))
 
 
 def avg_open_price(account, ticker):
