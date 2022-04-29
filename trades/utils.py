@@ -45,17 +45,7 @@ def valuations(d=None, account=None, ticker=None):
     return data
 
 
-def pnl_calculator(d=None, a='MSRKIB', trades_filter=None):
-    a = Account.objects.get(name=a)
-
-    qs = Trade.objects.values_list('ticker__ticker').filter(account=a)
-
-    if trades_filter is not None:
-        qs = qs.filter(trades_filter)
-
-    if d is not None:
-        dt = day_start_next_day(d)
-        qs = qs.filter(dt__lt=dt)
+def pnl_calculator(qs, d=None):
     qs = qs.annotate(pos=Sum(F('q')),
                      qp=Sum(F('q') * F('p')),
                      c=Sum(F('commission')))
@@ -80,9 +70,27 @@ def pnl_calculator(d=None, a='MSRKIB', trades_filter=None):
     return result, total
 
 
+def trades_qs(a, d):
+    a = Account.objects.get(name=a)
+    qs = Trade.objects.values_list('ticker__ticker').filter(account=a)
+
+    if d is not None:
+        dt = day_start_next_day(d)
+        qs = qs.filter(dt__lt=dt)
+
+    return qs
+
+
 @ttl_cache(maxsize=1000, ttl=10)
-def get_futures_pnl(d=None, a='MSRKIB'):
-    return pnl_calculator(d=d, a=a,trades_filter=~Q(ticker__market__ib_exchange__in=NOT_FUTURES_EXCHANGES))
+def get_futures_pnl(a='MSRKIB', d=None):
+    qs = trades_qs(a, d)..filter(~Q(ticker__market__ib_exchange__in=NOT_FUTURES_EXCHANGES))
+    return pnl_calculator(qs, d=d)
+
+
+@ttl_cache(maxsize=1000, ttl=10)
+def get_equties_pnl(a, d=None):
+    qs = trades_qs(a, d)..filter(Q(ticker__market__ib_exchange__in=NOT_FUTURES_EXCHANGES))
+    return pnl_calculator(qs, d=d)
 
 
 def avg_open_price(account, ticker):
