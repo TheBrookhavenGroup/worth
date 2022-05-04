@@ -2,7 +2,7 @@ import datetime
 
 from django.views.generic.base import TemplateView
 from analytics.cash import cash_sums, total_cash
-from analytics.pnl import futures_pnl, ppm_pnl
+from analytics.pnl import futures_pnl, ppm_pnl, year_pnl
 from trades.ib_flex import get_trades
 
 
@@ -22,6 +22,9 @@ class CheckingView(TemplateView):
 class PPMView(TemplateView):
     template_name = 'analytics/table.html'
 
+    def ppm_pnl_caller(self, d=None, account=None, ticker=None):
+        return ppm_pnl(d=d, account=account, ticker=ticker)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         getter = self.request.GET.get
@@ -33,9 +36,14 @@ class PPMView(TemplateView):
             d = datetime.datetime.strptime(d, '%Y%m%d').date()
 
         context['headings1'], context['data1'], context['formats'] = \
-            ppm_pnl(d=d, account=account, ticker=ticker)
+            self.ppm_pnl_caller(d=d, account=account, ticker=ticker)
         context['title'] = 'PPM'
         return context
+
+
+class PPMViewNew(PPMView):
+    def ppm_pnl_caller(self, d=None, account=None, ticker=None):
+        return year_pnl(d=d, account=account, ticker=ticker)
 
 
 class FuturesPnLView(TemplateView):

@@ -30,7 +30,6 @@ class Trade(models.Model):
     def more_filtering(cls, account, ticker):
         qs = Trade.objects
         if account is not None:
-            account = account.upper()
             qs = qs.filter(account__name=account)
 
         if ticker is not None:

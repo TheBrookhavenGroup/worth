@@ -83,13 +83,13 @@ def trades_qs(a, d):
 
 @ttl_cache(maxsize=1000, ttl=10)
 def get_futures_pnl(a='MSRKIB', d=None):
-    qs = trades_qs(a, d)..filter(~Q(ticker__market__ib_exchange__in=NOT_FUTURES_EXCHANGES))
+    qs = trades_qs(a, d).filter(~Q(ticker__market__ib_exchange__in=NOT_FUTURES_EXCHANGES))
     return pnl_calculator(qs, d=d)
 
 
 @ttl_cache(maxsize=1000, ttl=10)
 def get_equties_pnl(a, d=None):
-    qs = trades_qs(a, d)..filter(Q(ticker__market__ib_exchange__in=NOT_FUTURES_EXCHANGES))
+    qs = trades_qs(a, d).filter(Q(ticker__market__ib_exchange__in=NOT_FUTURES_EXCHANGES))
     return pnl_calculator(qs, d=d)
 
 
