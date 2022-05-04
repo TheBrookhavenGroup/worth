@@ -16,10 +16,10 @@ class PnLTests(TestCase):
         pos_i, value_i, pnl_i = 0, 2, 6
 
         x = data_dict['AAA Total']
-        self.assertEqual('1,000,000.000', x[value_i])
+        self.assertEqual('1,010,000.000', x[value_i])
 
         x = data_dict['CASH']
-        self.assertEqual('997,000.000', x[value_i])
+        self.assertEqual('1,007,000.000', x[value_i])
 
         x = data_dict['AAPL']
         self.assertEqual('100', x[pnl_i])

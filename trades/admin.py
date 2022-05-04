@@ -82,6 +82,6 @@ class TradeAdmin(admin.ModelAdmin):
     date_hierarchy = 'dt'
 
     list_display = ('dt', 'account', 'ticker', 'q', 'p', 'commission', 'reinvest', 'trade_id', 'note')
-    list_filter = (GetTradesFilter, NoCommissionFilter, BuySellFilter, ExchangeTypeFilter, ActiveAccountFilter)
+    list_filter = (GetTradesFilter, NoCommissionFilter, BuySellFilter, ExchangeTypeFilter, ActiveAccountFilter, 'reinvest')
     search_fields = ('account__name', 'dt', 'note', 'ticker__ticker')
     ordering = ('account', '-dt')
