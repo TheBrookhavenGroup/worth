@@ -9,7 +9,7 @@ class Trade(models.Model):
     dt = models.DateTimeField(null=False, blank=False)
     account = models.ForeignKey(Account, on_delete=models.CASCADE)
     ticker = models.ForeignKey(Ticker, on_delete=models.CASCADE)
-    reinvest = models.BooleanField(default=True, blank=False, null=False)
+    reinvest = models.BooleanField(default=False, blank=False, null=False)
     q = models.FloatField(blank=False, null=False)
     p = models.FloatField(blank=False, null=False)
     commission = models.FloatField(default=0.0, validators=[MinValueValidator(0.0)])
