@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import CheckingView, PPMView, PPMViewNew, FuturesPnLView, GetIBTradesView, TotalCashView
+from .views import CheckingView, PPMView, FuturesPnLView, GetIBTradesView, TotalCashView
 
 
 app_name = 'analytics'
@@ -9,6 +9,5 @@ urlpatterns = [
     path('cash/', TotalCashView.as_view(), name='cash'),
     path('getibtrades/', GetIBTradesView.as_view(), name='getibtrades'),
     path('ppm/', PPMView.as_view(), name='ppm'),
-    path('ppm_new/', PPMViewNew.as_view(), name='ppmnew'),
     path('futures/', FuturesPnLView.as_view(), name='futures'),
 ]

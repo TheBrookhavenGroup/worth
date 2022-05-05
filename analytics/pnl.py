@@ -113,77 +113,11 @@ def pnl_ymd(d=None, account=None, ticker=None):
     return eoy_value, lm_value, yesterday_value, total_value
 
 
-def ppm_pnl(d=None, account=None, ticker=None):
-    headings = ['Account', 'Ticker', 'Pos', 'Price', 'Value', 'Today', 'MTD', 'YTD']
-    formats = json.dumps({'columnDefs': [{'targets': [i for i in range(2, len(headings))],
-                                          'className': 'dt-body-right'}]})
-    # , 'ordering': False})
-
-    eoy_value, lm_value, yesterday_value, total_value = pnl_ymd(d=d, account=account, ticker=ticker)
-
-    ks = set(total_value.keys()).\
-        union(set(yesterday_value.keys())).\
-        union(set(lm_value.keys())).\
-        union(set(eoy_value.keys()))
-
-    ks = list(ks)
-
-    data = []
-    ytd_total = mtd_total = today_total = 0.0
-    for k in ks:
-        a, t = k
-
-        pos, price, value = total_value[k]
-
-        if k in yesterday_value:
-            daily = yesterday_value[k][-1]
-            daily = value - daily
-        else:
-            daily = value
-
-        if k in lm_value:
-            mtd = lm_value[k][-1]
-            mtd = value - mtd
-        else:
-            mtd = value
-
-        if k in eoy_value:
-            ytd = eoy_value[k][-1]
-            ytd = value - ytd
-        else:
-            ytd = value
-
-        t = Ticker.objects.get(ticker=t)
-        pprec = t.market.pprec
-        vprec = t.market.vprec
-        t = yahoo_url(t)
-
-        ytd_total += ytd
-        mtd_total += mtd
-        today_total += daily
-
-        pos = cround(pos, 0)
-        price = cround(price, pprec)
-        daily_pcnt = cround(pcnt_change(value - daily, delta=daily), 1, symbol='%')
-        value = cround(value, vprec, symbol='#')
-        daily = f"{cround(daily, 2)}  {daily_pcnt}"
-        mtd = cround(mtd, 2)
-        ytd = cround(ytd, 0)
-
-        data.append([a, t, pos, price, value, daily, mtd, ytd])
-
-    if (account is None) and (ticker is None) and (not d or (d == date.today())):
-        total_worth = total_value[('ALL', 'CASH')][-1]
-        PPMResult.objects.create(value=total_worth)
-
-    return headings, data, formats
-
-
 def format_rec(a, t, pos, price, value, daily, mtd, ytd, pnl, yahoo_f=True):
     t = Ticker.objects.get(ticker=t)
     pprec = t.market.pprec
     vprec = t.market.vprec
-    if yahoo_f:
+    if yahoo_f and t != 'CASH':
         t = yahoo_url(t)
 
     pos = cround(pos, 0)
