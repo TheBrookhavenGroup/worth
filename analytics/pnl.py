@@ -158,16 +158,19 @@ def year_pnl(d=None, account=None, ticker=None, yahoo_f=True):
     accounts = union_keys([total_cash_value, yesterday_cash_value, lm_cash_value], first='ALL')
 
     total_worth = 0
+    total_coh = 0
     for a in accounts:
         value = total_cash_value.get(a, 0)
         daily = value - yesterday_cash_value.get(a, 0)
         mtd = value - lm_cash_value.get(a, 0)
         ytd = value - eoy_cash_value.get(a, 0)
-        rec = format_rec(a, 'CASH', value, 1.0, value, daily, mtd, ytd, value, yahoo_f=yahoo_f)
+        data.append(format_rec(a, 'CASH', value, 1.0, value, daily, mtd, ytd, value, yahoo_f=yahoo_f))
         if a == 'ALL':
             total_worth = value
-        data.append(rec)
+        else:
+            total_coh += value
 
+    data.append(['ALL COH', 'CASH', 0, 0, 0, 0, 0, 0, cround(total_coh, 0, symbol='#')])
     accounts.remove('ALL')
 
     def pnl_to_dict(x):

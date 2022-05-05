@@ -16,6 +16,7 @@ def make_trades():
     m = Market.objects.create(symbol='CASH', name='cash', ib_exchange='CASH', yahoo_exchange='CASH', cs=1, commission=0,
                               ib_price_factor=1, yahoo_price_factor=1, pprec=4, vprec=3)
     Ticker.objects.create(ticker='CASH', market=m, fixed_price=1.0)
+    Ticker.objects.create(ticker='C_O_H', market=m, fixed_price=1.0)
 
     m = Market.objects.create(symbol='STOCK', name='Equity', ib_exchange='STOCK', yahoo_exchange='STOCK', cs=1,
                               commission=0, ib_price_factor=1, yahoo_price_factor=1, pprec=4, vprec=0)
