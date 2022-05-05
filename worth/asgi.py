@@ -1,5 +1,5 @@
 """
-ASGI config for worth worth.
+ASGI config for ALL ALL.
 
 It exposes the ASGI callable as a module-level variable named ``application``.
 

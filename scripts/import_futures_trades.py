@@ -24,7 +24,7 @@ def get_market(s):
 
 @transaction.atomic
 def add_trades():
-    fn = '/Users/ms/Documents/dev/worth/futures_trades.csv'
+    fn = '/Users/ms/Documents/dev/ALL/futures_trades.csv'
     # "id", "cash_accnt", "d", "t", "reinv_f", "q", "p", "c", "c_f", "note", "account", "ticker"
     with open(fn) as fh:
         lines = fh.readlines()

@@ -102,8 +102,13 @@ def is_not_near_zero(x, epsilon=1E-10):
     return not is_near_zero(x, epsilon=epsilon)
 
 
-def union_keys(dicts):
+def union_keys(dicts, first=None):
     result = []
     for i in dicts:
         result.extend(i.keys())
-    return set(result)
+    result = list(set(result))
+    if first is not None:
+        result.remove(first)
+        result.insert(0, first)
+
+    return result

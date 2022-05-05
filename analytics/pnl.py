@@ -1,6 +1,6 @@
 import json
 from datetime import date
-from worth.utils import cround, is_near_zero, union_keys
+from worth.utils import cround, is_near_zero, is_not_near_zero, union_keys
 from worth.dt import our_now, lbd_prior_month, prior_business_day
 from markets.models import Ticker
 from analytics.models import PPMResult
@@ -173,7 +173,7 @@ def ppm_pnl(d=None, account=None, ticker=None):
         data.append([a, t, pos, price, value, daily, mtd, ytd])
 
     if (account is None) and (ticker is None) and (not d or (d == date.today())):
-        total_worth = total_value[('AAA Total', 'CASH')][-1]
+        total_worth = total_value[('ALL', 'CASH')][-1]
         PPMResult.objects.create(value=total_worth)
 
     return headings, data, formats
@@ -221,24 +221,26 @@ def year_pnl(d=None, account=None, ticker=None, yahoo_f=True):
     lm_cash_value = to_dict(valuations(d=lm, account=account))
     eoy_cash_value = to_dict(valuations(d=eoy, account=account))
 
-    accounts = union_keys([total_cash_value, yesterday_cash_value, lm_cash_value])
+    accounts = union_keys([total_cash_value, yesterday_cash_value, lm_cash_value], first='ALL')
 
+    total_worth = 0
     for a in accounts:
         value = total_cash_value.get(a, 0)
         daily = value - yesterday_cash_value.get(a, 0)
         mtd = value - lm_cash_value.get(a, 0)
-        ytd = value = eoy_cash_value.get(a, 0)
-        data.append(format_rec(a, 'CASH', value, 1.0, value, daily, mtd, ytd, value, yahoo_f=yahoo_f))
+        ytd = value - eoy_cash_value.get(a, 0)
+        rec = format_rec(a, 'CASH', value, 1.0, value, daily, mtd, ytd, value, yahoo_f=yahoo_f)
+        if a == 'ALL':
+            total_worth = value
+        data.append(rec)
+
+    accounts.remove('ALL')
 
     def pnl_to_dict(x):
         return dict([(str(i[0]), i[1:]) for i in x])
 
+    ticker_total_pnl = 0
     for a in accounts:
-        if a == 'AAA Total':
-            total_worth = total_cash_value.get('AAA Total', 0)
-            # data.append(format_rec(a, 'CASH', 0, 0, total_worth, 0, 0, 0))
-            continue
-
         x = get_equties_pnl(d=d, a=a)
         total_pnl = pnl_to_dict(x[0])
         yesterday_pnl = pnl_to_dict(get_equties_pnl(d=yesterday, a=a)[0])
@@ -253,15 +255,18 @@ def year_pnl(d=None, account=None, ticker=None, yahoo_f=True):
             daily = pnl - yesterday_pnl.get(t, [0, 0, 0])[2]
             mtd = pnl - lm_pnl.get(t, [0, 0, 0])[2]
             ytd = pnl - eoy_pnl.get(t, [0, 0, 0])[2]
-            data.append(format_rec(a, t, pos, price, value, daily, mtd, ytd, pnl, yahoo_f=yahoo_f))
 
-    # UNCOMMENT
-    # UNCOMMENT
-    # UNCOMMENT
-    # UNCOMMENT
-    # UNCOMMENT
-    # UNCOMMENT
-    # if (account is None) and (ticker is None) and (not d or (d == date.today())):
-    #     PPMResult.objects.create(value=total_worth)
+            show_ticker_f = (ticker is not None) and (t == ticker)
+            if show_ticker_f:
+                ticker_total_pnl += pnl
+
+            if show_ticker_f or not (is_near_zero(pos) and is_near_zero(daily)):
+                data.append(format_rec(a, t, pos, price, value, daily, mtd, ytd, pnl, yahoo_f=yahoo_f))
+
+    if is_not_near_zero(ticker_total_pnl):
+        data.append(format_rec('ALL', ticker, 0, 0, 0, 0, 0, 0, ticker_total_pnl, yahoo_f=yahoo_f))
+
+    if (account is None) and (d is None or (d == date.today())):
+        PPMResult.objects.create(value=total_worth)
 
     return headings, data, formats

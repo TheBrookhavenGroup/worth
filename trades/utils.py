@@ -18,7 +18,7 @@ def valuations(d=None, account=None, ticker=None):
 
     balances = get_balances(d, account, ticker)
 
-    total_worth = 0
+    ALL = 0
     for a in balances.keys():
         portfolio = balances[a]
         for ticker in portfolio.keys():
@@ -36,11 +36,11 @@ def valuations(d=None, account=None, ticker=None):
             else:
                 value = q * p * m.cs
 
-            total_worth += value
+            ALL += value
 
             data.append([a, ticker, q, p, value])
 
-    data.append(['AAA Total', 'CASH', '', '', total_worth])
+    data.append(['ALL', 'CASH', '', '', ALL])
 
     return data
 

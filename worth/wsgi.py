@@ -1,5 +1,5 @@
 """
-WSGI config for worth worth.
+WSGI config for ALL ALL.
 
 It exposes the WSGI callable as a module-level variable named ``application``.
 
