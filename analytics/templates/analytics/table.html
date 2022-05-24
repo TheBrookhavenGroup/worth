@@ -1,0 +1,19 @@
+
+{% block javascript_imports %}
+    {% include 'jquery_table.html' %}
+{% endblock %}
+
+{% load humanize %}
+
+{% block title %}{{ title }}{% endblock title %}
+
+{% block content %}
+    {% include "admin/quick_links.html" with show_changelinks=True %}
+    <p>
+    <a href="/admin">Admin</a>
+    </p>
+
+    <div style="width: 600px;">
+    {% include 'table.html' with table_id="table_id1" data=data1 headings=headings1 %}
+    </div>
+{% endblock content %}
