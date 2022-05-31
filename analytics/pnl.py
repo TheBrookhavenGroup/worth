@@ -76,6 +76,7 @@ def futures_pnl(d=None, a='MSRKIB'):
         mtd_total += mtd
         today_total += daily
 
+        ticker = yahoo_url(Ticker.objects.get(ticker=t))
         pos = cround(pos, 0)
         price = cround(price, t.market.pprec)
         pnl = cround(pnl, 0)
