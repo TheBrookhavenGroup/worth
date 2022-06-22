@@ -102,10 +102,11 @@ def good_friday(year):
 
 
 def which_holiday(dte, weekend_f=True):
-    if weekend_f and is_week_end(dte):
-        return 'Weekend'
-
+    "d = 0 is Monday"
     y, m, d, wd = dte.year, dte.month, dte.day, dte.weekday()
+
+    if weekend_f and wd > 4:
+        return 'Weekend'
 
     if 1 == m:
         if 1 == d:
@@ -123,6 +124,13 @@ def which_holiday(dte, weekend_f=True):
         # Memorial day is the last Monday in May
         if (0 == wd) and (d > 24):
             return 'Memorial Day'
+    elif 6 == m and y > 2021:
+        # Started celebrating Juneteenth in 2022
+        if 19 == d:
+            return "Juneteenth"
+        elif (0 == wd) and (d == 20 or d == 21):
+            # It is Monday but the 19th was on the weekend.
+            return "Juneteenth Observed"
     elif 7 == m:
         # Independence day
         if 4 == d:
@@ -267,7 +275,11 @@ def test_is_holiday_observed():
                 [20230904, 'Monday Labor Day'],
                 [20231123, 'Thursday Thanksgiving Day'],
                 [20231225, 'Monday Christmas Day'],
-                [20240101, 'Monday New Years Day']]
+                [20240101, 'Monday New Years Day'],
+                [20220619, 'Weekend'],
+                [20220620, 'Junteenth Observed'],
+                [20230619, 'Junteenth']
+                ]
 
     expected = [yyyymmdd2dt(i).date() for i, j in expected]
     d = yyyymmdd2dt(20140101).date()
