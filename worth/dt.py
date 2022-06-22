@@ -102,11 +102,11 @@ def good_friday(year):
 
 
 def which_holiday(dte, weekend_f=True):
-    if weekend_f and is_week_end(dte):
-        return 'Weekend'
-
     "d = 0 is Monday"
     y, m, d, wd = dte.year, dte.month, dte.day, dte.weekday()
+
+    if weekend_f and wd > 4:
+        return 'Weekend'
 
     if 1 == m:
         if 1 == d:
