@@ -3,6 +3,12 @@ from analytics.pnl import year_pnl
 from trades.ib_flex import get_trades
 
 
+# This is a zsh function to run this command.
+# worth_night() {
+#     echo "source $HOME/.zshrc; pyenv shell worth; python $HOME/Documents/dev/worth/manage.py night" | zsh
+# }
+
+
 class Command(BaseCommand):
     help = 'Run PPM and store results in database.'
 
@@ -11,4 +17,4 @@ class Command(BaseCommand):
         for i in x[1]:
             print(i)
         x = year_pnl()
-        print(next(i for i in x[1] if i[0] == 'ALL')[4])
+        print(next(i for i in x[1] if i[0] == 'ALL')[4:6])
