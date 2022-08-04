@@ -1,9 +1,10 @@
-import datetime
+from datetime import datetime
 
 from django.views.generic.base import TemplateView
 from analytics.cash import cash_sums, total_cash
 from analytics.pnl import futures_pnl, year_pnl
 from trades.ib_flex import get_trades
+from worth.dt import lbd_prior_month, our_now
 
 
 class CheckingView(TemplateView):
@@ -33,8 +34,16 @@ class PPMView(TemplateView):
 
         d = getter('d')
         if d is not None:
-            d = datetime.datetime.strptime(d, '%Y%m%d').date()
-
+            n = 0
+            if d.isnumeric():
+                n = int(d)
+                d = our_now()
+                while n > 0:
+                    d = lbd_prior_month(d)
+                    n -= 1
+            else:
+                d = datetime.strptime(d, '%Y%m%d').date()
+            context['d'] = d
         context['headings1'], context['data1'], context['formats'] = \
             self.ppm_pnl_caller(d=d, account=account, ticker=ticker)
         context['title'] = 'PPM'
@@ -50,7 +59,7 @@ class FuturesPnLView(TemplateView):
 
         d = getter('d')
         if d is not None:
-            d = datetime.datetime.strptime(d, '%Y%m%d').date()
+            d = datetime.strptime(d, '%Y%m%d').date()
 
         context['headings1'], context['data1'], context['formats'] = futures_pnl(d=d)
         context['title'] = 'Futures PnL'

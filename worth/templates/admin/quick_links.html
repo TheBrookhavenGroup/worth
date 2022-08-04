@@ -1,19 +1,24 @@
+
 <div class="module">
   <table>
-    <caption>
-      <a href="{{ app.app_url }}" class="section" >Quick Links</a>
-    </caption>
-    <tr class="model-group">
-        <th scope="row">
-        <a href="{% url 'analytics:checking' %}">BofA Balances</a><br>
-        <a href="{% url 'analytics:getibtrades' %}">Get IB Trades</a><br>
-        <a href="{% url 'analytics:ppm' %}">PPM</a><br>
-        <a href="http://127.0.0.1:8020/admin/analytics/ppmresult/">PPM History</a><br>
-        <a href="{% url 'analytics:futures' %}">Futures PnL</a><br>
-        <a href="{% url 'analytics:cash' %}">Total Cash</a><br>
-        <a href="{% url 'accounts:get_ib_statements' %}">Get IB Statements</a><br>
-        <td></td>
-        </th>
+      {% if not exclude_quick_links_caption %}
+          <caption>
+              <a href="{{ app.app_url }}" class="section" >Quick Links</a>
+          </caption>
+      {% endif %}
+      <tr class="model-group">
+            <th scope="row">
+            <a href="{% url 'analytics:checking' %}">BofA Balances</a><br>
+            <a href="{% url 'analytics:getibtrades' %}">Get IB Trades</a><br>
+            <a href="{% url 'analytics:ppm' %}">PPM</a><br>
+            <a href="{% url 'analytics:ppm' %}?d=1">PPM Last Month</a><br>
+            <a href="{% url 'analytics:ppm' %}?d=2">PPM 2 Months Ago</a><br>
+            <a href="{% url 'admin:index' %}analytics/ppmresult/">PPM History</a><br>
+            <a href="{% url 'analytics:futures' %}">Futures PnL</a><br>
+            <a href="{% url 'analytics:cash' %}">Total Cash</a><br>
+            <a href="{% url 'accounts:get_ib_statements' %}">Get IB Statements</a><br>
+            <td></td>
+            </th>
     </tr>
   </table>
 </div>

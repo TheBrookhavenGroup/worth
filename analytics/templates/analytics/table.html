@@ -1,5 +1,8 @@
+{% extends "base.html" %}
+{% load i18n %}
 
-{% block javascript_imports %}
+
+{% block local_javascript_imports %}
     {% include 'jquery_table.html' %}
 {% endblock %}
 
@@ -8,12 +11,20 @@
 {% block title %}{{ title }}{% endblock title %}
 
 {% block content %}
-    {% include "admin/quick_links.html" with show_changelinks=True %}
-    <p>
-    <a href="/admin">Admin</a>
-    </p>
+    <div>
+        <p>
+        <a href="/admin">Admin</a>
+        {% with exclude_quick_links_caption=True %}
+            {% include "admin/quick_links.html" with show_changelinks=True %}
+        {% endwith %}
+        </p>
 
-    <div style="width: 600px;">
-    {% include 'table.html' with table_id="table_id1" data=data1 headings=headings1 %}
+        <div style="width: 600px;">
+            {%  block d %}
+                <p><div class="text-center"><strong>{{ d }}</strong></div></p>
+            {% endblock %}
+
+            {% include 'table.html' with table_id="table_id1" data=data1 headings=headings1 %}
+        </div>
     </div>
 {% endblock content %}
