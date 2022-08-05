@@ -308,6 +308,13 @@ def prior_business_day(d=None):
     return most_recent_business_day(d)
 
 
+def next_business_day(d):
+    d += datetime.timedelta(days=1)
+    while is_holiday_observed(d):
+        d += datetime.timedelta(days=1)
+    return d
+
+
 def lbd_of_month(d):
     y = d.year
     m = d.month

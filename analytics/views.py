@@ -5,6 +5,9 @@ from analytics.cash import cash_sums, total_cash
 from analytics.pnl import futures_pnl, year_pnl
 from trades.ib_flex import get_trades
 from worth.dt import lbd_prior_month, our_now
+from markets.tbgyahoo import yahoo_url
+from markets.models import Ticker
+from trades.utils import weighted_average_price
 
 
 class CheckingView(TemplateView):
@@ -22,9 +25,6 @@ class CheckingView(TemplateView):
 
 class PPMView(TemplateView):
     template_name = 'analytics/table.html'
-
-    def ppm_pnl_caller(self, d=None, account=None, ticker=None):
-        return year_pnl(d=d, account=account, ticker=ticker)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -45,7 +45,7 @@ class PPMView(TemplateView):
                 d = datetime.strptime(d, '%Y%m%d').date()
             context['d'] = d
         context['headings1'], context['data1'], context['formats'] = \
-            self.ppm_pnl_caller(d=d, account=account, ticker=ticker)
+            year_pnl(d=d, account=account, ticker=ticker)
         context['title'] = 'PPM'
         return context
 
@@ -83,4 +83,15 @@ class GetIBTradesView(TemplateView):
         context = super().get_context_data(**kwargs)
         context['headings1'], context['data1'], context['formats'] = get_trades()
         context['title'] = 'IB Futures Trades'
+        return context
+
+
+class TickerView(TemplateView):
+    template_name = 'analytics/ticker.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        ticker = Ticker.objects.get(ticker=context['ticker'])
+        context['title'] = yahoo_url(ticker)
+        context['open_price'] = weighted_average_price(ticker)
         return context
