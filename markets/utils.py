@@ -1,5 +1,7 @@
 from cachetools.func import ttl_cache
 from django.conf import settings
+from django.urls import reverse
+from django.utils.safestring import mark_safe
 from datetime import date
 from worth.dt import y1_to_y4, is_lbd_of_month, most_recent_business_day
 from markets.tbgyahoo import yahooHistory, yahooQuote
@@ -9,6 +11,16 @@ from markets.models import Ticker, Market, NOT_FUTURES_EXCHANGES
 
 def is_futures(exchange):
     return exchange not in NOT_FUTURES_EXCHANGES
+
+
+def ticker_url(ticker):
+    if ticker.market.is_cash:
+        url = ticker.ticker
+    else:
+        ticker = ticker.ticker
+        url = reverse('analytics:ticker_view', kwargs={'ticker': ticker})
+        url = mark_safe(f'<a href={url}>{ticker}</a>')
+    return url
 
 
 @ttl_cache(maxsize=1000, ttl=10)

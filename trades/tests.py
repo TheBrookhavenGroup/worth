@@ -1,9 +1,10 @@
 import datetime
 from django.test import TestCase
-from worth.dt import our_localize
+from worth.dt import our_localize, next_business_day
 from accounts.models import Account, CashRecord
 from markets.models import Market, Ticker
 from trades.models import Trade
+from trades.utils import weighted_average_price
 
 
 def make_trades():
@@ -32,6 +33,12 @@ def make_trades():
     dt = our_localize(datetime.datetime(year=2021, month=10, day=22, hour=10, minute=30, second=0))
     Trade.objects.create(dt=dt, account=a, ticker=t, q=10, p=310, reinvest=False)
 
+    t = Ticker.objects.create(ticker='AMZN', market=m)
+    dt = our_localize(datetime.datetime(year=2021, month=10, day=22, hour=10, minute=0, second=0))
+    for q, p in [(80, 68.0), (-80, 72.0), (100, 75.0), (120, 77.00), (75, 99.00), (-190, 101.0), (-10, 110.0)]:
+        dt = next_business_day(dt)
+        Trade.objects.create(dt=dt, account=a, ticker=t, q=q, p=p, reinvest=False)
+
     m = Market.objects.create(symbol='ES', name='EMini SP500', ib_exchange='CME', yahoo_exchange='CME', cs=50,
                               commission=2.1, ib_price_factor=1, yahoo_price_factor=1, pprec=2, vprec=0)
     # Note: setting fixed_price here for testing so that we don't keep going to yahoo for data.
@@ -51,3 +58,9 @@ class TradesTests(TestCase):
     def test_setup(self):
         self.assertEqual('MSFidelity', self.a.name)
         self.assertAlmostEqual(100, self.trade.q)
+
+    def test_wap(self):
+        # Test weighted average price
+        t = Ticker.objects.get(ticker='AMZN')
+        wap = weighted_average_price(t)
+        self.assertAlmostEqual(75, wap)

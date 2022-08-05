@@ -12,6 +12,56 @@ from trades.models import Trade
 from markets.utils import get_price
 
 
+def wap(data):
+    # weighted average price
+    n = len(data)
+
+    #  close out lifo trades
+    for i in range(1, n):
+        (q, p) = data[i]
+        for j in range(i - 1, -1, -1):
+            q2 = data[j][0]
+            if q * q2 >= 0.0:
+                continue
+            if abs(q) <= abs(q2):
+                q2 += q
+                q = 0
+            else:
+                q += q2
+                q2 = 0
+            data[j][0] = q2
+            if is_near_zero(q):
+                break
+        data[i][0] = q
+
+    # Calculate WAP
+    pqsum = 0.0
+    qsum = 0.0
+    for x in data:
+        (q, p) = x
+        pqsum += p * q
+        qsum += q
+
+    if 0 == is_near_zero(qsum):
+        wap = pqsum / qsum
+    else:
+        wap = 0.0
+    return wap
+
+
+def weighted_average_price(ticker, account=None):
+    if type(ticker) == str:
+        ticker = Ticker.objects.get(ticker=ticker)
+
+    if account is None:
+        qs = Trade.objects.filter(ticker=ticker).values_list('q', 'p').order_by('dt')
+    else:
+        if type(account) == str:
+            account = Account.objects.get(name=account)
+        qs = Trade.objects.filter(account=account, ticker=ticker).values_list('q', 'p').order_by('dt')
+    return wap([list(i) for i in qs])
+
+
 @ttl_cache(maxsize=1000, ttl=10)
 def valuations(d=None, account=None, ticker=None):
     data = []
@@ -30,7 +80,7 @@ def valuations(d=None, account=None, ticker=None):
 
             p = get_price(t, d=d)
 
-            open_price = avg_open_price(a, t)
+            open_price = weighted_average_price(t, account=a)
 
             if m.is_futures:
                 # Need this for futures trades made outside MSRKIB
@@ -93,41 +143,6 @@ def get_futures_pnl(a='MSRKIB', d=None):
 def get_equties_pnl(a, d=None):
     qs = trades_qs(a, d).filter(Q(ticker__market__ib_exchange__in=NOT_FUTURES_EXCHANGES))
     return pnl_calculator(qs, d=d)
-
-
-def avg_open_price(account, ticker):
-    if type(account) == str:
-        account = Account.objects.get(name=account)
-
-    if type(ticker) == str:
-        ticker = Ticker.objects.get(ticker=ticker)
-
-    pos = 0
-    qp_sum = 0
-    commissions = 0
-    # Use LIFO
-    qs = Trade.objects.filter(account=account, ticker=ticker).values_list('q', 'p', 'commission').order_by('dt')
-    for q, p, c in qs:
-        if is_near_zero(pos + q):
-            qp_sum = 0
-            pos = 0
-            commissions = 0
-        else:
-            if q * pos < 0:
-                qp_sum *= 1 - abs(q) / pos
-                commissions -= c
-            else:
-                qp_sum += q * p
-                commissions += c
-
-            pos += q
-
-    if is_near_zero(pos):
-        avg_price = 0.0
-    else:
-        avg_price = (qp_sum - commissions) / pos
-
-    return avg_price
 
 
 def get_balances(d=None, account=None, ticker=None):

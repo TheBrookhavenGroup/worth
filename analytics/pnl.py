@@ -7,12 +7,13 @@ from analytics.models import PPMResult
 from analytics.utils import pcnt_change
 from trades.utils import valuations, get_futures_pnl, get_equties_pnl, get_balances
 from markets.tbgyahoo import yahoo_url
+from markets.utils import ticker_url
 
 
 headings = ['Account', 'Ticker', 'Pos', 'Price', 'Value', 'Today', 'MTD', 'YTD', 'PnL']
 
 
-def format_rec(a, t, pos=0, price=1, value=0, daily=0, mtd=0, ytd=0, pnl=0, yahoo_f=True):
+def format_rec(a, t, pos=0, price=1, value=0, daily=0, mtd=0, ytd=0, pnl=0):
     if t == 'TOTAL':
         return [t, '', '', '', '', cround(daily, 2), cround(mtd, 2), cround(ytd, 0), '']
     if t == 'ALL COH':
@@ -20,8 +21,7 @@ def format_rec(a, t, pos=0, price=1, value=0, daily=0, mtd=0, ytd=0, pnl=0, yaho
     t = Ticker.objects.get(ticker=t)
     pprec = t.market.pprec
     vprec = t.market.vprec
-    if yahoo_f and t != 'CASH':
-        t = yahoo_url(t)
+    t = ticker_url(t)
 
     pos = cround(pos, 0)
     if is_near_zero(price):
@@ -114,7 +114,7 @@ def futures_pnl(d=None, a='MSRKIB'):
         mtd_total += mtd
         today_total += daily
 
-        data.append(format_rec(a, ticker, pos, price, pos * price, daily, mtd, ytd, pnl, yahoo_f=True))
+        data.append(format_rec(a, ticker, pos, price, pos * price, daily, mtd, ytd, pnl))
 
     data.append(format_rec(a, 'TOTAL', 0, 0, 0, today_total, mtd_total, ytd_total, today_total))
 
@@ -124,7 +124,7 @@ def futures_pnl(d=None, a='MSRKIB'):
     return headings, data, formats
 
 
-def year_pnl(d=None, account=None, ticker=None, yahoo_f=True):
+def year_pnl(d=None, account=None, ticker=None):
     formats = json.dumps({'columnDefs': [{'targets': [i for i in range(2, len(headings))],
                                           'className': 'dt-body-right'}]})
     # , 'ordering': False})
@@ -161,7 +161,7 @@ def year_pnl(d=None, account=None, ticker=None, yahoo_f=True):
         else:
             total_coh += value
 
-        data.append(format_rec(a, 'CASH', value, 1.0, value, daily, mtd, ytd, yahoo_f=yahoo_f))
+        data.append(format_rec(a, 'CASH', value, 1.0, value, daily, mtd, ytd))
 
     data.append(format_rec('ALL COH', 'ALL COH', pnl=total_coh))
     accounts.remove('ALL')
@@ -192,10 +192,10 @@ def year_pnl(d=None, account=None, ticker=None, yahoo_f=True):
                 ticker_total_pnl += pnl
 
             if show_ticker_f or not (is_near_zero(pos) and is_near_zero(daily)):
-                data.append(format_rec(a, t, pos, price, value, daily, mtd, ytd, pnl, yahoo_f=yahoo_f))
+                data.append(format_rec(a, t, pos, price, value, daily, mtd, ytd, pnl))
 
     if is_not_near_zero(ticker_total_pnl):
-        data.append(format_rec('ALL', ticker, pnl=ticker_total_pnl, yahoo_f=yahoo_f))
+        data.append(format_rec('ALL', ticker, pnl=ticker_total_pnl))
 
     if (account is None) and (d is None or (d == date.today())):
         PPMResult.objects.create(value=total_worth)
