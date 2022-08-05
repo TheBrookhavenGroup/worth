@@ -80,10 +80,9 @@ def valuations(d=None, account=None, ticker=None):
 
             p = get_price(t, d=d)
 
-            open_price = weighted_average_price(t, account=a)
-
             if m.is_futures:
                 # Need this for futures trades made outside MSRKIB
+                open_price = weighted_average_price(t, account=a)
                 value = q * (p - open_price) * m.cs
             else:
                 value = q * p * m.cs
