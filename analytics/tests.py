@@ -28,11 +28,11 @@ class PnLTests(TestCase):
         pos_i, value_i, pnl_i = 0, 2, 6
 
         x = data_dict['ALL']
-        self.assertEqual('1,010,000.000', x[value_i])
+        self.assertEqual('1.010M', x[value_i])
 
         x = data_dict['CASH']
-        self.assertEqual('1,007,000.000', x[value_i])
-        self.assertEqual(coh, '1,007,000')
+        self.assertEqual('1.007M', x[value_i])
+        self.assertEqual(coh, '1M')
 
         x = data_dict['MSFT']
         self.assertEqual('-100', x[pnl_i])
@@ -48,4 +48,4 @@ class PnLTests(TestCase):
         x = data_dict['AAPL']
         self.assertEqual('100', x[pnl_i])
         x = data_dict['ALL']
-        self.assertEqual('1,010,000.000', x[value_i])
+        self.assertEqual('1.010M', x[value_i])
