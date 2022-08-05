@@ -23,9 +23,6 @@ class CheckingView(TemplateView):
 class PPMView(TemplateView):
     template_name = 'analytics/table.html'
 
-    def ppm_pnl_caller(self, d=None, account=None, ticker=None):
-        return year_pnl(d=d, account=account, ticker=ticker)
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         getter = self.request.GET.get
@@ -45,7 +42,7 @@ class PPMView(TemplateView):
                 d = datetime.strptime(d, '%Y%m%d').date()
             context['d'] = d
         context['headings1'], context['data1'], context['formats'] = \
-            self.ppm_pnl_caller(d=d, account=account, ticker=ticker)
+            year_pnl(d=d, account=account, ticker=ticker)
         context['title'] = 'PPM'
         return context
 

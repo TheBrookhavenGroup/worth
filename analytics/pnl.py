@@ -9,6 +9,28 @@ from trades.utils import valuations, get_futures_pnl, get_equties_pnl, get_balan
 from markets.tbgyahoo import yahoo_url
 
 
+headings = ['Account', 'Ticker', 'Pos', 'Price', 'Value', 'Today', 'MTD', 'YTD', 'PnL']
+
+
+def format_rec(a, t, pos, price, value, daily, mtd, ytd, pnl, yahoo_f=True):
+    t = Ticker.objects.get(ticker=t)
+    pprec = t.market.pprec
+    vprec = t.market.vprec
+    if yahoo_f and t != 'CASH':
+        t = yahoo_url(t)
+
+    pos = cround(pos, 0)
+    price = cround(price, pprec)
+    daily_pcnt = cround(pcnt_change(value - daily, delta=daily), 1, symbol='%')
+    value = cround(value, vprec, symbol='#')
+    daily = f"{cround(daily, 2)}  {daily_pcnt}"
+    mtd = cround(mtd, 2)
+    ytd = cround(ytd, 0)
+    pnl = cround(pnl, vprec, symbol='#')
+
+    return [a, t, pos, price, value, daily, mtd, ytd, pnl]
+
+
 def futures_pnl_ymd(d=None, a='MSRKIB'):
     if d is None:
         d = our_now().date()
@@ -31,7 +53,7 @@ def futures_pnl_ymd(d=None, a='MSRKIB'):
 
 
 def futures_pnl(d=None, a='MSRKIB'):
-    headings = ['Ticker', 'Pos', 'Price', 'PnL', 'Today', 'MTD', 'YTD']
+
     formats = json.dumps({'columnDefs': [{'targets': [i for i in range(1, len(headings))],
                                           'className': 'dt-body-right'}], 'ordering': False})
 
@@ -76,65 +98,18 @@ def futures_pnl(d=None, a='MSRKIB'):
         mtd_total += mtd
         today_total += daily
 
-        ticker = yahoo_url(Ticker.objects.get(ticker=t))
-        pos = cround(pos, 0)
-        price = cround(price, t.market.pprec)
-        pnl = cround(pnl, 0)
-        daily = cround(daily, 2)
-        mtd = cround(mtd, 2)
-        ytd = cround(ytd, 0)
-
-        data.append([ticker, pos, price, pnl, daily, mtd, ytd])
+        rec = format_rec(a, ticker, pos, price, pos * price, daily, mtd, ytd, pnl, yahoo_f=True)
+        data.append(rec)
 
     data.append(['TOTAL', '', '', '', cround(today_total, 2), cround(mtd_total, 2), cround(ytd_total, 0)])
 
     cash = get_balances(d=d, account=a)[a]['CASH']
-    data.append(['CASH', cround(cash, 2), '', '', '', '', ''])
+    data.append(['CASH', cround(cash, 2), '', '', '', '', '', ''])
 
     return headings, data, formats
 
 
-def pnl_ymd(d=None, account=None, ticker=None):
-    if d is None:
-        d = our_now().date()
-
-    yesterday = prior_business_day(d)
-
-    eoy = lbd_prior_month(date(d.year, 1, 1))
-    lm = lbd_prior_month(d)
-
-    def to_dict(x):
-        return dict([((i[0], i[1]), i[2:]) for i in x])
-
-    total_value = to_dict(valuations(d=d, account=account, ticker=ticker))
-    yesterday_value = to_dict(valuations(d=yesterday, account=account, ticker=ticker))
-    lm_value = to_dict(valuations(d=lm, account=account, ticker=ticker))
-    eoy_value = to_dict(valuations(d=eoy, account=account, ticker=ticker))
-
-    return eoy_value, lm_value, yesterday_value, total_value
-
-
-def format_rec(a, t, pos, price, value, daily, mtd, ytd, pnl, yahoo_f=True):
-    t = Ticker.objects.get(ticker=t)
-    pprec = t.market.pprec
-    vprec = t.market.vprec
-    if yahoo_f and t != 'CASH':
-        t = yahoo_url(t)
-
-    pos = cround(pos, 0)
-    price = cround(price, pprec)
-    daily_pcnt = cround(pcnt_change(value - daily, delta=daily), 1, symbol='%')
-    value = cround(value, vprec, symbol='#')
-    daily = f"{cround(daily, 2)}  {daily_pcnt}"
-    mtd = cround(mtd, 2)
-    ytd = cround(ytd, 0)
-    pnl = cround(pnl, vprec, symbol='#')
-
-    return [a, t, pos, price, value, daily, mtd, ytd, pnl]
-
-
 def year_pnl(d=None, account=None, ticker=None, yahoo_f=True):
-    headings = ['Account', 'Ticker', 'Pos', 'Price', 'Value', 'Today', 'MTD', 'YTD', 'PnL']
     formats = json.dumps({'columnDefs': [{'targets': [i for i in range(2, len(headings))],
                                           'className': 'dt-body-right'}]})
     # , 'ordering': False})
@@ -187,12 +162,13 @@ def year_pnl(d=None, account=None, ticker=None, yahoo_f=True):
 
         tickers = union_keys([total_pnl, yesterday_pnl, lm_pnl])
 
+        default = [0, 0, 0, 0]
         for t in tickers:
-            pos, price, pnl = total_pnl.get(t, [0, 0, 0])
+            pos, price, pnl = total_pnl.get(t, default)
             value = pos * price
-            daily = pnl - yesterday_pnl.get(t, [0, 0, 0])[2]
-            mtd = pnl - lm_pnl.get(t, [0, 0, 0])[2]
-            ytd = pnl - eoy_pnl.get(t, [0, 0, 0])[2]
+            daily = pnl - yesterday_pnl.get(t, default)[2]
+            mtd = pnl - lm_pnl.get(t, default)[2]
+            ytd = pnl - eoy_pnl.get(t, default)[2]
 
             show_ticker_f = (ticker is not None) and (t == ticker)
             if show_ticker_f:

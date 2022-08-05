@@ -30,9 +30,11 @@ def valuations(d=None, account=None, ticker=None):
 
             p = get_price(t, d=d)
 
+            open_price = avg_open_price(a, t)
+
             if m.is_futures:
                 # Need this for futures trades made outside MSRKIB
-                value = q * (p - avg_open_price(a, t)) * m.cs
+                value = q * (p - open_price) * m.cs
             else:
                 value = q * p * m.cs
 
@@ -40,7 +42,7 @@ def valuations(d=None, account=None, ticker=None):
 
             data.append([a, ticker, q, p, value])
 
-    data.append(['ALL', 'CASH', '', '', ALL])
+    data.append(['ALL', 'CASH', '', '', '', ALL])
 
     return data
 
