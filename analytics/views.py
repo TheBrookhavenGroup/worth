@@ -93,5 +93,7 @@ class TickerView(TemplateView):
         context = super().get_context_data(**kwargs)
         ticker = Ticker.objects.get(ticker=context['ticker'])
         context['title'] = yahoo_url(ticker)
-        context['open_price'] = weighted_average_price(ticker)
+        pos, wap = weighted_average_price(ticker)
+        context['pos'] = pos
+        context['open_price'] = wap
         return context
