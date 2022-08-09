@@ -6,7 +6,6 @@ from markets.models import Ticker
 from analytics.models import PPMResult
 from analytics.utils import pcnt_change
 from trades.utils import valuations, get_futures_pnl, get_equties_pnl, get_balances
-from markets.tbgyahoo import yahoo_url
 from markets.utils import ticker_url
 
 

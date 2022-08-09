@@ -46,7 +46,7 @@ def wap(data):
         wap = pqsum / qsum
     else:
         wap = 0.0
-    return wap
+    return qsum, wap
 
 
 def weighted_average_price(ticker, account=None):

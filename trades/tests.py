@@ -62,5 +62,6 @@ class TradesTests(TestCase):
     def test_wap(self):
         # Test weighted average price
         t = Ticker.objects.get(ticker='AMZN')
-        wap = weighted_average_price(t)
+        pos, wap = weighted_average_price(t)
+        self.assertAlmostEqual(95, pos)
         self.assertAlmostEqual(75, wap)

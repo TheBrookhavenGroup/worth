@@ -20,7 +20,10 @@
 {% block content %}
 
     <p>
+        Position: {{ pos|floatformat:2|intcomma }} <br>
         Open Price: {{ open_price|floatformat:2|intcomma }} <br>
+        Price: {{ price|floatformat:2|intcomma }} <br>
+        PnL: {{ pnl|floatformat:2|intcomma }} <br>
     </p>
 
 {% endblock content %}
