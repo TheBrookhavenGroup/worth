@@ -8,6 +8,7 @@ from worth.dt import lbd_prior_month, our_now
 from markets.tbgyahoo import yahoo_url
 from markets.models import Ticker
 from trades.utils import weighted_average_price
+from markets.utils import get_price
 
 
 class CheckingView(TemplateView):
@@ -96,4 +97,7 @@ class TickerView(TemplateView):
         pos, wap = weighted_average_price(ticker)
         context['pos'] = pos
         context['open_price'] = wap
+        price = get_price(ticker)
+        context['price'] = price
+        context['pnl'] = ticker.market.cs * pos * (price - wap)
         return context

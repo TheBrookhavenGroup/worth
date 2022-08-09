@@ -28,7 +28,7 @@ class PnLTests(TestCase):
         pos_i, value_i, pnl_i = 0, 2, 6
 
         x = data_dict['ALL']
-        self.assertEqual('1.020M', x[value_i])
+        self.assertEqual('1.019M', x[value_i])
 
         x = data_dict['CASH']
         self.assertEqual('1.003M', x[value_i])
@@ -53,4 +53,4 @@ class PnLTests(TestCase):
         x = data_dict[find_key('AAPL')]
         self.assertEqual('100', x[pnl_i])
         x = data_dict[find_key('ALL')]
-        self.assertEqual('1.020M', x[value_i])
+        self.assertEqual('1.019M', x[value_i])
