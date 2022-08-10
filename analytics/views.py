@@ -97,7 +97,11 @@ class TickerView(TemplateView):
         pos, wap = weighted_average_price(ticker)
         context['pos'] = pos
         context['open_price'] = wap
-        price = get_price(ticker)
-        context['price'] = price
-        context['pnl'] = ticker.market.cs * pos * (price - wap)
+        try:
+            price = get_price(ticker)
+            context['price'] = price
+            context['pnl'] = ticker.market.cs * pos * (price - wap)
+        except IndexError:
+            context['msg'] = 'Could not get a price for this ticker.'
+
         return context
