@@ -9,7 +9,7 @@ from worth.utils import is_near_zero
 from markets.tbgyahoo import yahoo_url
 from markets.models import Ticker
 from trades.utils import weighted_average_price
-from markets.utils import get_price
+from markets.utils import get_price, ticker_admin_url
 
 
 class CheckingView(TemplateView):
@@ -94,7 +94,9 @@ class TickerView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         ticker = Ticker.objects.get(ticker=context['ticker'])
+        context['tickeradmin'] = ticker_admin_url(self.request, ticker)
         context['title'] = yahoo_url(ticker)
+        context['description'] = ticker.description
         pos, wap = weighted_average_price(ticker)
         if is_near_zero(pos):
             context['msg'] = 'Zero position.'

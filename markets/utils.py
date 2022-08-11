@@ -23,6 +23,14 @@ def ticker_url(ticker):
     return url
 
 
+def ticker_admin_url(request, ticker):
+    from django.contrib.sites.shortcuts import get_current_site
+    url = get_current_site(request)
+    url = f'{request.scheme}://{url}/admin/markets/ticker/{ticker.id}/change/'
+    url = f'<a href={url}>admin ticker</a>'
+    return mark_safe(url)
+
+
 @ttl_cache(maxsize=1000, ttl=10)
 def get_yahoo_history(ticker):
     if type(ticker) == str:

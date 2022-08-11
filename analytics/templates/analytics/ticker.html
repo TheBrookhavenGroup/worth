@@ -20,6 +20,10 @@
 {% block content %}
 
     <p>
+        {% if description %}
+            {{ description }} <br>
+            {{ tickeradmin }} <br>
+        {% endif %}
         {% if pos %}
             Position: {{ pos|floatformat:2|intcomma }} <br>
             Open Price: {{ open_price|floatformat:2|intcomma }} <br>

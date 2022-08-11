@@ -44,12 +44,25 @@ def upcase_symbol(sender, instance, **kwargs):
 
 class Ticker(models.Model):
     ticker = models.CharField(max_length=20, unique=True, blank=False, null=False)
+    name = models.CharField(max_length=50, blank=True, null=True,
+                            help_text='Optional override to Market description.')
     market = models.ForeignKey(Market, on_delete=models.CASCADE)
     fixed_price = models.FloatField(null=True, blank=True,
                                     help_text="If set then this is the price that will always be used.")
 
     def __str__(self):
         return f"{self.ticker}"
+
+    @property
+    def description(self):
+        if self.name is None:
+            market = self.market
+            if 'STOCK' == market.yahoo_exchange:
+                return 'STOCK'
+            else:
+                return self.market.description()
+        else:
+            return self.name
 
     @property
     def year(self):
