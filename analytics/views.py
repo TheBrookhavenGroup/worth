@@ -5,6 +5,7 @@ from analytics.cash import cash_sums, total_cash
 from analytics.pnl import futures_pnl, year_pnl
 from trades.ib_flex import get_trades
 from worth.dt import lbd_prior_month, our_now
+from worth.utils import is_near_zero
 from markets.tbgyahoo import yahoo_url
 from markets.models import Ticker
 from trades.utils import weighted_average_price
@@ -95,13 +96,17 @@ class TickerView(TemplateView):
         ticker = Ticker.objects.get(ticker=context['ticker'])
         context['title'] = yahoo_url(ticker)
         pos, wap = weighted_average_price(ticker)
-        context['pos'] = pos
-        context['open_price'] = wap
-        try:
-            price = get_price(ticker)
-            context['price'] = price
-            context['pnl'] = ticker.market.cs * pos * (price - wap)
-        except IndexError:
-            context['msg'] = 'Could not get a price for this ticker.'
+        if is_near_zero(pos):
+            context['msg'] = 'Zero position.'
+        else:
+            context['pos'] = pos
+            context['open_price'] = wap
+
+            try:
+                price = get_price(ticker)
+                context['price'] = price
+                context['pnl'] = ticker.market.cs * pos * (price - wap)
+            except IndexError:
+                context['msg'] = 'Could not get a price for this ticker.'
 
         return context
