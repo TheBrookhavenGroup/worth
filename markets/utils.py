@@ -27,7 +27,7 @@ def ticker_admin_url(request, ticker):
     from django.contrib.sites.shortcuts import get_current_site
     url = get_current_site(request)
     url = f'{request.scheme}://{url}/admin/markets/ticker/{ticker.id}/change/'
-    url = f'<a href={url}>admin ticker</a>'
+    url = f'<a href="{url}" target="_blank">admin ticker</a>'
     return mark_safe(url)
 
 
