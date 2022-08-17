@@ -1,7 +1,7 @@
 import datetime
 from django.test import TestCase
-from trades.tests import make_trades
-from .pnl import year_pnl
+from trades.tests import make_trades, make_trades_split
+from .pnl import year_pnl, valuations
 
 
 class PnLTests(TestCase):
@@ -54,3 +54,14 @@ class PnLTests(TestCase):
         self.assertEqual('100', x[pnl_i])
         x = data_dict[find_key('ALL')]
         self.assertEqual('1.020M', x[value_i])
+
+
+class PnLSplitTests(TestCase):
+    def setUp(self):
+        make_trades_split()
+
+    def test_split(self):
+        d = datetime.date(2020, 12, 31)
+        data = valuations(d=d)
+        value = [i[-1] for i in data if 'MSFidelity' in i[0]][0]
+        self.assertAlmostEqual(1010418.0, value)
