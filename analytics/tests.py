@@ -64,4 +64,4 @@ class PnLSplitTests(TestCase):
         d = datetime.date(2020, 12, 31)
         data = valuations(d=d)
         value = [i[-1] for i in data if 'MSFidelity' in i[0]][0]
-        self.assertAlmostEqual(1010418.0, value)
+        self.assertAlmostEqual(1024750.0, value)

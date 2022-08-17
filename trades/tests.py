@@ -65,7 +65,7 @@ def make_trades_split():
 
     for y, m, d, q, p, reinvest, note in [(2020, 5, 8, 50, 305.0, False, None),
                                           (2020, 8, 31, 150, 124.81, True, 'Split 4:1'),
-                                          (2020, 8, 31, -200, 128.34, False, None)]:
+                                          (2020, 8, 31, -200, 200.00, False, None)]:
         dt = our_localize(datetime.datetime(year=y, month=m, day=d, hour=10, minute=0, second=0))
         Trade.objects.create(dt=dt, account=a, ticker=t, q=q, p=p, reinvest=reinvest, note=note)
 
