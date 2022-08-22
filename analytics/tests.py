@@ -1,9 +1,31 @@
 import datetime
-from django.test import TestCase
+from django.test import TestCase, override_settings
+from unittest.mock import patch
+from markets.models import Market, Ticker
 from trades.tests import make_trades, make_trades_split
-from .pnl import year_pnl, valuations
+from analytics.pnl import year_pnl
 
 
+def get_price_patch(ticker, d=None):
+    return 1.0
+
+
+class FooTests(TestCase):
+    def setUp(self):
+        m = Market.objects.create(symbol='STOCK', name='Equity', ib_exchange='STOCK', yahoo_exchange='STOCK', cs=1,
+                                  commission=0, ib_price_factor=1, yahoo_price_factor=1, pprec=4, vprec=0)
+
+        self.ticker = Ticker.objects.create(ticker='AAPL', market=m)
+
+    @patch('markets.utils.get_price', get_price_patch)
+    def test_yahoo(self):
+        # Monkey patch works because import is here.  I could not get this to work for get_price in other tests.
+        from markets.utils import get_price
+        x = get_price(self.ticker)
+        self.assertAlmostEqual(x, 1.0)
+
+
+@override_settings(USE_PRICE_FEED=False)
 class PnLTests(TestCase):
     def setUp(self):
         make_trades()
@@ -28,7 +50,7 @@ class PnLTests(TestCase):
         pos_i, value_i, pnl_i = 0, 2, 6
 
         x = data_dict['ALL']
-        self.assertEqual('1.020M', x[value_i])
+        self.assertEqual('1.019M', x[value_i])
 
         x = data_dict['CASH']
         self.assertEqual('1.003M', x[value_i])
@@ -53,15 +75,19 @@ class PnLTests(TestCase):
         x = data_dict[find_key('AAPL')]
         self.assertEqual('100', x[pnl_i])
         x = data_dict[find_key('ALL')]
-        self.assertEqual('1.020M', x[value_i])
+        self.assertEqual('1.019M', x[value_i])
 
 
+@override_settings(USE_PRICE_FEED=False)
 class PnLSplitTests(TestCase):
     def setUp(self):
         make_trades_split()
 
+    @patch('markets.utils.get_price', get_price_patch)
     def test_split(self):
+        from .pnl import valuations
+
         d = datetime.date(2020, 12, 31)
         data = valuations(d=d)
         value = [i[-1] for i in data if 'MSFidelity' in i[0]][0]
-        self.assertAlmostEqual(1024750.0, value)
+        self.assertAlmostEqual(1004750.0, value)

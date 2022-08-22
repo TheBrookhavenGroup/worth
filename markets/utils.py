@@ -67,12 +67,19 @@ def get_historical_bar(ticker, d):
     return None
 
 
+fixed_prices = {'AAPL': 305.0, 'MSFT': 305.0, 'AMZN': 115.0, 'ESZ2021': 4300.0}
+
+
 @ttl_cache(maxsize=1000, ttl=10)
 def get_price(ticker, d=None):
     d = most_recent_business_day(d)
 
+    t = ticker.yahoo_ticker
     if not settings.USE_PRICE_FEED:
-        return 1.0
+        p = fixed_prices.get(t, 1.0)
+        # print(f'Mocked get_price({t}) = {p}')
+    # else:
+        # print(f'Getting {t} price from yahoo.')
 
     if type(ticker) == str:
         ticker = Ticker.objects.get(ticker=ticker)
