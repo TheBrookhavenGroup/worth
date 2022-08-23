@@ -59,15 +59,25 @@ def make_trades_split():
                               ib_price_factor=1, yahoo_price_factor=1, pprec=4, vprec=3)
     Ticker.objects.create(ticker='CASH', market=m, fixed_price=1.0)
 
-    m = Market.objects.create(symbol='STOCK', name='Equity', ib_exchange='STOCK', yahoo_exchange='STOCK', cs=1,
-                              commission=0, ib_price_factor=1, yahoo_price_factor=1, pprec=4, vprec=0)
-    t = Ticker.objects.create(ticker='AAPL', market=m)
+    mkt = Market.objects.create(symbol='STOCK', name='Equity', ib_exchange='STOCK', yahoo_exchange='STOCK', cs=1,
+                                commission=0, ib_price_factor=1, yahoo_price_factor=1, pprec=4, vprec=0)
+    aapl_ticker = Ticker.objects.create(ticker='AAPL', market=mkt)
 
     for y, m, d, q, p, reinvest, note in [(2020, 5, 8, 50, 305.0, False, None),
-                                          (2020, 8, 31, 150, 124.81, True, 'Split 4:1'),
+                                          (2020, 8, 31, 150, 0.00, True, 'Split 4:1'),
                                           (2020, 8, 31, -100, 200.00, False, None)]:
         dt = our_localize(datetime.datetime(year=y, month=m, day=d, hour=10, minute=0, second=0))
-        Trade.objects.create(dt=dt, account=a, ticker=t, q=q, p=p, reinvest=reinvest, note=note)
+        Trade.objects.create(dt=dt, account=a, ticker=aapl_ticker, q=q, p=p, reinvest=reinvest, note=note)
+
+    msft_ticker = Ticker.objects.create(ticker='MSFT', market=mkt)
+
+    for y, m, d, q, p, reinvest, note in [(2020, 5, 8, 150, 125.00, False, None),
+                                          (2020, 8, 31, -100, 0.00, True, 'Split 1:3'),
+                                          (2020, 8, 31, -25, 330.00, False, None)]:
+        dt = our_localize(datetime.datetime(year=y, month=m, day=d, hour=10, minute=0, second=0))
+        Trade.objects.create(dt=dt, account=a, ticker=msft_ticker, q=q, p=p, reinvest=reinvest, note=note)
+
+    return aapl_ticker, msft_ticker
 
 
 class TradesTests(TestCase):
