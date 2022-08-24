@@ -17,7 +17,6 @@ def make_trades():
     m = Market.objects.create(symbol='CASH', name='cash', ib_exchange='CASH', yahoo_exchange='CASH', cs=1, commission=0,
                               ib_price_factor=1, yahoo_price_factor=1, pprec=4, vprec=3)
     Ticker.objects.create(ticker='CASH', market=m, fixed_price=1.0)
-    Ticker.objects.create(ticker='C_O_H', market=m, fixed_price=1.0)
 
     m = Market.objects.create(symbol='STOCK', name='Equity', ib_exchange='STOCK', yahoo_exchange='STOCK', cs=1,
                               commission=0, ib_price_factor=1, yahoo_price_factor=1, pprec=4, vprec=0)
@@ -47,6 +46,38 @@ def make_trades():
     Trade.objects.create(dt=dt, account=a, ticker=t, q=2, p=4500.00, reinvest=False)
     dt = our_localize(datetime.datetime(year=2021, month=10, day=22, hour=13, minute=0, second=0))
     Trade.objects.create(dt=dt, account=a, ticker=t, q=-2, p=4600.00, reinvest=False)
+
+
+def make_trades_split():
+    a = Account.objects.create(name='MSFidelity', owner='MS', broker='Fidelity', broker_account='123',
+                               description='Testing Account', active_f=True)
+
+    d = datetime.date(year=2020, month=1, day=3)
+    CashRecord.objects.create(account=a, d=d, category='DE', description='Open account', amt=1e6, cleared_f=True)
+
+    m = Market.objects.create(symbol='CASH', name='cash', ib_exchange='CASH', yahoo_exchange='CASH', cs=1, commission=0,
+                              ib_price_factor=1, yahoo_price_factor=1, pprec=4, vprec=3)
+    Ticker.objects.create(ticker='CASH', market=m, fixed_price=1.0)
+
+    mkt = Market.objects.create(symbol='STOCK', name='Equity', ib_exchange='STOCK', yahoo_exchange='STOCK', cs=1,
+                                commission=0, ib_price_factor=1, yahoo_price_factor=1, pprec=4, vprec=0)
+    aapl_ticker = Ticker.objects.create(ticker='AAPL', market=mkt)
+
+    for y, m, d, q, p, reinvest, note in [(2020, 5, 8, 50, 305.0, False, None),
+                                          (2020, 8, 31, 150, 0.00, True, 'Split 4:1'),
+                                          (2020, 8, 31, -100, 200.00, False, None)]:
+        dt = our_localize(datetime.datetime(year=y, month=m, day=d, hour=10, minute=0, second=0))
+        Trade.objects.create(dt=dt, account=a, ticker=aapl_ticker, q=q, p=p, reinvest=reinvest, note=note)
+
+    msft_ticker = Ticker.objects.create(ticker='MSFT', market=mkt)
+
+    for y, m, d, q, p, reinvest, note in [(2020, 5, 8, 150, 125.00, False, None),
+                                          (2020, 8, 31, -100, 0.00, True, 'Split 1:3'),
+                                          (2020, 8, 31, -25, 330.00, False, None)]:
+        dt = our_localize(datetime.datetime(year=y, month=m, day=d, hour=10, minute=0, second=0))
+        Trade.objects.create(dt=dt, account=a, ticker=msft_ticker, q=q, p=p, reinvest=reinvest, note=note)
+
+    return aapl_ticker, msft_ticker
 
 
 class TradesTests(TestCase):

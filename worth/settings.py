@@ -9,19 +9,11 @@ IB_FTP_SERVER = env.get('IB_FTP_SERVER')
 IB_FLEX_TOKEN = env.get('IB_FLEX_TOKEN')
 
 PPM_FACTOR = eval(env.get('PPM_FACTOR', 'False'))
-
-
 USE_PRICE_FEED = eval(env.get('USE_PRICE_FEED', 'True'))
-
 
 # Build paths inside the worth like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = \
     'django-insecure-dt@hl9)ewrj!wdwrja6$#%&yx(g-*yp*ke*kcpdf8+x&*or1^='
 SECRET_KEY = env.get("DJANGO_SECRET_KEY", SECRET_KEY)
@@ -30,9 +22,6 @@ SECRET_KEY = env.get("DJANGO_SECRET_KEY", SECRET_KEY)
 DEBUG = True
 
 ALLOWED_HOSTS = ['127.0.0.1']
-
-
-# Application definition
 
 INSTALLED_APPS = [
     'worth.apps.AdminConfig',
@@ -90,8 +79,6 @@ DATABASES = {
     }
 }
 
-# Password validation
-# https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -110,23 +97,11 @@ AUTH_PASSWORD_VALIDATORS = [
 
 
 # Internationalization
-# https://docs.djangoproject.com/en/4.0/topics/i18n/
-
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'America/New_York'
-
 USE_I18N = True
-
 USE_TZ = True
 
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/4.0/howto/static-files/
-
 STATIC_URL = 'static/'
-
-# Default primary key field type
-# https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

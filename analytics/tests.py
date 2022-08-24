@@ -1,9 +1,13 @@
 import datetime
-from django.test import TestCase
-from trades.tests import make_trades
-from .pnl import year_pnl
+from django.test import TestCase, override_settings
+from unittest.mock import patch
+from markets.models import Market, Ticker
+from trades.tests import make_trades, make_trades_split
+from analytics.pnl import year_pnl, valuations, get_equties_pnl
+from markets.utils import get_price
 
 
+@override_settings(USE_PRICE_FEED=False)
 class PnLTests(TestCase):
     def setUp(self):
         make_trades()
@@ -28,7 +32,7 @@ class PnLTests(TestCase):
         pos_i, value_i, pnl_i = 0, 2, 6
 
         x = data_dict['ALL']
-        self.assertEqual('1.020M', x[value_i])
+        self.assertEqual('1.017M', x[value_i])
 
         x = data_dict['CASH']
         self.assertEqual('1.003M', x[value_i])
@@ -40,9 +44,9 @@ class PnLTests(TestCase):
                     return i
 
         x = data_dict[find_key('MSFT')]
-        self.assertEqual('-100', x[pnl_i])
+        self.assertEqual('-50', x[pnl_i])
         self.assertEqual('10', x[pos_i])
-        self.assertEqual('3,000', x[value_i])
+        self.assertEqual('3,050', x[value_i])
 
         data_dict, coh = self.results(d=datetime.date(2021, 10, 22))
         x = data_dict[find_key('AAPL')]
@@ -53,4 +57,32 @@ class PnLTests(TestCase):
         x = data_dict[find_key('AAPL')]
         self.assertEqual('100', x[pnl_i])
         x = data_dict[find_key('ALL')]
-        self.assertEqual('1.020M', x[value_i])
+        self.assertEqual('1.017M', x[value_i])
+
+
+@override_settings(USE_PRICE_FEED=False)
+class PnLSplitTests(TestCase):
+    def setUp(self):
+        self.aapl_ticker, self.msft_ticker = make_trades_split()
+
+    def check_pnl(self, ticker, pnl, x):
+        pos = sum(i[0] for i in x)
+        price = get_price(ticker)
+        x.append((-pos, price))
+        expected_pnl = -sum([i * j for i, j in x])
+
+        value = [i for i in pnl if ticker == i[0]][0][3]
+        self.assertAlmostEqual(expected_pnl, value)
+
+    def test_split(self):
+        pnl = get_equties_pnl('MSFidelity')[0]
+
+        # Split
+        # These are the trades used for testing with zero for price on split shares added.
+        x = [(50, 305), (150, 0), (-100, 200)]
+        self.check_pnl(self.aapl_ticker, pnl, x)
+
+        # Reverse split
+        # In a reverse split the split q is negative
+        x = [(150, 125), (-100, 0), (-25, 330)]
+        self.check_pnl(self.msft_ticker, pnl, x)

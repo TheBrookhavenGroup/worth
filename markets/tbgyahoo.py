@@ -24,7 +24,8 @@ def yahooHistory(ticker):
       ticker can be KCH22.NYB or ^GSPC or MSFT
     """
     t = datetime.now().strftime('%s')
-    url = 'https://query1.finance.yahoo.com/v8/finance/chart/' + ticker.yahoo_ticker + '?interval=1d&period1=0&period2=' + t
+    base_url = 'https://query1.finance.yahoo.com/v8/finance/chart/'
+    url = base_url + ticker.yahoo_ticker + '?interval=1d&period1=0&period2=' + t
     data = yahoo_get(url)
     data = json.loads(data)
     data = data['chart']['result']
