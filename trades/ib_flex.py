@@ -44,9 +44,7 @@ def get_trades(report_id='224849'):
             trade.p = p
             trade.commission = -i.commission
         except Trade.DoesNotExist:
-            trade = Trade(dt=t, account=account, ticker=ticker, reinvest=True,
-                          q=q, p=p, commission=i.commission,
-                          trade_id=i.tradeID)
+            trade = Trade(dt=t, account=account, ticker=ticker, q=q, p=p, commission=i.commission, trade_id=i.tradeID)
         trade.save()
 
         data.append([set_tz(trade.dt).strftime("%Y%m%d %H:%M:%S"), trade.ticker, trade.q, trade.p, trade.commission])
