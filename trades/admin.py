@@ -84,6 +84,8 @@ class SplitsFilter(SimpleListFilter):
         v = self.value()
         if 'yes' == v:
             return queryset.filter(reinvest=True, p__gt=-0.001, p__lt=0.001)
+        elif 'no' == v:
+            return queryset.filter(~Q(reinvest=True, p__gt=-0.001, p__lt=0.001))
         return queryset
 
 
