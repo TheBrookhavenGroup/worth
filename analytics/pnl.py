@@ -113,7 +113,10 @@ def futures_pnl(d=None, a='MSRKIB'):
         mtd_total += mtd
         today_total += daily
 
-        data.append(format_rec(a, ticker, pos, price, pos * price, daily, mtd, ytd, pnl))
+        cs = 0
+        if is_not_near_zero(pos):
+            cs = Ticker.objects.get(ticker=ticker).market.cs
+        data.append(format_rec(a, ticker, pos, price, pos * cs * price, daily, mtd, ytd, pnl))
 
     data.append(format_rec(a, 'TOTAL', 0, 0, 0, today_total, mtd_total, ytd_total, today_total))
 
