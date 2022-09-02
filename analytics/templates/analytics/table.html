@@ -11,7 +11,7 @@
 {% block title %}{{ title }}{% endblock title %}
 
 {% block content %}
-    <div>
+    <div class="container">
         <p>
         <a href="/admin">Admin</a>
         {% with exclude_quick_links_caption=True %}
@@ -19,7 +19,7 @@
         {% endwith %}
         </p>
 
-        <div style="width: 600px;">
+        <div style="width: 600px">
             {%  block d %}
                 <p><div class="text-center"><strong>{{ d }}</strong></div></p>
             {% endblock %}
