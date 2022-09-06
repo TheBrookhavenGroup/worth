@@ -7,6 +7,7 @@ from analytics.models import PPMResult
 from analytics.utils import pcnt_change
 from trades.utils import valuations, get_futures_pnl, get_equties_pnl, get_balances
 from markets.utils import ticker_url
+from accounts.utils import get_account_url
 
 
 headings = ['Account', 'Ticker', 'Pos', 'Price', 'Value', 'Today', 'MTD', 'YTD', 'PnL']
@@ -43,6 +44,7 @@ def format_rec(a, t, pos=0, price=1, value=0, daily=0, mtd=0, ytd=0, pnl=0):
     else:
         pnl = cround(pnl, vprec)
 
+    a = get_account_url(a)
     return [a, t, pos, price, value, daily, mtd, ytd, pnl]
 
 
