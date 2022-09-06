@@ -8,15 +8,27 @@
       {% endif %}
       <tr class="model-group">
             <th scope="row">
-            <a href="{% url 'analytics:checking' %}">BofA Balances</a><br>
-            <a href="{% url 'analytics:getibtrades' %}">Get IB Trades</a><br>
-            <a href="{% url 'analytics:ppm' %}">PPM</a><br>
-            <a href="{% url 'analytics:ppm' %}?d=1">PPM Last Month</a><br>
-            <a href="{% url 'analytics:ppm' %}?d=2">PPM 2 Months Ago</a><br>
-            <a href="{% url 'admin:index' %}analytics/ppmresult/">PPM History</a><br>
-            <a href="{% url 'analytics:futures' %}">Futures PnL</a><br>
-            <a href="{% url 'analytics:cash' %}">Total Cash</a><br>
-            <a href="{% url 'accounts:get_ib_statements' %}">Get IB Statements</a><br>
+                <table class="table">
+                    <tr>
+                        <th><a href="{% url 'accounts:accounts' %}">Accounts</a></th>
+                        <th><a href="{% url 'analytics:checking' %}">BofA Balances</a></th>
+                        <th><a href="{% url 'analytics:cash' %}">Total Cash</a></th>
+                        <th></th>
+                    </tr>
+                    <tr>
+                        <th><a href="{% url 'analytics:getibtrades' %}">Get IB Trades</a></th>
+                        <th><a href="{% url 'analytics:futures' %}">Futures PnL</a></th>
+                        <th><a href="{% url 'accounts:get_ib_statements' %}">Get IB Statements</a></th>
+                        <th></th>
+                    </tr>
+                    <tr>
+                        <th><a href="{% url 'analytics:ppm' %}">PPM</a></th>
+                        <th><a href="{% url 'analytics:ppm' %}?d=1">PPM Last Month</a></th>
+                        <th><a href="{% url 'analytics:ppm' %}?d=2">PPM 2 Months Ago</a></th>
+                        <th><a href="{% url 'admin:index' %}analytics/ppmresult/">PPM History</a></th>
+                        <th></th>
+                    </tr>
+                </table>
             <td></td>
             </th>
     </tr>
