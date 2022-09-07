@@ -334,3 +334,16 @@ def lbd_prior_month(d):
     d = datetime.date(d.year, d.month, 1)
     d -= datetime.timedelta(days=1)
     return lbd_of_month(d)
+
+
+def lbd_next_month(d):
+    y = d.year
+    m = d.month
+    if m == 12:
+        m = 1
+        y += 1
+    else:
+        m += 1
+    d = datetime.date(y, m, 1)
+    d = lbd_of_month(d)
+    return d
