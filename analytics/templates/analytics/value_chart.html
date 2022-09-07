@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block local_javascript_imports %}
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+{% endblock %}
+
+
+{% load humanize %}
+
+{% block title %}{{ title }}{% endblock title %}
+
+{% block page_style %}
+    <style>
+        body {background-color: lightyellow;}
+        .center {
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        p {text-align: center;}
+        font Verdana, Arial, Helvetica, sans-serif;
+    </style>
+{% endblock page_style %}
+
+{% block content %}
+    {% include "admin/quick_links.html" with show_changelinks=True %}
+
+    <div id="value_chart"></div>
+    <script>
+        var options = {{ options | safe }}
+        var chart = new ApexCharts(document.querySelector("#value_chart"), options);
+        chart.render();
+    </script>
+
+{% endblock content %}

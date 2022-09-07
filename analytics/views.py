@@ -1,14 +1,15 @@
-from datetime import datetime
+from datetime import datetime, date
+import json
 
 from django.views.generic.base import TemplateView
 from analytics.cash import cash_sums, total_cash
 from analytics.pnl import futures_pnl, year_pnl
 from trades.ib_flex import get_trades
-from worth.dt import lbd_prior_month, our_now
+from worth.dt import lbd_prior_month, our_now, lbd_of_month
 from worth.utils import is_near_zero
 from markets.tbgyahoo import yahoo_url
 from markets.models import Ticker
-from trades.utils import weighted_average_price
+from trades.utils import weighted_average_price, valuations
 from markets.utils import get_price, ticker_admin_url
 
 
@@ -111,4 +112,40 @@ class TickerView(TemplateView):
             except IndexError:
                 context['msg'] = 'Could not get a price for this ticker.'
 
+        return context
+
+
+class ValueChartView(TemplateView):
+    title = 'Value Chart'
+    template_name = 'analytics/value_chart.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        d = datetime.today().date()
+        y = d.year
+        m = d.month
+
+        x_axis = [lbd_of_month(date(y, i, 1)) for i in range(1, m)]
+        x_axis.append(d)
+
+        def get_all(v):
+            return sum([i[-1] / 1.e6 for i in v if i[0] != 'ALL'])
+
+        y_axis = [get_all(valuations(i)) for i in x_axis]
+        x_axis = [f'{d:%Y-%m}' for d in x_axis]
+
+        options = {
+            "series": [{"name": "Value", "data": y_axis}],
+            "chart": {"height": 350, "type": 'line', "zoom": {"enabled": True}},
+            "dataLabels": {"enabled": False},
+            "stroke": {"curve": "straight"},
+            "title": {"text": self.title, "align": 'center', 'offsetY': 10},
+            "grid": {"row": {"colors": ['#f3f3f3', 'transparent'], "opacity": 0.5}},
+            "xaxis": {"categories": x_axis},
+            "yaxis": {'decimalsInFloat': 2},
+        }
+
+        context['options'] = json.dumps(options)
+        context['title'] = self.title
         return context
