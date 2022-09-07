@@ -148,4 +148,5 @@ class ValueChartView(TemplateView):
 
         context['options'] = json.dumps(options)
         context['title'] = self.title
+        context['exclude_quick_links_caption'] = True
         return context
