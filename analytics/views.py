@@ -122,12 +122,18 @@ class ValueChartView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        d = datetime.today().date()
-        y = d.year
-        m = d.month
+        getter = self.request.GET.get
 
-        x_axis = [lbd_of_month(date(y, i, 1)) for i in range(1, m)]
-        x_axis.append(d)
+        d = datetime.today().date()
+        n_months = getter('n_months')
+        if n_months is not None:
+            x_axis = [d] + [d := lbd_prior_month(d) for i in range(int(n_months))]
+            x_axis.reverse()
+        else:
+            y = d.year
+            m = d.month
+            x_axis = [lbd_of_month(date(y, i, 1)) for i in range(1, m)]
+            x_axis.append(d)
 
         def get_all(v):
             return sum([i[-1] / 1.e6 for i in v if i[0] != 'ALL'])
