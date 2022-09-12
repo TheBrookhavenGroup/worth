@@ -135,10 +135,12 @@ class ValueChartView(TemplateView):
             x_axis = [lbd_of_month(date(y, i, 1)) for i in range(1, m)]
             x_axis.append(d)
 
+        accnt = getter('accnt')
+
         def get_all(v):
             return sum([i[-1] / 1.e6 for i in v if i[0] != 'ALL'])
 
-        y_axis = [get_all(valuations(i)) for i in x_axis]
+        y_axis = [get_all(valuations(i, account=accnt)) for i in x_axis]
         x_axis = [f'{d:%Y-%m}' for d in x_axis]
 
         options = {

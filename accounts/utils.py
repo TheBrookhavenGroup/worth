@@ -11,9 +11,12 @@ def get_account_url(a):
         except Account.DoesNotExist:
             return a
 
+    img = '<img src="/static/img/chart.png" height="15">'
+
     if type(a) is Account:
         if a.url is not None:
-            a = mark_safe(f'<a href={a.url} target="_blank">{a.name}</a>')
+            a = mark_safe(f'<a href={a.url} target="_blank">{a.name}</a>') + \
+                mark_safe(f'<a href="/value_chart?accnt={a.name}" target="_blank">{img}</a>')
         else:
             a = a.name
 

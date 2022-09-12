@@ -1,7 +1,9 @@
 
+from django.conf import settings
 from django.contrib import admin
 from django.urls import path, include
 from django.views.generic.base import RedirectView
+from django.conf.urls.static import static
 
 title = "ALL Administration"
 admin.site.site_header = title
@@ -13,4 +15,4 @@ urlpatterns = [
     path('', RedirectView.as_view(url='admin', permanent=False)),
     path('', include('analytics.urls')),
     path('', include('accounts.urls')),
-]
+] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
