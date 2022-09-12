@@ -5,23 +5,24 @@ from .models import Account
 
 @ttl_cache(maxsize=1000, ttl=10)
 def get_account_url(a):
+    img = '<img src="/static/img/chart.png" height="15">'
+
     if type(a) is str:
         try:
             a = Account.objects.get(name=a)
         except Account.DoesNotExist:
-            return a
-
-    img = '<img src="/static/img/chart.png" height="15">'
+            if 'ALL' == a:
+                a = f'{a}<a href="/value_chart" target="_blank">{img}</a>'
+            return mark_safe(a)
 
     if type(a) is Account:
-        if a.url is not None:
-            a = f'<a href={a.url} target="_blank">{a.name}</a>' + \
-                f'<a href="/value_chart?accnt={a.name}" target="_blank">{img}</a>'
-            a = mark_safe(a)
+        chart_url = f'<a href="/value_chart?accnt={a.name}" target="_blank">{img}</a>'
+        if a.url is None:
+            a = f'{a.name}{chart_url}'
         else:
-            a = a.name
+            a = f'<a href={a.url} target="_blank">{a.name}</a>{chart_url}'
 
-    return a
+    return mark_safe(a)
 
 
 def get_active_accounts():
