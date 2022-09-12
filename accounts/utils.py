@@ -15,8 +15,9 @@ def get_account_url(a):
 
     if type(a) is Account:
         if a.url is not None:
-            a = mark_safe(f'<a href={a.url} target="_blank">{a.name}</a>') + \
-                mark_safe(f'<a href="/value_chart?accnt={a.name}" target="_blank">{img}</a>')
+            a = f'<a href={a.url} target="_blank">{a.name}</a>' + \
+                f'<a href="/value_chart?accnt={a.name}" target="_blank">{img}</a>'
+            a = mark_safe(a)
         else:
             a = a.name
 
