@@ -17,4 +17,4 @@ class Command(BaseCommand):
         for i in x[1]:
             print(i)
         x = year_pnl()
-        print(next(i for i in x[1] if i[0] == 'ALL')[4:6])
+        print(next(i for i in x[1] if 'ALL<a' in i[0])[4:6])
