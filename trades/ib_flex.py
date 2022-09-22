@@ -1,6 +1,6 @@
 import json
 from django.conf import settings
-from ib_insync.flexreport import FlexReport
+from ib_insync.flexreport import FlexReport, FlexError
 from worth.dt import dt2dt, set_tz
 from accounts.models import Account
 from trades.models import Trade
@@ -22,7 +22,13 @@ def get_trades(report_id='224849'):
     headings = ['Date-Time', 'Ticker', 'Q', 'P', 'Commission']
     data = []
 
-    report = FlexReport(settings.IB_FLEX_TOKEN, report_id)
+    try:
+        report = FlexReport(settings.IB_FLEX_TOKEN, report_id)
+    except FlexError as e:
+        msg = str(e)
+        data.append([msg, '', '', '', ''])
+        print(msg)
+        return headings, data, formats
 
     # print(report.topics())
     # {'TradeConfirm', 'FlexQueryResponse', 'FlexStatements', 'FlexStatement'}
