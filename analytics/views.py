@@ -37,15 +37,17 @@ class PPMView(TemplateView):
 
         d = getter('d')
         if d is not None:
-            n = 0
-            if d.isnumeric():
-                n = int(d)
-                d = our_now()
-                while n > 0:
-                    d = lbd_prior_month(d)
-                    n -= 1
-            else:
+            try:
                 d = datetime.strptime(d, '%Y%m%d').date()
+            except:
+                n = 0
+                if d.isnumeric():
+                    n = int(d)
+                    d = our_now()
+                    while n > 0:
+                        d = lbd_prior_month(d)
+                        n -= 1
+
             context['d'] = d
         context['headings1'], context['data1'], context['formats'] = \
             year_pnl(d=d, account=account, ticker=ticker)
