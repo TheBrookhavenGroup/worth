@@ -74,8 +74,8 @@ DATABASES = {
         'NAME': 'worth',
         'HOST': '127.0.0.1',
         'PORT': 5432,
-        'USER': 'ms',
-        'PASSWORD': '',
+        'USER': 'postgres',
+        'PASSWORD': 'postgres',
     }
 }
 
