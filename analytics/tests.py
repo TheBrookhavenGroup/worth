@@ -15,7 +15,7 @@ class PnLTests(TestCase):
     def results(self, ticker=None, d=None):
         headings, data, formats = year_pnl(d=d, ticker=ticker)
 
-        all_dict = data_dict = dict([(str(i[1]), i[2:]) for i in data if i[0] == 'ALL'])
+        all_dict = data_dict = dict([(str(i[1]), i[2:]) for i in data if i[0].startswith('ALL<a')])
         all_dict['ALL'] = all_dict['CASH']
         del all_dict['CASH']
 
