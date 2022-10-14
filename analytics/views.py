@@ -39,7 +39,7 @@ class PPMView(TemplateView):
         if d is not None:
             try:
                 d = datetime.strptime(d, '%Y%m%d').date()
-            except:
+            except Exception:
                 n = 0
                 if d.isnumeric():
                     n = int(d)
