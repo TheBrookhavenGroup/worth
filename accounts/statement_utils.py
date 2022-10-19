@@ -1,6 +1,30 @@
 import os
 from ftplib import FTP
 from django.conf import settings
+import gnupg
+
+
+def gpg_encrypt(fn):
+    # If fn = foo.txt then output file would be foo.txt.asc.
+    # gpg --encrypt --sign --armor -r <email> foo.txt
+    gpg = gnupg.GPG()
+    email = os.environ.get('GPG_EMAIL')
+    fn_out = fn + '.asc'
+
+    with open(fn, 'rb') as f:
+        status = gpg.encrypt_file(f, recipients=[email], armor=True, output=fn_out)
+
+    return status
+
+
+def gpg_decrypt(fn, fn_out=None):
+    # If fn = foo.txt.asc then output file would be foo.txt.
+    gpg = gnupg.GPG()
+
+    with open(fn, 'rb') as f:
+        status = gpg.decrypt_file(f, output=fn_out)
+
+    return status
 
 
 def ib_statements():

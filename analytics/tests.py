@@ -1,9 +1,7 @@
 import datetime
 from django.test import TestCase, override_settings
-from unittest.mock import patch
-from markets.models import Market, Ticker
 from trades.tests import make_trades, make_trades_split
-from analytics.pnl import year_pnl, valuations, get_equties_pnl
+from analytics.pnl import year_pnl, get_equties_pnl
 from markets.utils import get_price
 
 
