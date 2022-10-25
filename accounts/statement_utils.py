@@ -6,9 +6,12 @@ import gnupg
 
 def gpg_encrypt(fn):
     # If fn = foo.txt then output file would be foo.txt.asc.
-    # gpg --encrypt --sign --armor -r <email> foo.txt
-    gpg = gnupg.GPG()
+    # gpg --encrypt --sign --armor -r <email> --homedir ~/.gnupg foo.txt
+
     email = os.environ.get('GPG_EMAIL')
+    gpghomedir = os.environ.get('GPG_HOME')
+    gpg = gnupg.GPG(gnupghome=gpghomedir)
+
     fn_out = fn + '.asc'
 
     with open(fn, 'rb') as f:
@@ -19,7 +22,9 @@ def gpg_encrypt(fn):
 
 def gpg_decrypt(fn, fn_out=None):
     # If fn = foo.txt.asc then output file would be foo.txt.
-    gpg = gnupg.GPG()
+    # gpg --homedir ~/.gnupg fn.txt.asc
+    gpghomedir = os.environ.get('GPG_HOME')
+    gpg = gnupg.GPG(gnupghome=gpghomedir)
 
     with open(fn, 'rb') as f:
         status = gpg.decrypt_file(f, output=fn_out)
