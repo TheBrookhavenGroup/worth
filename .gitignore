@@ -1,6 +1,6 @@
 *.py[cod]
 *.tar
-.idea/
+.idea/workspace.xml
 .tox/
 .config
 /static
