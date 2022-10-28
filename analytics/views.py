@@ -110,6 +110,7 @@ class TickerView(TemplateView):
             try:
                 price = get_price(ticker)
                 context['price'] = price
+                context['capital'] = pos * price
                 context['pnl'] = ticker.market.cs * pos * (price - wap)
             except IndexError:
                 context['msg'] = 'Could not get a price for this ticker.'
