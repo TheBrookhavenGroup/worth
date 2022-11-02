@@ -15,7 +15,7 @@ def gpg_encrypt(fn):
     fn_out = fn + '.asc'
 
     with open(fn, 'rb') as f:
-        status = gpg.encrypt_file(f, recipients=[email], armor=True, output=fn_out)
+        status = gpg.encrypt_file(f, recipients=[email], armor=True, output=fn_out, passphrase='foo')
 
     return status
 
