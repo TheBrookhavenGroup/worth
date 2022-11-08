@@ -1,10 +1,5 @@
 {% extends "base.html" %}
 
-{% block local_javascript_imports %}
-    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
-{% endblock %}
-
-
 {% load humanize %}
 
 {% block title %}{{ title }}{% endblock title %}
@@ -25,14 +20,8 @@
 {% block content %}
     {% include "admin/quick_links.html" with show_changelinks=True %}
 
-    <div id="value_chart"></div>
-    <script>
-        var options = {{ options | safe }}
-        var chart = new ApexCharts(document.querySelector("#value_chart"), options);
-        chart.render();
-    </script>
-
     <p>
+        {{ plot_div | safe }}
     <p>
     Try using `n_months=20` as an argument here.<br>
     Try using `accnt=TDA` as argument here.

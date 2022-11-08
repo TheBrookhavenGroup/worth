@@ -8,4 +8,4 @@ requests==2.27.1
 cachetools==5.0.0
 ib-insync==0.9.70
 python-gnupg==0.5.0
-
+plotly==5.11.0
