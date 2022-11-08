@@ -1,5 +1,7 @@
 from datetime import datetime, date
-import json
+
+from plotly.offline import plot
+import plotly.graph_objs as go
 
 from django.views.generic.base import TemplateView
 from analytics.cash import cash_sums, total_cash
@@ -146,18 +148,13 @@ class ValueChartView(TemplateView):
         y_axis = [get_all(valuations(i, account=accnt)) for i in x_axis]
         x_axis = [f'{d:%Y-%m}' for d in x_axis]
 
-        options = {
-            "series": [{"name": "Value", "data": y_axis}],
-            "chart": {"height": 350, "type": 'line', "zoom": {"enabled": True}},
-            "dataLabels": {"enabled": False},
-            "stroke": {"curve": "straight"},
-            "title": {"text": self.title, "align": 'center', 'offsetY': 10},
-            "grid": {"row": {"colors": ['#f3f3f3', 'transparent'], "opacity": 0.5}},
-            "xaxis": {"categories": x_axis},
-            "yaxis": {'decimalsInFloat': 2},
-        }
-
-        context['options'] = json.dumps(options)
         context['title'] = self.title
-        context['exclude_quick_links_caption'] = True
+
+        fig = go.Figure(data=go.Scatter(x=x_axis, y=y_axis,
+                        mode='lines', name='value',
+                        opacity=0.8, marker_color='green'))
+        fig.update_layout({'title_text': 'Value', 'yaxis_title': 'Millions($)'})
+
+        context['plot_div'] = plot({'data': fig}, output_type='div')
+
         return context
