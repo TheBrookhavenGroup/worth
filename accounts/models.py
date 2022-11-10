@@ -9,6 +9,7 @@ class Account(models.Model):
     description = models.CharField(max_length=200, blank=True)
     active_f = models.BooleanField(default=True)
     url = models.URLField(blank=True, null=True)
+    reconciled_f = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.name}"

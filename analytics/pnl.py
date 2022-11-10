@@ -17,7 +17,7 @@ def format_rec(a, t, pos=0, price=1, value=0, daily=0, mtd=0, ytd=0, pnl=0):
     if t == 'TOTAL':
         return [t, '', '', '', '', cround(daily, 2), cround(mtd, 2), cround(ytd, 0), '']
     if t == 'ALL COH':
-        return [t, '', '', '', '', '', '', '', cround(pnl, 0)]
+        return [t, '', '', '', '', '', '', '', cround(pnl, 0), ]
     t = Ticker.objects.get(ticker=t)
     pprec = t.market.pprec
     vprec = t.market.vprec
