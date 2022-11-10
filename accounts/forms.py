@@ -4,7 +4,7 @@ from accounts.utils import get_active_accounts
 
 class AccountForm(Form):
     accounts = MultipleChoiceField(widget=CheckboxSelectMultiple(attrs={'onclick': 'this.form.submit();'}),
-                                   choices=[])
+                                   choices=[], required=False)
 
     def __init__(self, *args, **kwargs):
         # Set the accounts field choices each time the form is rendered.
