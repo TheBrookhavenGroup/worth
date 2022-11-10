@@ -19,11 +19,13 @@
 
 {% block content %}
 
-    <p>
-        {% for a in accounts %}
-            <input type="checkbox" style="width: 30px" id="task_completed" value="">{{ a }}</br>
-        {% endfor %}
-    </p>
+    <form method="post">
+    {% csrf_token %}
+        {{ form.as_p }}
+{#        Don't need submit button because form options submit when checkboxes are clicked. #}
+{#    <input type="submit" value="Submit">#}
+    </form>
+
     <p>
     A few additional statements to get:<br>
         <input type="checkbox" style="width: 30px" id="task_completed" value="">
@@ -31,7 +33,7 @@
         <input type="checkbox" style="width: 30px" id="task_completed" value="">
         <a href=https://www.bankofamerica.com/ target="_blank">BofA Mortgage</a><br>
         <input type="checkbox" style="width: 30px" id="task_completed" value="">
-        <a href="https://bge.com" target="_blank">BGE</a><br>
+        <a href="https://bge.com" target="_blank">BGE (20th of month)</a><br>
     </p>
 
 {% endblock content %}

@@ -17,7 +17,7 @@ def format_rec(a, t, pos=0, price=1, value=0, daily=0, mtd=0, ytd=0, pnl=0):
     if t == 'TOTAL':
         return [t, '', '', '', '', cround(daily, 2), cround(mtd, 2), cround(ytd, 0), '']
     if t == 'ALL COH':
-        return [t, '', '', '', '', '', '', '', cround(pnl, 0)]
+        return [t, '', '', '', cround(value, 0), '', '', '', '']
     t = Ticker.objects.get(ticker=t)
     pprec = t.market.pprec
     vprec = t.market.vprec
@@ -167,7 +167,7 @@ def year_pnl(d=None, account=None, ticker=None):
 
         data.append(format_rec(a, 'CASH', value, 1.0, value, daily, mtd, ytd))
 
-    data.append(format_rec('ALL COH', 'ALL COH', pnl=total_coh))
+    data.append(format_rec('ALL COH', 'ALL COH', value=total_coh))
     accounts.remove('ALL')
 
     def pnl_to_dict(x):

@@ -4,6 +4,7 @@ from plotly.offline import plot
 import plotly.graph_objs as go
 
 from django.views.generic.base import TemplateView
+from django.contrib.auth.mixins import LoginRequiredMixin
 from analytics.cash import cash_sums, total_cash
 from analytics.pnl import futures_pnl, year_pnl
 from trades.ib_flex import get_trades
@@ -15,7 +16,7 @@ from trades.utils import weighted_average_price, valuations
 from markets.utils import get_price, ticker_admin_url
 
 
-class CheckingView(TemplateView):
+class CheckingView(LoginRequiredMixin, TemplateView):
     template_name = 'analytics/checking.html'
 
     def get_context_data(self, **kwargs):
@@ -28,7 +29,7 @@ class CheckingView(TemplateView):
         return context
 
 
-class PPMView(TemplateView):
+class PPMView(LoginRequiredMixin, TemplateView):
     template_name = 'analytics/table.html'
 
     def get_context_data(self, **kwargs):
@@ -57,7 +58,7 @@ class PPMView(TemplateView):
         return context
 
 
-class FuturesPnLView(TemplateView):
+class FuturesPnLView(LoginRequiredMixin, TemplateView):
     template_name = 'analytics/table.html'
 
     def get_context_data(self, **kwargs):
@@ -73,7 +74,7 @@ class FuturesPnLView(TemplateView):
         return context
 
 
-class TotalCashView(TemplateView):
+class TotalCashView(LoginRequiredMixin, TemplateView):
     template_name = 'analytics/total_cash.html'
 
     def get_context_data(self, **kwargs):
@@ -83,7 +84,7 @@ class TotalCashView(TemplateView):
         return context
 
 
-class GetIBTradesView(TemplateView):
+class GetIBTradesView(LoginRequiredMixin, TemplateView):
     template_name = 'analytics/table.html'
 
     def get_context_data(self, **kwargs):
@@ -93,7 +94,7 @@ class GetIBTradesView(TemplateView):
         return context
 
 
-class TickerView(TemplateView):
+class TickerView(LoginRequiredMixin, TemplateView):
     template_name = 'analytics/ticker.html'
 
     def get_context_data(self, **kwargs):
@@ -120,7 +121,7 @@ class TickerView(TemplateView):
         return context
 
 
-class ValueChartView(TemplateView):
+class ValueChartView(LoginRequiredMixin, TemplateView):
     title = 'Value Chart'
     template_name = 'analytics/value_chart.html'
 
