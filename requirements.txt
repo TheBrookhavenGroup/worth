@@ -1,6 +1,7 @@
 asgiref
 Django
-psycopg2-binary
+# psycopg2-binary
+psycopg2
 pycodestyle
 pytz
 sqlparse
