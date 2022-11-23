@@ -4,7 +4,7 @@ Simple trading and cash management bookkeeping system.
 ## Introduction
 
 ### Goal
-Keep track of wealth at a collection of brokers and banks accross a variety of asset classes.  Do it privately, without storing informaiton on third party servers.
+Keep track of wealth at a collection of brokers and banks across a variety of asset classes.  Do it privately, without storing information on third party servers.
 
 ## Reasoning
 Maybe this isn't so reasonable. Sure, I could have used something off-the-shelf or another open source project.  But, I wanted this to be simple and private.  I did not want my data stored on someone else's server.  Lastly, I wanted to have a code base I could customize easliy and add asset classes to.  All that being said I'll surely borrow and use other open source packages from time to time.
