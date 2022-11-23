@@ -1,13 +1,12 @@
-asgiref
-pandas
-Django
-psycopg2-binary
-# psycopg2
-pycodestyle
-pytz
-sqlparse
-requests
-cachetools
-ib-insync
-python-gnupg
-plotly
+asgiref==3.5.2
+pandas==1.5.2
+Django==4.1.3
+psycopg2-binary==2.9.5
+pycodestyle==2.9.1
+pytz==2022.6
+sqlparse==0.4.3
+requests==2.28.1
+cachetools==5.2.0
+ib-insync==0.9.77
+python-gnupg==0.5.0
+plotly==5.11.0

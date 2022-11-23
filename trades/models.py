@@ -22,7 +22,7 @@ class Trade(models.Model):
         return f"{self.account} {self.dt} {self.ticker.ticker} {self.q} @ {self.p} c={self.commission} id={self.trade_id}"
 
     def save(self, *args, **kwargs):
-        get_trade_records.cache_clear()
+        get_trades_df.cache_clear()
         if self.commission is None:
             self.commission = abs(self.q * self.ticker.market.commission)
         elif self.commission < 0:
