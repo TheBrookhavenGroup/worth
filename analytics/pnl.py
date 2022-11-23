@@ -1,11 +1,14 @@
 import json
+import numpy as np
+import pandas as pd
 from datetime import date
-from worth.utils import cround, is_near_zero, is_not_near_zero, union_keys
+from collections import OrderedDict
+from worth.utils import cround, is_near_zero, is_not_near_zero, union_keys, df_to_jqtable
 from worth.dt import our_now, lbd_prior_month, prior_business_day
-from markets.models import Ticker
+from markets.models import get_ticker
 from analytics.models import PPMResult
 from analytics.utils import pcnt_change
-from trades.utils import valuations, get_futures_pnl, get_equties_pnl, get_balances
+from trades.utils import valuations, get_futures_pnl, get_equties_pnl
 from markets.utils import ticker_url
 from accounts.utils import get_account_url
 
@@ -14,11 +17,12 @@ headings = ['Account', 'Ticker', 'Pos', 'Price', 'Value', 'Today', 'MTD', 'YTD',
 
 
 def format_rec(a, t, pos=0, price=1, value=0, daily=0, mtd=0, ytd=0, pnl=0):
-    if t == 'TOTAL':
-        return [t, '', '', '', '', cround(daily, 2), cround(mtd, 2), cround(ytd, 0), '']
+    if a == 'TOTAL':
+        return [a, '', '', '', '', cround(daily, 2), cround(mtd, 2), cround(ytd, 0), '']
     if t == 'ALL COH':
         return [t, '', '', '', '', '', '', '', cround(pnl, 0), ]
-    t = Ticker.objects.get(ticker=t)
+
+    t = get_ticker(t)
     pprec = t.market.pprec
     vprec = t.market.vprec
     t = ticker_url(t)
@@ -48,82 +52,45 @@ def format_rec(a, t, pos=0, price=1, value=0, daily=0, mtd=0, ytd=0, pnl=0):
     return [a, t, pos, price, value, daily, mtd, ytd, pnl]
 
 
-def futures_pnl_ymd(d=None, a='MSRKIB'):
+def futures_pnl(d=None, a='MSRKIB'):
     if d is None:
         d = our_now().date()
 
     yesterday = prior_business_day(d)
-
     eoy = lbd_prior_month(date(d.year, 1, 1))
     lm = lbd_prior_month(d)
 
-    def to_dict(x):
-        return dict([(i[0].ticker, i[1:]) for i in x])
+    pnl_total = get_futures_pnl(d=None)
+    pnl_yesterday = get_futures_pnl(d=yesterday)
+    pnl_prior_month = get_futures_pnl(d=lm)
+    pnl_end_of_year = get_futures_pnl(d=eoy)
 
-    pnl_total, total = get_futures_pnl(d=d, a=a)
-    pnl_total = to_dict(pnl_total)
-    pnl_yesterday = to_dict(get_futures_pnl(d=yesterday, a=a)[0])
-    pnl_prior_month = to_dict(get_futures_pnl(d=lm, a=a)[0])
-    pnl_end_of_year = to_dict(get_futures_pnl(d=eoy, a=a)[0])
+    df = pd.merge(pnl_yesterday, pnl_end_of_year, on=['a', 't'], how='outer', suffixes=('_yesterday', '_year'))
+    # Note - merge only uses suffixes if both df's have the same column headings.
+    #        so this one wouldn't use them anyway
+    df = pd.merge(df, pnl_total, on=['a', 't'], how='outer')
+    df = pd.merge(df, pnl_prior_month, on=['a', 't'], how='outer', suffixes=('', '_month'))
+    df = df.fillna(value=0)
 
-    return pnl_end_of_year, pnl_prior_month, pnl_yesterday, pnl_total
+    result = pd.DataFrame(OrderedDict((('Account', df.a),
+                                       ('Ticker', df.t),
+                                       ('Pos', df.q),
+                                       ('Price', df.price),
+                                       ('Value', df.value),
+                                       ('Today', df.pnl - df.pnl_yesterday),
+                                       ('MTD', df.pnl - df.pnl_month),
+                                       ('YTD', df.pnl - df.pnl_year),
+                                       ('PnL', df.pnl))))
 
+    filter_index = result[(np.abs(result['YTD']) < 0.0001) & (np.abs(result['Value']) < 0.001)].index
+    result.drop(filter_index, inplace=True)
 
-def futures_pnl(d=None, a='MSRKIB'):
+    today_total = result.Today.sum()
+    mtd_total = result.MTD.sum()
+    ytd_total = result.YTD.sum()
+    result.loc[len(result)] = format_rec('TOTAL', '', 0, 0, 0, today_total, mtd_total, ytd_total, 0)
 
-    formats = json.dumps({'columnDefs': [{'targets': [i for i in range(1, len(headings))],
-                                          'className': 'dt-body-right'}], 'ordering': False})
-
-    pnl_end_of_year, pnl_prior_month, pnl_yesterday, pnl_total = futures_pnl_ymd(d=d, a=a)
-
-    tickers = set(pnl_total.keys()).\
-        union(set(pnl_yesterday.keys())).\
-        union(set(pnl_prior_month.keys())).\
-        union(set(pnl_end_of_year.keys()))
-
-    tickers = list(tickers)
-
-    data = []
-    ytd_total = mtd_total = today_total = 0.0
-    for ticker in tickers:
-        pos, price, pnl = pnl_total[ticker]
-
-        if ticker in pnl_yesterday:
-            daily = pnl_yesterday[ticker][-1]
-            daily = pnl - daily
-        else:
-            daily = pnl
-
-        if ticker in pnl_prior_month:
-            mtd = pnl_prior_month[ticker][-1]
-            mtd = pnl - mtd
-        else:
-            mtd = pnl
-
-        if ticker in pnl_end_of_year:
-            ytd = pnl_end_of_year[ticker][-1]
-            ytd = pnl - ytd
-        else:
-            ytd = pnl
-
-        t = Ticker.objects.get(ticker=ticker)
-
-        if is_near_zero(ytd):
-            continue
-
-        ytd_total += ytd
-        mtd_total += mtd
-        today_total += daily
-
-        cs = 0
-        if is_not_near_zero(pos):
-            cs = Ticker.objects.get(ticker=ticker).market.cs
-        data.append(format_rec(a, ticker, pos, price, pos * cs * price, daily, mtd, ytd, pnl))
-
-    data.append(format_rec(a, 'TOTAL', 0, 0, 0, today_total, mtd_total, ytd_total, today_total))
-
-    cash = get_balances(d=d, account=a)[a]['CASH']
-    data.append(format_rec(a, 'CASH', pos=cash))
+    headings, data, formats = df_to_jqtable(df=result, formatter=format_rec)
 
     return headings, data, formats
 

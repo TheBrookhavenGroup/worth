@@ -1,4 +1,5 @@
-
+import pandas as pd
+import numpy as np
 from collections import defaultdict
 from cachetools.func import ttl_cache
 from django.conf import settings
@@ -7,9 +8,21 @@ from accounts.models import CashRecord
 from worth.utils import is_near_zero
 from worth.dt import day_start_next_day
 from accounts.models import Account
-from markets.models import Ticker, NOT_FUTURES_EXCHANGES
-from trades.models import Trade
+from markets.models import get_ticker, NOT_FUTURES_EXCHANGES
+from trades.models import Trade, get_futures_df, get_equity_df
 from markets.utils import get_price
+
+
+'''
+weighted_average_price(t, a) - query db values q,p and calculate wap
+get_balances(d, a, t) - query trades and cash,  calculate cash realized contributions, balances[k]=v
+valuations(d, account, ticker) - use get_balances() for query - for each pos get price and value it.
+
+These two functions get everything even if pos is zero or no trades in date range.
+get_futures_pnl(a, d) - query trade sums and return [[t, p, pos, pnl]], total
+get_equities_pnl(a, d) - same as get_futures_pnl but just equities
+
+'''
 
 
 def wap(data):
@@ -51,7 +64,7 @@ def wap(data):
 
 def weighted_average_price(ticker, account=None):
     if type(ticker) == str:
-        ticker = Ticker.objects.get(ticker=ticker)
+        ticker = get_ticker(ticker)
 
     if account is None:
         qs = Trade.objects.filter(ticker=ticker).values_list('q', 'p').order_by('dt')
@@ -72,7 +85,7 @@ def valuations(d=None, account=None, ticker=None):
     for a in balances.keys():
         portfolio = balances[a]
         for ticker in portfolio.keys():
-            t = Ticker.objects.get(ticker=ticker)
+            t = get_ticker(ticker)
             m = t.market
             q = portfolio[ticker]
             if is_near_zero(q):
@@ -96,14 +109,16 @@ def valuations(d=None, account=None, ticker=None):
     return data
 
 
+def add_sums(qs):
+    return qs.annotate(pos=Sum(F('q')), qp=Sum(F('q') * F('p')), c=Sum(F('commission')))
+
+
 def pnl_calculator(qs, d=None):
-    qs = qs.annotate(pos=Sum(F('q')),
-                     qp=Sum(F('q') * F('p')),
-                     c=Sum(F('commission')))
+    qs = add_sums(qs)
     result = []
     total = 0.0
     for ti, pos, qp, commission in qs:
-        ticker = Ticker.objects.get(ticker=ti)
+        ticker = get_ticker(ti)
         market = ticker.market
         pos = int(pos)
         pnl = -qp
@@ -132,14 +147,38 @@ def trades_qs(a, d):
     return qs
 
 
-@ttl_cache(maxsize=1000, ttl=10)
 def get_futures_pnl(a='MSRKIB', d=None):
-    qs = trades_qs(a, d).filter(~Q(ticker__market__ib_exchange__in=NOT_FUTURES_EXCHANGES))
-    return pnl_calculator(qs, d=d)
+    def price_mapper(x):
+        if x['q'] == 0:
+            price = 0
+        else:
+            ti = get_ticker(x['t'])
+            price = get_price(ti, d)
+        return price
+
+    df = get_futures_df(a=a)
+    if d is not None:
+        dt = day_start_next_day(d)
+        mask = df['dt'] < dt
+        df = df.loc[mask]
+
+    df = df.astype({"q": int})
+
+    df['qp'] = -df.q * df.p
+    result = pd.pivot_table(df, index=["a", "t"],
+                            aggfunc={'qp': np.sum, 'q': np.sum, 'cs': np.max, 'c': np.sum}).reset_index(['a', 't'])
+    result['price'] = result.apply(lambda x: price_mapper(x), axis=1)
+    result['pnl'] = result.cs * (result.qp + result.q * result.price) - result.c
+    result['value'] = result.cs * result.q * result.price
+
+    result = result.drop(['c', 'cs', 'qp'], axis=1)
+
+    return result
 
 
 @ttl_cache(maxsize=1000, ttl=10)
 def get_equties_pnl(a, d=None):
+    df = get_equity_df(a)
     qs = trades_qs(a, d).filter(Q(ticker__market__ib_exchange__in=NOT_FUTURES_EXCHANGES))
     return pnl_calculator(qs, d=d)
 
@@ -184,7 +223,8 @@ def get_balances(d=None, account=None, ticker=None):
     futures_accounts = qs.filter(~Q(ticker__market__ib_exchange__in=NOT_FUTURES_EXCHANGES)).distinct()
 
     for a in set([i[0] for i in futures_accounts]):
-        pnl, total = get_futures_pnl(d=d, a=a)
+        f = get_futures_pnl(d=d, a=a)
+        total = f.pnl.sum()
         balances[a]['CASH'] += total
 
     for a in balances:
