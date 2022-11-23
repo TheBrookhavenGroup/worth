@@ -1,3 +1,5 @@
+import pandas as pd
+from cachetools.func import lru_cache
 from django.db import models
 from django.db.models import Q
 from django.core.validators import MinValueValidator
@@ -20,6 +22,7 @@ class Trade(models.Model):
         return f"{self.account} {self.dt} {self.ticker.ticker} {self.q} @ {self.p} c={self.commission} id={self.trade_id}"
 
     def save(self, *args, **kwargs):
+        get_trade_records.cache_clear()
         if self.commission is None:
             self.commission = abs(self.q * self.ticker.market.commission)
         elif self.commission < 0:
@@ -27,7 +30,7 @@ class Trade(models.Model):
         super().save(*args, **kwargs)
 
     @classmethod
-    def more_filtering(cls, account, ticker):
+    def more_filtering(cls, account, ticker=None):
         qs = Trade.objects
         if account is not None:
             qs = qs.filter(account__name=account)
@@ -47,3 +50,33 @@ class Trade(models.Model):
     def equity_trades(cls, account=None, ticker=None):
         qs = cls.more_filtering(account, ticker)
         return qs.filter(ticker__market__ib_exchange__in=(NOT_FUTURES_EXCHANGES))
+
+
+@lru_cache(maxsize=10)
+def get_trades_df(a=None, futures=True):
+    fields = ('account__name', 'ticker__ticker',
+              'ticker__market__ib_exchange', 'ticker__market__cs',
+              'dt', 'q', 'p', 'commission', 'reinvest')
+    qs = Trade.objects.values_list(*fields)
+    if a is not None:
+        qs = qs.filter(account__name=a)
+    else:
+        qs = qs.filter(account__active_f=True)
+
+    q = Q(ticker__market__ib_exchange__in=NOT_FUTURES_EXCHANGES)
+    if futures:
+        qs = qs.filter(~q)
+    else:
+        qs = qs.filter(q)
+
+    df = pd.DataFrame.from_records(list(qs))
+    df.columns = ['a', 't', 'e', 'cs', 'dt', 'q', 'p', 'c', 'r']
+    return df
+
+
+def get_futures_df(a=None):
+    return get_trades_df(a=a, futures=True)
+
+
+def get_equity_df(a=None):
+    return get_trades_df(futures=False)

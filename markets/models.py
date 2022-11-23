@@ -1,3 +1,4 @@
+from cachetools.func import ttl_cache
 from django.db import models
 from django.dispatch import receiver
 from django.db.models.signals import pre_save
@@ -138,3 +139,8 @@ class TBGDailyBar(models.Model):
 
     def __str__(self):
         return f"{self.d}|{self.o}|{self.h}|{self.l}|{self.c}|{self.v}|{self.oi}"
+
+
+@ttl_cache(maxsize=1000, ttl=10)
+def get_ticker(t):
+    return Ticker.objects.get(ticker=t)

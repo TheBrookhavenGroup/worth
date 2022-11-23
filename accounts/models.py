@@ -1,3 +1,5 @@
+from cachetools.func import lru_cache
+import pandas as pd
 from django.db import models
 
 
@@ -87,3 +89,21 @@ class CashRecord(models.Model):
     amt = models.FloatField()
     cleared_f = models.BooleanField(default=False)
     ignored = models.BooleanField(default=False)
+
+    def save(self, *args, **kwargs):
+        get_cash_records.cache_clear()
+        super().save(*args, **kwargs)
+
+
+@lru_cache(maxsize=10)
+def get_cash_records(a=None):
+    print("getting cash")
+    qs = CashRecord.objects.values_list('account__name', 'amt').filter(ignored=False)
+    if a is not None:
+        qs = qs.filter(account__name=a)
+    else:
+        qs = qs.filter(account__active_f=True)
+
+    df = pd.DataFrame.from_records(list(qs))
+    df.columns = ['a', 'q']
+    return df
