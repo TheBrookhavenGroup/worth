@@ -39,7 +39,6 @@ jobs:
 
     - name: Run tests
       env:
-        GITHUB_COMMONOLOGY_CI_TEST: True
         API_KEY: ${{secrets.API_KEY}}
         SLACK_TOKEN: ${{secrets.SLACK_TOKEN}}
         TEST_CLIENT_PW: ${{secrets.TEST_CLIENT_PW}}
