@@ -1,7 +1,8 @@
 asgiref
+pandas
 Django
-# psycopg2-binary
-psycopg2
+psycopg2-binary
+# psycopg2
 pycodestyle
 pytz
 sqlparse
