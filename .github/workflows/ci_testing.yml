@@ -43,4 +43,6 @@ jobs:
         API_KEY: ${{secrets.API_KEY}}
         SLACK_TOKEN: ${{secrets.SLACK_TOKEN}}
         TEST_CLIENT_PW: ${{secrets.TEST_CLIENT_PW}}
-      run: python manage.py migrate && python manage.py test --exclude-tag=gpg
+      run:
+        pip freeze
+        python manage.py migrate && python manage.py test --exclude-tag=gpg
