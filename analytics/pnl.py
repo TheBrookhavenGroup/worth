@@ -72,15 +72,15 @@ def futures_pnl(d=None, a='MSRKIB'):
     df = pd.merge(df, pnl_prior_month, on=['a', 't'], how='outer', suffixes=('', '_month'))
     df = df.fillna(value=0)
 
-    result = pd.DataFrame(OrderedDict((('Account', df['a']),
-                                       ('Ticker', df['t']),
-                                       ('Pos', df['q']),
-                                       ('Price', df['price']),
-                                       ('Value', df['value']),
-                                       ('Today', df['pnl'] - df['pnl_yesterday']),
-                                       ('MTD', df['pnl'] - df['pnl_month']),
-                                       ('YTD', df['pnl'] - df['pnl_year']),
-                                       ('PnL', df['pnl']))))
+    result = pd.DataFrame(OrderedDict((('Account', df.a),
+                                       ('Ticker', df.t),
+                                       ('Pos', df.q),
+                                       ('Price', df.price),
+                                       ('Value', df.value),
+                                       ('Today', df.pnl - df.pnl_yesterday),
+                                       ('MTD', df.pnl - df.pnl_month),
+                                       ('YTD', df.pnl - df.pnl_year),
+                                       ('PnL', df.pnl))))
 
     filter_index = result[(np.abs(result['YTD']) < 0.0001) & (np.abs(result['Value']) < 0.001)].index
     result.drop(filter_index, inplace=True)
