@@ -1,7 +1,7 @@
 import datetime
 from django.test import TestCase, override_settings
 from trades.tests import make_trades, make_trades_split
-from analytics.pnl import year_pnl, get_equties_pnl
+from analytics.pnl import pnl_summary
 from markets.utils import get_price
 
 
@@ -10,8 +10,8 @@ class PnLTests(TestCase):
     def setUp(self):
         make_trades()
 
-    def results(self, ticker=None, d=None):
-        headings, data, formats = year_pnl(d=d, ticker=ticker)
+    def results(self, d=None):
+        headings, data, formats, total_worth = pnl_summary(d=d)
 
         all_dict = data_dict = dict([(str(i[1]), i[2:]) for i in data if i[0].startswith('ALL<a')])
         all_dict['ALL'] = all_dict['CASH']
@@ -51,7 +51,7 @@ class PnLTests(TestCase):
         self.assertEqual('100', x[pnl_i])
 
         # Test if we can force AAPL to show even if position was closed out long ago.
-        data_dict, coh = self.results(ticker='AAPL')
+        data_dict, coh = self.results()
         x = data_dict[find_key('AAPL')]
         self.assertEqual('100', x[pnl_i])
         x = data_dict[find_key('ALL')]
@@ -73,7 +73,7 @@ class PnLSplitTests(TestCase):
         self.assertAlmostEqual(expected_pnl, value)
 
     def test_split(self):
-        pnl = get_equties_pnl('MSFidelity')[0]
+        pnl = pnl_summary(a='MSFidelity')[0]
 
         # Split
         # These are the trades used for testing with zero for price on split shares added.
