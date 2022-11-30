@@ -10,7 +10,8 @@ class PnLTests(TestCase):
     def setUp(self):
         make_trades()
 
-    def results(self, d=None):
+    @staticmethod
+    def results(d=None):
         headings, data, formats, total_worth = pnl_summary(d=d)
 
         all_dict = data_dict = dict([(str(i[1]), i[2:]) for i in data if i[0].startswith('ALL<a')])
