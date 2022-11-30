@@ -1,5 +1,5 @@
 from accounts.models import CashRecord
-from trades.utils import get_balances
+from trades.utils import pnl_asof
 
 
 def cash_sums(account_name):
@@ -16,10 +16,6 @@ def cash_sums(account_name):
 
 def total_cash():
     total = 0.0
-    balances = get_balances()
-    for a in balances.keys():
-        portfolio = balances[a]
-        if 'CASH' in portfolio:
-            cash = portfolio['CASH']
-            total += cash
+    _, cash = pnl_asof()
+    total = cash.q.sum()
     return total

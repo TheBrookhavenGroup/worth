@@ -55,16 +55,16 @@ class Trade(models.Model):
 
 
 @lru_cache(maxsize=10)
-def get_trades_df():
+def get_trades_df(a=None):
     fields = ('account__name', 'ticker__ticker',
               'ticker__market__ib_exchange', 'ticker__market__cs',
               'dt', 'q', 'p', 'commission', 'reinvest')
+
     qs = Trade.objects.values_list(*fields)
-    # if a is not None:
-    #     qs = qs.filter(account__name=a)
-    # else:
-    #     qs = qs.filter(account__active_f=True)
-    qs = qs.filter(account__active_f=True)
+    if a is not None:
+        qs = qs.filter(account__name=a)
+    else:
+        qs = qs.filter(account__active_f=True)
 
     # q = Q(ticker__market__ib_exchange__in=NOT_FUTURES_EXCHANGES)
     # if futures:
@@ -84,12 +84,11 @@ def get_trades_df():
     return df
 
 
-def copy_trades_df(d=None):
-    df = get_trades_df()
+def copy_trades_df(d=None, a=None):
+    df = get_trades_df(a=a)
     df = df.copy(deep=True)
     if d is not None:
         dt = day_start_next_day(d)
         mask = df['dt'] < dt
         df = df.loc[mask]
     return df
-

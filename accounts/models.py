@@ -116,8 +116,7 @@ def get_cash_df(a=None, d=None, pivot=False):
     return df
 
 
-def copy_cash_df(d=None, pivot=False):
-    df = get_cash_df(d=d, pivot=pivot)
+def copy_cash_df(d=None, a=None, pivot=False):
+    df = get_cash_df(d=d, a=a, pivot=pivot)
     df = df.copy(deep=True)
     return df
-
