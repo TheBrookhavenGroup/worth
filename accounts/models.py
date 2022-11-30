@@ -1,8 +1,8 @@
 from cachetools.func import lru_cache
 import pandas as pd
+import numpy as np
 from django.db.models import Sum
 from django.db import models
-from worth.dt import day_start_next_day
 
 
 class Account(models.Model):
@@ -98,7 +98,7 @@ class CashRecord(models.Model):
 
 
 @lru_cache(maxsize=10)
-def get_cash_df(a=None, d=None):
+def get_cash_df(a=None, d=None, pivot=False):
     qs = CashRecord.objects.filter(ignored=False, account__active_f=True)
     if d is not None:
         qs = qs.filter(d__lte=d)
@@ -109,11 +109,15 @@ def get_cash_df(a=None, d=None):
 
     df = pd.DataFrame.from_records(list(qs))
     df.columns = ['a', 'q']
+
+    if pivot:
+        df = pd.pivot_table(df, index=["a"], aggfunc={'q': np.sum})
+
     return df
 
 
-def copy_cash_df(d=None):
-    df = get_cash_df(d=d)
+def copy_cash_df(d=None, pivot=False):
+    df = get_cash_df(d=d, pivot=pivot)
     df = df.copy(deep=True)
     return df
 

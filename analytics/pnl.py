@@ -62,15 +62,15 @@ def pnl_summary(d=None, a='MSRKIB'):
     lm = lbd_prior_month(d)
 
     pnl_total, cash_flows = pnl_asof(d=None)
-    pnl_yesterday, _ = pnl_asof(d=yesterday)
-    pnl_prior_month, _ = pnl_asof(d=lm)
-    pnl_end_of_year, _ = pnl_asof(d=eoy)
+    pnl_eod, cash_flows_eod = pnl_asof(d=yesterday)
+    pnl_eom, cash_flows_eom = pnl_asof(d=lm)
+    pnl_eoy, cash_flows_eoy = pnl_asof(d=eoy)
 
-    df = pd.merge(pnl_yesterday, pnl_end_of_year, on=['a', 't'], how='outer', suffixes=('_yesterday', '_year'))
+    df = pd.merge(pnl_eod, pnl_eoy, on=['a', 't'], how='outer', suffixes=('_yesterday', '_year'))
     # Note - merge only uses suffixes if both df's have the same column headings.
     #        so this one wouldn't use them anyway
     df = pd.merge(df, pnl_total, on=['a', 't'], how='outer')
-    df = pd.merge(df, pnl_prior_month, on=['a', 't'], how='outer', suffixes=('', '_month'))
+    df = pd.merge(df, pnl_eom, on=['a', 't'], how='outer', suffixes=('', '_month'))
     df = df.fillna(value=0)
 
     result = pd.DataFrame(OrderedDict((('Account', df.a),
@@ -93,12 +93,33 @@ def pnl_summary(d=None, a='MSRKIB'):
     result.loc[len(result)] = format_rec('TOTAL', '', 0, 0, 0, today_total, mtd_total, ytd_total, 0)
 
     # Calculate Account Cash Balances
-    cash = copy_cash_df(d)
-    cash = pd.pivot_table(cash, index=["a"], aggfunc={'q': np.sum})
+    cash = copy_cash_df(d=d, pivot=True)
+    cash_eod = copy_cash_df(d=yesterday, pivot=True)
+    cash_eom = copy_cash_df(d=lm, pivot=True)
+    cash_eoy = copy_cash_df(d=eoy, pivot=True)
+
     cash = pd.merge(cash, cash_flows, how='outer', on='a')
+    cash = pd.merge(cash, cash_eod, how='outer', on='a', suffixes=['', '_eod'])
+    cash = pd.merge(cash, cash_eom, how='outer', on='a', suffixes=['', '_eom'])
+    cash = pd.merge(cash, cash_eoy, how='outer', on='a', suffixes=['', '_eoy'])
+    cash = pd.merge(cash, cash_flows_eod, how='outer', on='a', suffixes=['', '_eod'])
+    cash = pd.merge(cash, cash_flows_eom, how='outer', on='a', suffixes=['', '_eom'])
+    cash = pd.merge(cash, cash_flows_eoy, how='outer', on='a', suffixes=['', '_eoy'])
     cash.fillna(0, inplace=True)
-    cash['balance'] = cash.q + cash.adj
-    cash.drop(['q', 'adj'], axis=1, inplace=True)
+
+    cash.reset_index(inplace=True)
+    cash.rename(columns={'a': 'Account'}, inplace=True)
+    cash['Ticker'] = 'CASH'
+    cash['Pos'] = cash.q + cash.adj
+    cash['Price'] = 1.0
+    cash['Value'] = cash.Pos
+    cash['Today'] = cash.Pos - cash.q_eod - cash.adj_eod
+    cash['MTD'] = cash.Pos - cash.q_eom - cash.adj_eom
+    cash['YTD'] = cash.Pos - cash.q_eoy - cash.adj_eoy
+    cash['PnL'] = 0
+    cash.drop(['q', 'adj', 'q_eod', 'adj_eod', 'q_eom', 'adj_eom', 'q_eoy', 'adj_eoy'], axis=1, inplace=True)
+
+    result = pd.concat([result, cash])
 
     headings, data, formats = df_to_jqtable(df=result, formatter=format_rec)
 
