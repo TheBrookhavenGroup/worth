@@ -8,8 +8,9 @@ from worth.dt import our_now, lbd_prior_month, prior_business_day
 from markets.models import get_ticker
 from analytics.models import PPMResult
 from analytics.utils import pcnt_change
-from trades.utils import valuations, get_futures_pnl, get_equties_pnl
+from trades.utils import valuations, pnl_asof, get_equties_pnl
 from markets.utils import ticker_url
+from accounts.models import copy_cash_df
 from accounts.utils import get_account_url
 
 
@@ -52,7 +53,7 @@ def format_rec(a, t, pos=0, price=1, value=0, daily=0, mtd=0, ytd=0, pnl=0):
     return [a, t, pos, price, value, daily, mtd, ytd, pnl]
 
 
-def futures_pnl(d=None, a='MSRKIB'):
+def pnl_summary(d=None, a='MSRKIB'):
     if d is None:
         d = our_now().date()
 
@@ -60,10 +61,10 @@ def futures_pnl(d=None, a='MSRKIB'):
     eoy = lbd_prior_month(date(d.year, 1, 1))
     lm = lbd_prior_month(d)
 
-    pnl_total = get_futures_pnl(d=None)
-    pnl_yesterday = get_futures_pnl(d=yesterday)
-    pnl_prior_month = get_futures_pnl(d=lm)
-    pnl_end_of_year = get_futures_pnl(d=eoy)
+    pnl_total, cash_flows = pnl_asof(d=None)
+    pnl_yesterday, _ = pnl_asof(d=yesterday)
+    pnl_prior_month, _ = pnl_asof(d=lm)
+    pnl_end_of_year, _ = pnl_asof(d=eoy)
 
     df = pd.merge(pnl_yesterday, pnl_end_of_year, on=['a', 't'], how='outer', suffixes=('_yesterday', '_year'))
     # Note - merge only uses suffixes if both df's have the same column headings.
@@ -82,6 +83,7 @@ def futures_pnl(d=None, a='MSRKIB'):
                                        ('YTD', df.pnl - df.pnl_year),
                                        ('PnL', df.pnl))))
 
+    # Remove old irrelevant records - things that did not have a position or a trade this year.
     filter_index = result[(np.abs(result['YTD']) < 0.0001) & (np.abs(result['Value']) < 0.001)].index
     result.drop(filter_index, inplace=True)
 
@@ -89,6 +91,14 @@ def futures_pnl(d=None, a='MSRKIB'):
     mtd_total = result.MTD.sum()
     ytd_total = result.YTD.sum()
     result.loc[len(result)] = format_rec('TOTAL', '', 0, 0, 0, today_total, mtd_total, ytd_total, 0)
+
+    # Calculate Account Cash Balances
+    cash = copy_cash_df(d)
+    cash = pd.pivot_table(cash, index=["a"], aggfunc={'q': np.sum})
+    cash = pd.merge(cash, cash_flows, how='outer', on='a')
+    cash.fillna(0, inplace=True)
+    cash['balance'] = cash.q + cash.adj
+    cash.drop(['q', 'adj'], axis=1, inplace=True)
 
     headings, data, formats = df_to_jqtable(df=result, formatter=format_rec)
 

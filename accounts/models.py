@@ -1,6 +1,8 @@
 from cachetools.func import lru_cache
 import pandas as pd
+from django.db.models import Sum
 from django.db import models
+from worth.dt import day_start_next_day
 
 
 class Account(models.Model):
@@ -91,19 +93,27 @@ class CashRecord(models.Model):
     ignored = models.BooleanField(default=False)
 
     def save(self, *args, **kwargs):
-        get_cash_records.cache_clear()
+        get_cash_df.cache_clear()
         super().save(*args, **kwargs)
 
 
 @lru_cache(maxsize=10)
-def get_cash_records(a=None):
-    print("getting cash")
-    qs = CashRecord.objects.values_list('account__name', 'amt').filter(ignored=False)
+def get_cash_df(a=None, d=None):
+    qs = CashRecord.objects.filter(ignored=False, account__active_f=True)
+    if d is not None:
+        qs = qs.filter(d__lte=d)
     if a is not None:
         qs = qs.filter(account__name=a)
-    else:
-        qs = qs.filter(account__active_f=True)
+
+    qs = qs.values('account__name').order_by('account__name').annotate(total=Sum('amt'))
 
     df = pd.DataFrame.from_records(list(qs))
     df.columns = ['a', 'q']
     return df
+
+
+def copy_cash_df(d=None):
+    df = get_cash_df(d=d)
+    df = df.copy(deep=True)
+    return df
+

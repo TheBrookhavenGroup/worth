@@ -3,6 +3,8 @@ from cachetools.func import lru_cache
 from django.db import models
 from django.db.models import Q
 from django.core.validators import MinValueValidator
+from django.conf import settings
+from worth.dt import day_start_next_day
 from markets.models import Ticker, NOT_FUTURES_EXCHANGES
 from accounts.models import Account
 
@@ -53,30 +55,41 @@ class Trade(models.Model):
 
 
 @lru_cache(maxsize=10)
-def get_trades_df(a=None, futures=True):
+def get_trades_df():
     fields = ('account__name', 'ticker__ticker',
               'ticker__market__ib_exchange', 'ticker__market__cs',
               'dt', 'q', 'p', 'commission', 'reinvest')
     qs = Trade.objects.values_list(*fields)
-    if a is not None:
-        qs = qs.filter(account__name=a)
-    else:
-        qs = qs.filter(account__active_f=True)
+    # if a is not None:
+    #     qs = qs.filter(account__name=a)
+    # else:
+    #     qs = qs.filter(account__active_f=True)
+    qs = qs.filter(account__active_f=True)
 
-    q = Q(ticker__market__ib_exchange__in=NOT_FUTURES_EXCHANGES)
-    if futures:
-        qs = qs.filter(~q)
-    else:
-        qs = qs.filter(q)
+    # q = Q(ticker__market__ib_exchange__in=NOT_FUTURES_EXCHANGES)
+    # if futures:
+    #     qs = qs.filter(~q)
+    # else:
+    #     qs = qs.filter(q)
 
     df = pd.DataFrame.from_records(list(qs))
+
     df.columns = ['a', 't', 'e', 'cs', 'dt', 'q', 'p', 'c', 'r']
+    df = df.astype({"q": int})
+
+    factor = settings.PPM_FACTOR
+    if factor is not False:
+        df.q *= factor
+
     return df
 
 
-def get_futures_df(a=None):
-    return get_trades_df(a=a, futures=True)
+def copy_trades_df(d=None):
+    df = get_trades_df()
+    df = df.copy(deep=True)
+    if d is not None:
+        dt = day_start_next_day(d)
+        mask = df['dt'] < dt
+        df = df.loc[mask]
+    return df
 
-
-def get_equity_df(a=None):
-    return get_trades_df(futures=False)

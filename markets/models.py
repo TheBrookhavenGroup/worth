@@ -141,6 +141,6 @@ class TBGDailyBar(models.Model):
         return f"{self.d}|{self.o}|{self.h}|{self.l}|{self.c}|{self.v}|{self.oi}"
 
 
-@ttl_cache(maxsize=1000, ttl=10)
+@ttl_cache(maxsize=10000, ttl=10)
 def get_ticker(t):
     return Ticker.objects.get(ticker=t)

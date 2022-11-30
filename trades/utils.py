@@ -9,7 +9,7 @@ from worth.utils import is_near_zero
 from worth.dt import day_start_next_day
 from accounts.models import Account
 from markets.models import get_ticker, NOT_FUTURES_EXCHANGES
-from trades.models import Trade, get_futures_df, get_equity_df
+from trades.models import Trade, copy_trades_df
 from markets.utils import get_price
 
 
@@ -147,38 +147,60 @@ def trades_qs(a, d):
     return qs
 
 
-def get_futures_pnl(a='MSRKIB', d=None):
-    def price_mapper(x):
-        if x['q'] == 0:
-            price = 0
-        else:
-            ti = get_ticker(x['t'])
-            price = get_price(ti, d)
-        return price
+def price_mapper(x, d):
+    if x.q == 0:
+        price = 0
+    else:
+        ti = get_ticker(x.t)
+        price = get_price(ti, d)
+    return price
 
-    df = get_futures_df(a=a)
-    if d is not None:
-        dt = day_start_next_day(d)
-        mask = df['dt'] < dt
-        df = df.loc[mask]
 
-    df = df.astype({"q": int})
+def pnl_asof(d=None):
+    '''
+    Calculate PnL from all trades - need that for cash flow.
+    Calculate Cash balances.
+    Return YTD data for active positions.
+    '''
+
+    df = copy_trades_df(d=d)
 
     df['qp'] = -df.q * df.p
-    result = pd.pivot_table(df, index=["a", "t"],
-                            aggfunc={'qp': np.sum, 'q': np.sum, 'cs': np.max, 'c': np.sum}).reset_index(['a', 't'])
-    result['price'] = result.apply(lambda x: price_mapper(x), axis=1)
-    result['pnl'] = result.cs * (result.qp + result.q * result.price) - result.c
-    result['value'] = result.cs * result.q * result.price
 
-    result = result.drop(['c', 'cs', 'qp'], axis=1)
+    pnl = pd.pivot_table(df, index=["a", "t"],
+                         aggfunc={'qp': np.sum, 'q': np.sum, 'cs': np.max, 'c': np.sum, 'e': 'first'}
+                         ).reset_index(['a', 't'])
+    pnl['price'] = pnl.apply(lambda x: price_mapper(x, d), axis=1)
+    pnl['pnl'] = pnl.cs * (pnl.qp + pnl.q * pnl.price) - pnl.c
+    pnl['value'] = pnl.cs * pnl.q * pnl.price
 
-    return result
+    # Need to add cash flow to cash records for each account.
+    pnl['cash_flow'] = df.qp - df.c
+
+    # The full pnl for futures should be added to cash
+    # The cs * sum(q*p) for everything else, not the pnl, should be added to cash
+    # Pivot on these to get cash contributions for each account
+
+    futures_cash = pnl[~pnl.e.isin(NOT_FUTURES_EXCHANGES)]
+    futures_cash = pd.pivot_table(futures_cash, index=["a"], aggfunc={'cash_flow': np.sum})
+
+    non_futures_cash = pnl[pnl.e.isin(NOT_FUTURES_EXCHANGES)]
+    non_futures_cash = pd.pivot_table(non_futures_cash, index=["a"], aggfunc={'pnl': np.sum})
+    non_futures_cash.rename(columns={'pnl': 'non_f_cash_flow'}, inplace=True)
+
+    cash_adj = pd.merge(futures_cash, non_futures_cash, how='outer', on='a')
+    cash_adj.fillna(0, inplace=True)
+
+    cash_adj['adj'] = cash_adj.cash_flow + cash_adj.non_f_cash_flow
+    cash_adj.drop(['cash_flow', 'non_f_cash_flow'], axis=1, inplace=True)
+
+    pnl.drop(['c', 'cs', 'qp','cash_flow', 'e'], axis=1, inplace=True)
+
+    return pnl, cash_adj
 
 
 @ttl_cache(maxsize=1000, ttl=10)
 def get_equties_pnl(a, d=None):
-    df = get_equity_df(a)
     qs = trades_qs(a, d).filter(Q(ticker__market__ib_exchange__in=NOT_FUTURES_EXCHANGES))
     return pnl_calculator(qs, d=d)
 
@@ -223,7 +245,7 @@ def get_balances(d=None, account=None, ticker=None):
     futures_accounts = qs.filter(~Q(ticker__market__ib_exchange__in=NOT_FUTURES_EXCHANGES)).distinct()
 
     for a in set([i[0] for i in futures_accounts]):
-        f = get_futures_pnl(d=d, a=a)
+        f = pnl_asof(d=d, a=a)
         total = f.pnl.sum()
         balances[a]['CASH'] += total
 

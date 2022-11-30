@@ -6,7 +6,7 @@ import plotly.graph_objs as go
 from django.views.generic.base import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from analytics.cash import cash_sums, total_cash
-from analytics.pnl import futures_pnl, year_pnl
+from analytics.pnl import pnl_summary, year_pnl
 from trades.ib_flex import get_trades
 from worth.dt import lbd_prior_month, our_now, lbd_of_month
 from worth.utils import is_near_zero
@@ -69,7 +69,7 @@ class FuturesPnLView(LoginRequiredMixin, TemplateView):
         if d is not None:
             d = datetime.strptime(d, '%Y%m%d').date()
 
-        context['headings1'], context['data1'], context['formats'] = futures_pnl(d=d)
+        context['headings1'], context['data1'], context['formats'] = pnl_summary(d=d)
         context['title'] = 'Futures PnL'
         return context
 
