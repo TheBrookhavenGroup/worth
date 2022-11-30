@@ -114,8 +114,13 @@ def pnl_asof(d=None, a=None):
     cash_adj = pd.merge(futures_cash, non_futures_cash, how='outer', on='a')
     cash_adj.fillna(0, inplace=True)
 
-    cash_adj['adj'] = cash_adj.cash_flow + cash_adj.non_f_cash_flow
-    cash_adj.drop(['cash_flow', 'non_f_cash_flow'], axis=1, inplace=True)
+    if futures_cash.empty:
+        cash_adj.rename(columns={'non_f_cash_flow': 'adj'}, inplace=True)
+    elif non_futures_cash.empty:
+        cash_adj.rename(columns={'cash_flow': 'adj'}, inplace=True)
+    else:
+        cash_adj['adj'] = cash_adj.cash_flow + cash_adj.non_f_cash_flow
+        cash_adj.drop(['cash_flow', 'non_f_cash_flow'], axis=1, inplace=True)
 
     pnl.drop(['c', 'cs', 'qp', 'cash_flow', 'e'], axis=1, inplace=True)
 

@@ -74,7 +74,7 @@ class PnLSplitTests(TestCase):
         self.assertAlmostEqual(expected_pnl, value)
 
     def test_split(self):
-        pnl = pnl_summary(a='MSFidelity')[0]
+        pnl = pnl_summary(a='MSFidelity')[1]
 
         # Split
         # These are the trades used for testing with zero for price on split shares added.
