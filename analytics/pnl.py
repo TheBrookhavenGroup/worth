@@ -107,15 +107,16 @@ def pnl_summary(d=None, a=None, save_result_f=True):  # 'MSRKIB'):
     cash.drop(['q', 'q_eod', 'q_eom', 'q_eoy'], axis=1, inplace=True)
 
     result = pd.concat([result, cash])
+    result.reset_index(inplace=True, drop=True)
 
     today_total = result.Today.sum()
     mtd_total = result.MTD.sum()
     ytd_total = result.YTD.sum()
-    result.loc[len(result)] = format_rec('TOTAL', '', 0, 0, total_worth, today_total, mtd_total, ytd_total, 0)
+    result.loc[len(result) + 1] = format_rec('TOTAL', '', 0, 0, total_worth, today_total, mtd_total, ytd_total, 0)
 
     coh = result[result.Ticker == "CASH"]
     coh = coh.Pos.sum()
-    result.loc[len(result)] = ['ALL COH', '', '', '', '', '', '', '', cround(coh, 0)]
+    result.loc[len(result) + 1] = ['ALL COH', '', '', '', '', '', '', '', cround(coh, 0)]
 
     if (d is None) or (d == date.today()):
         PPMResult.objects.create(value=total_worth)
