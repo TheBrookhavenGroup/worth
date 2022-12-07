@@ -84,7 +84,8 @@ def pnl_summary(d=None, a=None, save_result_f=True):  # 'MSRKIB'):
                                        ('PnL', df.pnl))))
 
     # Remove old irrelevant records - things that did not have a position or a trade this year.
-    filter_index = result[(np.abs(result['YTD']) < 0.0001) & (np.abs(result['Value']) < 0.001)].index
+    x = 0.001
+    filter_index = result[(np.abs(result.Pos) < x) & (np.abs(result.YTD) < x) & (np.abs(result.Value) < x)].index
     result.drop(filter_index, inplace=True)
 
     # Calculate Account Cash Balances
