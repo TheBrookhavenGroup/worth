@@ -124,9 +124,11 @@ def pnl_asof(d=None, a=None):
     pnl.drop(['c', 'cs', 'qp', 'cash_flow'], axis=1, inplace=True)
 
     cash = copy_cash_df(d=d, a=a, pivot=True)
-    cash = pd.merge(cash, cash_adj, how='outer', on='a')
+    # concat with axis=1 is an outer join
+    cash = pd.concat([cash, cash_adj], axis=1)
+    cash.fillna(0, inplace=True)
     cash.q = cash.q + cash.adj
     cash.drop(['adj'], axis=1, inplace=True)
-    cash.fillna(0, inplace=True)
+
 
     return pnl, cash
