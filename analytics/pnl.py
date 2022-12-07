@@ -5,7 +5,7 @@ from datetime import date
 from collections import OrderedDict
 from worth.utils import cround, is_near_zero, is_not_near_zero, union_keys, df_to_jqtable
 from worth.dt import our_now, lbd_prior_month, prior_business_day
-from markets.models import NOT_FUTURES_EXCHANGES
+from markets.models import get_ticker, NOT_FUTURES_EXCHANGES
 from analytics.models import PPMResult
 from analytics.utils import pcnt_change
 from trades.utils import pnl_asof
