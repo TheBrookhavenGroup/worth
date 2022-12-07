@@ -1,18 +1,16 @@
-import json
+
 import numpy as np
 import pandas as pd
 from datetime import date
 from collections import OrderedDict
 from worth.utils import cround, is_near_zero, is_not_near_zero, union_keys, df_to_jqtable
 from worth.dt import our_now, lbd_prior_month, prior_business_day
-from markets.models import get_ticker
+from markets.models import NOT_FUTURES_EXCHANGES
 from analytics.models import PPMResult
 from analytics.utils import pcnt_change
 from trades.utils import pnl_asof
 from markets.utils import ticker_url
-from accounts.models import copy_cash_df
 from accounts.utils import get_account_url
-
 
 def format_rec(a, t, pos=0, price=1, value=0, daily=0, mtd=0, ytd=0, pnl=0):
     if a == 'TOTAL':
@@ -50,7 +48,7 @@ def format_rec(a, t, pos=0, price=1, value=0, daily=0, mtd=0, ytd=0, pnl=0):
     return [a, t, pos, price, value, daily, mtd, ytd, pnl]
 
 
-def pnl_summary(d=None, a=None):  # 'MSRKIB'):
+def pnl_summary(d=None, a=None, save_result_f=True):  # 'MSRKIB'):
     if d is None:
         d = our_now().date()
 
@@ -62,6 +60,11 @@ def pnl_summary(d=None, a=None):  # 'MSRKIB'):
     pnl_eod, cash_eod = pnl_asof(d=yesterday, a=a)
     pnl_eom, cash_eom = pnl_asof(d=lm, a=a)
     pnl_eoy, cash_eoy = pnl_asof(d=eoy, a=a)
+
+    # The Value of Futures positions is already added to the cash and should not be added to the total again.
+    total_worth = pnl_total[pnl_total.e.isin(NOT_FUTURES_EXCHANGES)]
+    total_worth = total_worth.value.sum() + cash.q.sum()
+
 
     df = pd.merge(pnl_eod, pnl_eoy, on=['a', 't'], how='outer', suffixes=('_yesterday', '_year'))
     # Note - merge only uses suffixes if both df's have the same column headings.
@@ -104,7 +107,6 @@ def pnl_summary(d=None, a=None):  # 'MSRKIB'):
 
     result = pd.concat([result, cash])
 
-    total_worth = result.Value.sum()
     today_total = result.Today.sum()
     mtd_total = result.MTD.sum()
     ytd_total = result.YTD.sum()

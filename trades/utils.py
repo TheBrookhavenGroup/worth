@@ -121,7 +121,7 @@ def pnl_asof(d=None, a=None):
         cash_adj['adj'] = cash_adj.cash_flow + cash_adj.pnl
         cash_adj.drop(['cash_flow', 'pnl'], axis=1, inplace=True)
 
-    pnl.drop(['c', 'cs', 'qp', 'cash_flow', 'e'], axis=1, inplace=True)
+    pnl.drop(['c', 'cs', 'qp', 'cash_flow'], axis=1, inplace=True)
 
     cash = copy_cash_df(d=d, a=a, pivot=True)
     cash = pd.merge(cash, cash_adj, how='outer', on='a')
