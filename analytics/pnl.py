@@ -12,6 +12,7 @@ from trades.utils import pnl_asof
 from markets.utils import ticker_url
 from accounts.utils import get_account_url
 
+
 def format_rec(a, t, pos=0, price=1, value=0, daily=0, mtd=0, ytd=0, pnl=0):
     if a == 'TOTAL':
         return [a, '', '', '', cround(value, 2), cround(daily, 2), cround(mtd, 2), cround(ytd, 0), '']
@@ -64,7 +65,6 @@ def pnl_summary(d=None, a=None, save_result_f=True):  # 'MSRKIB'):
     # The Value of Futures positions is already added to the cash and should not be added to the total again.
     total_worth = pnl_total[pnl_total.e.isin(NOT_FUTURES_EXCHANGES)]
     total_worth = total_worth.value.sum() + cash.q.sum()
-
 
     df = pd.merge(pnl_eod, pnl_eoy, on=['a', 't'], how='outer', suffixes=('_yesterday', '_year'))
     # Note - merge only uses suffixes if both df's have the same column headings.

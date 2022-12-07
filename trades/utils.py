@@ -130,5 +130,4 @@ def pnl_asof(d=None, a=None):
     cash.q = cash.q + cash.adj
     cash.drop(['adj'], axis=1, inplace=True)
 
-
     return pnl, cash
