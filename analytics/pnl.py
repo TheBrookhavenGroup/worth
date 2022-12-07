@@ -15,8 +15,8 @@ from accounts.utils import get_account_url
 def format_rec(a, t, pos=0, price=1, value=0, daily=0, mtd=0, ytd=0, pnl=0):
     if a == 'TOTAL':
         return [a, '', '', '', cround(value, 2), cround(daily, 2), cround(mtd, 2), cround(ytd, 0), '']
-    if t == 'ALL COH':
-        return [t, '', '', '', '', '', '', '', cround(pnl, 0), ]
+    if a == 'ALL COH':
+        return [a, '', '', '', '', '', '', '', cround(pnl, 0), ]
 
     t = get_ticker(t)
     pprec = t.market.pprec
@@ -111,6 +111,10 @@ def pnl_summary(d=None, a=None, save_result_f=True):  # 'MSRKIB'):
     mtd_total = result.MTD.sum()
     ytd_total = result.YTD.sum()
     result.loc[len(result)] = format_rec('TOTAL', '', 0, 0, total_worth, today_total, mtd_total, ytd_total, 0)
+
+    coh = result[result.Ticker == "CASH"]
+    coh = coh.Pos.sum()
+    result.loc[len(result)] = ['ALL COH', '', '', '', '', '', '', '', cround(coh, 0)]
 
     if (d is None) or (d == date.today()):
         PPMResult.objects.create(value=total_worth)
