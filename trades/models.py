@@ -75,7 +75,6 @@ def get_trades_df(a=None):
     df = pd.DataFrame.from_records(list(qs))
 
     df.columns = ['a', 't', 'e', 'cs', 'dt', 'q', 'p', 'c', 'r']
-    df = df.astype({"q": int})
 
     factor = settings.PPM_FACTOR
     if factor is not False:
