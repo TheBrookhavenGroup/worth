@@ -50,7 +50,7 @@ def format_rec(a, t, pos=0, price=1, value=0, daily=0, mtd=0, ytd=0, pnl=0):
     return [a, t, pos, price, value, daily, mtd, ytd, pnl]
 
 
-def pnl_summary(d=None, a='MSRKIB'):
+def pnl_summary(d=None, a=None):  # 'MSRKIB'):
     if d is None:
         d = our_now().date()
 
