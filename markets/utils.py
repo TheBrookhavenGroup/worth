@@ -109,7 +109,7 @@ def get_price(ticker, d=None):
     else:
         p = ticker.fixed_price
 
-    print(f"Got price for {ticker} for {d} = {p}")
+    # print(f"Got price for {ticker} for {d} = {p}")
     return p
 
 

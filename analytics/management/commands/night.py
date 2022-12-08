@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from analytics.pnl import year_pnl
+from analytics.pnl import pnl
 from trades.ib_flex import get_trades
 
 
@@ -16,5 +16,6 @@ class Command(BaseCommand):
         x = get_trades()
         for i in x[1]:
             print(i)
-        x = year_pnl()
-        print(next(i for i in x[1] if 'ALL<a' in i[0])[4:6])
+        df, total = pnl()
+        df = df[df.Account == 'TOTAL']
+        print(df.to_string())
