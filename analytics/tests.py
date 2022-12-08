@@ -1,7 +1,7 @@
 import datetime
 from django.test import TestCase, override_settings
 from trades.tests import make_trades, make_trades_split
-from analytics.pnl import pnl_summary
+from analytics.pnl import pnl
 from markets.utils import get_price
 
 
@@ -12,41 +12,31 @@ class PnLTests(TestCase):
 
     @staticmethod
     def results(d=None):
-        headings, data, formats, total_worth = pnl_summary(d=d)
+        df, total = pnl(d=d)
 
-        total = [i for i in data if i[0] == 'TOTAL'][-1][4]
-        coh = [i for i in data if i[0] == 'ALL COH'][-1][-1]
-        cash = [i for i in data if i[1] == 'CASH'][-1][4]
-        msft = [i for i in data if 'MSFT' in i[1]]
-        if msft:
-            msft = msft[-1][-7:]
-        amzn = [i for i in data if 'AMZN' in i[1]]
-        if amzn:
-            amzn = amzn[-1][-7:]
-        aapl = [i for i in data if 'AAPL' in i[1]]
-        if aapl:
-            aapl = aapl[-1][-7:]
+        coh = df[df.Account == 'ALL COH'].iloc[0][-1]
+        cash = df[df.Ticker == 'CASH'].iloc[0][4]
+        msft = df[df.Ticker == 'MSFT'].iloc[0][-1]
+        try:
+            aapl = df[df.Ticker == 'AAPL'].iloc[0][-1]
+        except IndexError:
+            aapl = 0
 
-        return {'TOTAL': total, 'COH': coh, 'CASH': cash, 'MSFT': msft, 'AMZN': amzn, 'AAPL': aapl}
+        return {'TOTAL': total, 'COH': coh, 'CASH': cash, 'MSFT': msft, 'AAPL': aapl}
 
     def test_today(self):
         data = self.results()
-        pos_i, value_i, pnl_i = 0, 2, 6
 
-        self.assertEqual('1.02M', data['TOTAL'])
+        self.assertAlmostEqual(1017420.0, data['TOTAL'])
 
-        self.assertEqual('1.003M', data['CASH'])
+        self.assertAlmostEqual(1003445.0, data['CASH'])
         self.assertEqual('1M', data['COH'])
-
-        x = data['MSFT']
-        self.assertEqual('-50', x[pnl_i])
-        self.assertEqual('10', x[pos_i])
-        self.assertEqual('3,050', x[value_i])
+        self.assertAlmostEqual(-50.0, data['MSFT'])
 
     def test_givendate(self):
         data = self.results(d=datetime.date(2021, 10, 23))
-        x = data['AAPL']
-        self.assertEqual('100', x[pnl_i])
+
+        self.assertEqual(500, data['AAPL'])
 
 
 @override_settings(USE_PRICE_FEED=False)

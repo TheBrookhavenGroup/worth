@@ -110,29 +110,29 @@ def pnl_asof(d=None, a=None):
     # Pivot on these to get cash contributions for each account
 
     futures_cash = pnl[~pnl.e.isin(NOT_FUTURES_EXCHANGES)]
-    futures_cash = pd.pivot_table(futures_cash, index=["a"], aggfunc={'pnl': np.sum})
+    futures_cash = futures_cash.groupby('a')['pnl'].sum().reset_index()
 
     non_futures_cash = pnl[pnl.e.isin(NOT_FUTURES_EXCHANGES)]
-    non_futures_cash = pd.pivot_table(non_futures_cash, index=["a"], aggfunc={'cash_flow': np.sum})
-
-    cash_adj = pd.merge(futures_cash, non_futures_cash, how='outer', on='a')
-    cash_adj.fillna(0, inplace=True)
+    non_futures_cash = non_futures_cash.groupby('a')['cash_flow'].sum().reset_index()
 
     if futures_cash.empty:
-        cash_adj.rename(columns={'cash_flow': 'adj'}, inplace=True)
+        cash_adj = non_futures_cash
+        cash_adj.rename(columns={'cash_flow': 'q'}, inplace=True)
     elif non_futures_cash.empty:
-        cash_adj.rename(columns={'pnl': 'adj'}, inplace=True)
+        cash_adj = futures_cash
+        cash_adj.rename(columns={'pnl': 'q'}, inplace='True')
     else:
-        cash_adj['adj'] = cash_adj.cash_flow + cash_adj.pnl
+        cash_adj = pd.merge(futures_cash, non_futures_cash, how='outer', on='a')
+        cash_adj.fillna(0, inplace=True)
+        cash_adj['q'] = cash_adj.cash_flow + cash_adj.pnl
         cash_adj.drop(['cash_flow', 'pnl'], axis=1, inplace=True)
-
-    pnl.drop(['c', 'cs', 'qp', 'cash_flow'], axis=1, inplace=True)
 
     cash = copy_cash_df(d=d, a=a, pivot=True)
     # concat with axis=1 is an outer join
-    cash = pd.concat([cash, cash_adj], axis=1)
+    cash = pd.merge(cash, cash_adj, on='a')
     cash.fillna(0, inplace=True)
-    cash.q = cash.q + cash.adj
-    cash.drop(['adj'], axis=1, inplace=True)
+    cash.q_x = cash.q_x + cash.q_y
+    cash.drop(['q_y'], axis=1, inplace=True)
+    cash.rename(columns={'q_x': 'q'}, inplace=True)
 
     return pnl, cash

@@ -49,7 +49,7 @@ def format_rec(a, t, pos=0, price=1, value=0, daily=0, mtd=0, ytd=0, pnl=0):
     return [a, t, pos, price, value, daily, mtd, ytd, pnl]
 
 
-def pnl_summary(d=None, a=None, save_result_f=True):  # 'MSRKIB'):
+def pnl(d=None, a=None):
     if d is None:
         d = our_now().date()
 
@@ -94,7 +94,7 @@ def pnl_summary(d=None, a=None, save_result_f=True):  # 'MSRKIB'):
     cash = pd.merge(cash, cash_eoy, how='outer', on='a', suffixes=('', '_eoy'))
     cash.fillna(0, inplace=True)
 
-    cash.reset_index(inplace=True)
+    cash.reset_index(inplace=True, drop=True)
     cash.rename(columns={'a': 'Account'}, inplace=True)
     cash['Ticker'] = 'CASH'
     cash['Pos'] = cash.q
@@ -112,11 +112,17 @@ def pnl_summary(d=None, a=None, save_result_f=True):  # 'MSRKIB'):
     today_total = result.Today.sum()
     mtd_total = result.MTD.sum()
     ytd_total = result.YTD.sum()
-    result.loc[len(result) + 1] = format_rec('TOTAL', '', 0, 0, total_worth, today_total, mtd_total, ytd_total, 0)
+    result.loc[len(result) + 1] = ['TOTAL', '', 0, 0, total_worth, today_total, mtd_total, ytd_total, 0]
 
     coh = result[result.Ticker == "CASH"]
     coh = coh.Pos.sum()
     result.loc[len(result) + 1] = ['ALL COH', '', '', '', '', '', '', '', cround(coh, 0)]
+
+    return result, total_worth
+
+
+def pnl_summary(d=None, a=None):
+    result, total_worth = pnl(d=d, a=a)
 
     if (d is None) or (d == date.today()):
         PPMResult.objects.create(value=total_worth)

@@ -111,7 +111,7 @@ def get_cash_df(a=None, d=None, pivot=False):
     df.columns = ['a', 'q']
 
     if pivot:
-        df = pd.pivot_table(df, index=["a"], aggfunc={'q': np.sum})
+        df = df.groupby('a')['q'].sum().reset_index()
 
     return df
 
