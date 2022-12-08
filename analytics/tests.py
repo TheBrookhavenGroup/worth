@@ -44,24 +44,24 @@ class PnLSplitTests(TestCase):
     def setUp(self):
         self.aapl_ticker, self.msft_ticker = make_trades_split()
 
-    def check_pnl(self, ticker, pnl, x):
+    def check_pnl(self, ticker, df, x):
         pos = sum(i[0] for i in x)
         price = get_price(ticker)
         x.append((-pos, price))
         expected_pnl = -sum([i * j for i, j in x])
 
-        value = [i for i in pnl if ticker == i[0]][0][3]
-        self.assertAlmostEqual(expected_pnl, value)
+        pnl = df[df.Ticker == str(ticker)].iloc[0][-1]
+        self.assertAlmostEqual(expected_pnl, pnl)
 
     def test_split(self):
-        pnl = pnl_summary(a='MSFidelity')[1]
+        df, total = pnl(a='MSFidelity')
 
         # Split
         # These are the trades used for testing with zero for price on split shares added.
         x = [(50, 305), (150, 0), (-100, 200)]
-        self.check_pnl(self.aapl_ticker, pnl, x)
+        self.check_pnl(self.aapl_ticker, df, x)
 
         # Reverse split
         # In a reverse split the split q is negative
         x = [(150, 125), (-100, 0), (-25, 330)]
-        self.check_pnl(self.msft_ticker, pnl, x)
+        self.check_pnl(self.msft_ticker, df, x)
