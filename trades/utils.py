@@ -88,6 +88,11 @@ def pnl_asof(d=None, a=None):
 
     df = copy_trades_df(d=d, a=a)
 
+    if df.empty:
+        pnl = pd.DataFrame(columns=['a', 't', 'qp', 'q', 'e', 'price', 'pnl', 'value'])
+        cash = pd.DataFrame(columns=['a', 'q'])
+        return pnl, cash
+
     df['qp'] = -df.q * df.p
 
     pnl = pd.pivot_table(df, index=["a", "t"],

@@ -29,7 +29,7 @@ class PnLTests(TestCase):
 
         return {'TOTAL': total, 'COH': coh, 'CASH': cash, 'MSFT': msft, 'AMZN': amzn, 'AAPL': aapl}
 
-    def test_setup(self):
+    def test_today(self):
         data = self.results()
         pos_i, value_i, pnl_i = 0, 2, 6
 
@@ -43,6 +43,7 @@ class PnLTests(TestCase):
         self.assertEqual('10', x[pos_i])
         self.assertEqual('3,050', x[value_i])
 
+    def test_givendate(self):
         data = self.results(d=datetime.date(2021, 10, 23))
         x = data['AAPL']
         self.assertEqual('100', x[pnl_i])

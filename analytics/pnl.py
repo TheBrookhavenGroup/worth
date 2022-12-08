@@ -57,7 +57,7 @@ def pnl_summary(d=None, a=None, save_result_f=True):  # 'MSRKIB'):
     eoy = lbd_prior_month(date(d.year, 1, 1))
     lm = lbd_prior_month(d)
 
-    pnl_total, cash = pnl_asof(d=None, a=a)
+    pnl_total, cash = pnl_asof(d=d, a=a)
     pnl_eod, cash_eod = pnl_asof(d=yesterday, a=a)
     pnl_eom, cash_eom = pnl_asof(d=lm, a=a)
     pnl_eoy, cash_eoy = pnl_asof(d=eoy, a=a)
