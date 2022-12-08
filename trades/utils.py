@@ -1,15 +1,10 @@
 import pandas as pd
 import numpy as np
-from collections import defaultdict
-from cachetools.func import ttl_cache
-from django.conf import settings
-from django.db.models import Sum, F, Q
-from accounts.models import CashRecord
+
 from worth.utils import is_near_zero
-from worth.dt import day_start_next_day
-from accounts.models import Account
+from accounts.models import Account, copy_cash_df
 from markets.models import get_ticker, NOT_FUTURES_EXCHANGES
-from trades.models import Trade, get_futures_df, get_equity_df
+from trades.models import Trade, copy_trades_df
 from markets.utils import get_price
 
 
@@ -75,167 +70,69 @@ def weighted_average_price(ticker, account=None):
     return wap([list(i) for i in qs])
 
 
-@ttl_cache(maxsize=1000, ttl=10)
-def valuations(d=None, account=None, ticker=None):
-    data = []
-
-    balances = get_balances(d, account, ticker)
-
-    ALL = 0
-    for a in balances.keys():
-        portfolio = balances[a]
-        for ticker in portfolio.keys():
-            t = get_ticker(ticker)
-            m = t.market
-            q = portfolio[ticker]
-            if is_near_zero(q):
-                continue
-
-            p = get_price(t, d=d)
-
-            if m.is_futures:
-                # Need this for futures trades made outside MSRKIB
-                open_price = weighted_average_price(t, account=a)
-                value = q * (p - open_price) * m.cs
-            else:
-                value = q * p * m.cs
-
-            ALL += value
-
-            data.append([a, ticker, q, p, value])
-
-    data.append(['ALL', 'CASH', '', '', '', ALL])
-
-    return data
+def price_mapper(x, d):
+    if x.q == 0:
+        price = 0
+    else:
+        ti = get_ticker(x.t)
+        price = get_price(ti, d)
+    return price
 
 
-def add_sums(qs):
-    return qs.annotate(pos=Sum(F('q')), qp=Sum(F('q') * F('p')), c=Sum(F('commission')))
+def pnl_asof(d=None, a=None):
+    '''
+    Calculate PnL from all trades - need that for cash flow.
+    Calculate Cash balances.
+    Return YTD data for active positions.
+    '''
 
+    df = copy_trades_df(d=d, a=a)
 
-def pnl_calculator(qs, d=None):
-    qs = add_sums(qs)
-    result = []
-    total = 0.0
-    for ti, pos, qp, commission in qs:
-        ticker = get_ticker(ti)
-        market = ticker.market
-        pos = int(pos)
-        pnl = -qp
-        if pos == 0:
-            price = 0
-        else:
-            price = get_price(ticker, d)
-            pnl += pos * price
-
-        pnl *= market.cs
-        pnl -= commission
-        total += pnl
-        result.append((ticker, pos, price, pnl))
-
-    return result, total
-
-
-def trades_qs(a, d):
-    a = Account.objects.get(name=a)
-    qs = Trade.objects.values_list('ticker__ticker').filter(account=a)
-
-    if d is not None:
-        dt = day_start_next_day(d)
-        qs = qs.filter(dt__lt=dt)
-
-    return qs
-
-
-def get_futures_pnl(a='MSRKIB', d=None):
-    def price_mapper(x):
-        if x['q'] == 0:
-            price = 0
-        else:
-            ti = get_ticker(x['t'])
-            price = get_price(ti, d)
-        return price
-
-    df = get_futures_df(a=a)
-    if d is not None:
-        dt = day_start_next_day(d)
-        mask = df['dt'] < dt
-        df = df.loc[mask]
-
-    df = df.astype({"q": int})
+    if df.empty:
+        pnl = pd.DataFrame(columns=['a', 't', 'qp', 'q', 'e', 'price', 'pnl', 'value'])
+        cash = pd.DataFrame(columns=['a', 'q'])
+        return pnl, cash
 
     df['qp'] = -df.q * df.p
-    result = pd.pivot_table(df, index=["a", "t"],
-                            aggfunc={'qp': np.sum, 'q': np.sum, 'cs': np.max, 'c': np.sum}).reset_index(['a', 't'])
-    result['price'] = result.apply(lambda x: price_mapper(x), axis=1)
-    result['pnl'] = result.cs * (result.qp + result.q * result.price) - result.c
-    result['value'] = result.cs * result.q * result.price
 
-    result = result.drop(['c', 'cs', 'qp'], axis=1)
+    pnl = pd.pivot_table(df, index=["a", "t"],
+                         aggfunc={'qp': np.sum, 'q': np.sum, 'cs': np.max, 'c': np.sum, 'e': 'first'}
+                         ).reset_index(['a', 't'])
+    pnl['price'] = pnl.apply(lambda x: price_mapper(x, d), axis=1)
+    pnl['pnl'] = pnl.cs * (pnl.qp + pnl.q * pnl.price) - pnl.c
+    pnl['value'] = pnl.cs * pnl.q * pnl.price
 
-    return result
+    # Need to add cash flow to cash records for each account.
+    pnl['cash_flow'] = pnl.qp - pnl.c
 
+    # The full pnl for futures should be added to cash
+    # The cs * sum(q*p) for everything else, not the pnl, should be added to cash
+    # Pivot on these to get cash contributions for each account
 
-@ttl_cache(maxsize=1000, ttl=10)
-def get_equties_pnl(a, d=None):
-    df = get_equity_df(a)
-    qs = trades_qs(a, d).filter(Q(ticker__market__ib_exchange__in=NOT_FUTURES_EXCHANGES))
-    return pnl_calculator(qs, d=d)
+    futures_cash = pnl[~pnl.e.isin(NOT_FUTURES_EXCHANGES)]
+    futures_cash = futures_cash.groupby('a')['pnl'].sum().reset_index()
 
+    non_futures_cash = pnl[pnl.e.isin(NOT_FUTURES_EXCHANGES)]
+    non_futures_cash = non_futures_cash.groupby('a')['cash_flow'].sum().reset_index()
 
-def get_balances(d=None, account=None, ticker=None):
-    # balances[<account>]->[<ticker>]-><qty>
-    balances = defaultdict(lambda: defaultdict(lambda: 0.0))
+    if futures_cash.empty:
+        cash_adj = non_futures_cash
+        cash_adj.rename(columns={'cash_flow': 'q'}, inplace=True)
+    elif non_futures_cash.empty:
+        cash_adj = futures_cash
+        cash_adj.rename(columns={'pnl': 'q'}, inplace='True')
+    else:
+        cash_adj = pd.merge(futures_cash, non_futures_cash, how='outer', on='a')
+        cash_adj.fillna(0, inplace=True)
+        cash_adj['q'] = cash_adj.cash_flow + cash_adj.pnl
+        cash_adj.drop(['cash_flow', 'pnl'], axis=1, inplace=True)
 
-    qs = Trade.more_filtering(account, ticker)
-    if d is not None:
-        dt = day_start_next_day(d)
-        qs = qs.filter(dt__lt=dt)
+    cash = copy_cash_df(d=d, a=a, pivot=True)
+    # concat with axis=1 is an outer join
+    cash = pd.merge(cash, cash_adj, on='a')
+    cash.fillna(0, inplace=True)
+    cash.q_x = cash.q_x + cash.q_y
+    cash.drop(['q_y'], axis=1, inplace=True)
+    cash.rename(columns={'q_x': 'q'}, inplace=True)
 
-    qs = qs.filter(ticker__market__ib_exchange__in=NOT_FUTURES_EXCHANGES)
-    qs = qs.values_list('account__name', 'ticker__ticker', 'q', 'p', 'commission', 'ticker__market__cs', 'reinvest')
-    for a, ti, q, p, c, cs, reinvest in qs:
-        portfolio = balances[a]
-
-        if not reinvest:
-            cash_amount = -q * p * cs - c
-            portfolio['CASH'] += cash_amount
-
-        portfolio[ti] += q
-
-    qs = CashRecord.objects.filter(ignored=False)
-    if d is not None:
-        qs = qs.filter(d__lte=d)
-    if account is not None:
-        qs = qs.filter(account__name=account)
-
-    qs = qs.values('account__name').order_by('account__name').annotate(total=Sum('amt'))
-    for result in qs:
-        total = result['total']
-        if abs(total) < 0.001:
-            continue
-        a = result['account__name']
-        balances[a]['CASH'] += total
-
-    qs = Trade.more_filtering(account, ticker).values_list('account__name')
-    if d is not None:
-        qs = qs.filter(dt__lt=dt)
-    futures_accounts = qs.filter(~Q(ticker__market__ib_exchange__in=NOT_FUTURES_EXCHANGES)).distinct()
-
-    for a in set([i[0] for i in futures_accounts]):
-        f = get_futures_pnl(d=d, a=a)
-        total = f.pnl.sum()
-        balances[a]['CASH'] += total
-
-    for a in balances:
-        balances[a] = {k: v for k, v in balances[a].items() if abs(v) > 0.001}
-    balances = {k: v for k, v in balances.items() if len(v.keys())}
-
-    # Scale results for demo purposes.  PPM_FACTOR defaults to False.
-    factor = settings.PPM_FACTOR
-    if factor is not False:
-        for k, v in balances.items():
-            for j in v.keys():
-                v[j] *= factor
-
-    return balances
+    return pnl, cash

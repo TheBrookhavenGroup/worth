@@ -6,13 +6,13 @@ import plotly.graph_objs as go
 from django.views.generic.base import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from analytics.cash import cash_sums, total_cash
-from analytics.pnl import futures_pnl, year_pnl
+from analytics.pnl import pnl_summary
 from trades.ib_flex import get_trades
 from worth.dt import lbd_prior_month, our_now, lbd_of_month
 from worth.utils import is_near_zero
 from markets.tbgyahoo import yahoo_url
 from markets.models import Ticker
-from trades.utils import weighted_average_price, valuations
+from trades.utils import weighted_average_price
 from markets.utils import get_price, ticker_admin_url
 
 
@@ -29,13 +29,12 @@ class CheckingView(LoginRequiredMixin, TemplateView):
         return context
 
 
-class PPMView(LoginRequiredMixin, TemplateView):
+class PnLView(LoginRequiredMixin, TemplateView):
     template_name = 'analytics/table.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         getter = self.request.GET.get
-        ticker = getter('ticker')
         account = getter('account')
 
         d = getter('d')
@@ -52,25 +51,9 @@ class PPMView(LoginRequiredMixin, TemplateView):
                         n -= 1
 
             context['d'] = d
-        context['headings1'], context['data1'], context['formats'] = \
-            year_pnl(d=d, account=account, ticker=ticker)
+        context['headings1'], context['data1'], context['formats'], total_worth = \
+            pnl_summary(d=d, a=account)
         context['title'] = 'PPM'
-        return context
-
-
-class FuturesPnLView(LoginRequiredMixin, TemplateView):
-    template_name = 'analytics/table.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        getter = self.request.GET.get
-
-        d = getter('d')
-        if d is not None:
-            d = datetime.strptime(d, '%Y%m%d').date()
-
-        context['headings1'], context['data1'], context['formats'] = futures_pnl(d=d)
-        context['title'] = 'Futures PnL'
         return context
 
 
@@ -143,10 +126,7 @@ class ValueChartView(LoginRequiredMixin, TemplateView):
 
         accnt = getter('accnt')
 
-        def get_all(v):
-            return sum([i[-1] / 1.e6 for i in v if i[0] != 'ALL'])
-
-        y_axis = [get_all(valuations(i, account=accnt)) for i in x_axis]
+        y_axis = [pnl_summary(i, a=accnt)[-1] / 1.e6 for i in x_axis]
         x_axis = [f'{d:%Y-%m}' for d in x_axis]
 
         context['title'] = self.title

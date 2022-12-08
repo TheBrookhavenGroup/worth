@@ -24,7 +24,7 @@ def make_trades():
     t = Ticker.objects.create(ticker='AAPL', market=m)
     dt = our_localize(datetime.datetime(year=2021, month=10, day=22, hour=10, minute=0, second=0))
     Trade.objects.create(dt=dt, account=a, ticker=t, q=100, p=300, reinvest=False)
-    dt = our_localize(datetime.datetime(year=2021, month=10, day=22, hour=11, minute=0, second=0))
+    dt = our_localize(datetime.datetime(year=2021, month=10, day=25, hour=11, minute=0, second=0))
     Trade.objects.create(dt=dt, account=a, ticker=t, q=-100, p=301, reinvest=False)
 
     # Note: setting fixed_price here for testing so that we don't keep going to yahoo for data.
