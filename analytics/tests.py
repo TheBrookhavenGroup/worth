@@ -12,17 +12,23 @@ class PnLTests(TestCase):
 
     @staticmethod
     def results(d=None):
+
         df, total = pnl(d=d)
+
+        def get_pnl(ticker):
+            try:
+                p = df[df.Ticker == ticker].iloc[0][-1]
+            except IndexError:
+                p = 0
+            return p
 
         coh = df[df.Account == 'ALL COH'].iloc[0][-1]
         cash = df[df.Ticker == 'CASH'].iloc[0][4]
-        msft = df[df.Ticker == 'MSFT'].iloc[0][-1]
-        try:
-            aapl = df[df.Ticker == 'AAPL'].iloc[0][-1]
-        except IndexError:
-            aapl = 0
+        msft = get_pnl('MSFT')
+        amzn = get_pnl('AMZN')
+        aapl = get_pnl('AAPL')
 
-        return {'TOTAL': total, 'COH': coh, 'CASH': cash, 'MSFT': msft, 'AAPL': aapl}
+        return {'TOTAL': total, 'COH': coh, 'CASH': cash, 'MSFT': msft, 'AAPL': aapl, 'AMZN': amzn}
 
     def test_today(self):
         data = self.results()
@@ -32,11 +38,14 @@ class PnLTests(TestCase):
         self.assertAlmostEqual(1003445.0, data['CASH'])
         self.assertEqual('1M', data['COH'])
         self.assertAlmostEqual(-50.0, data['MSFT'])
+        self.assertAlmostEqual(7370, data['AMZN'])
 
     def test_givendate(self):
         data = self.results(d=datetime.date(2021, 10, 23))
+        self.assertAlmostEqual(500, data['AAPL'])
 
-        self.assertEqual(500, data['AAPL'])
+        data = self.results(d=datetime.date(2021, 10, 30))
+        self.assertAlmostEqual(100, data['AAPL'])
 
 
 @override_settings(USE_PRICE_FEED=False)
