@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from datetime import date
 from collections import OrderedDict
-from worth.utils import cround, is_near_zero, is_not_near_zero, union_keys, df_to_jqtable
+from worth.utils import cround, is_near_zero, df_to_jqtable
 from worth.dt import our_now, lbd_prior_month, prior_business_day
 from markets.models import get_ticker, NOT_FUTURES_EXCHANGES
 from analytics.models import PPMResult

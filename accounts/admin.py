@@ -14,14 +14,36 @@ class ActiveAccountFilter(SimpleListFilter):
 
     def queryset(self, request, queryset):
         if self.value():
+            return queryset.filter(id=self.value())
+
+        return queryset
+
+
+class ActiveTradeAccountFilter(ActiveAccountFilter):
+    def queryset(self, request, queryset):
+        if self.value():
             return queryset.filter(account__id=self.value())
 
         return queryset
 
 
+def set_qualified_flag(modeladmin, request, qs):
+    for rec in qs:
+        rec.qualified_f = True
+        rec.save()
+
+
+def clear_qualified_flag(modeladmin, request, qs):
+    for rec in qs:
+        rec.qualified_f = False
+        rec.save()
+
+
 @admin .register(Account)
 class AccountAdmin(admin.ModelAdmin):
     list_display = ('name', )
+    list_filter = ('active_f', 'qualified_f', ActiveAccountFilter)
+    actions = [set_qualified_flag, clear_qualified_flag]
 
 
 def set_cleared_flag(modeladmin, request, qs):
@@ -42,7 +64,7 @@ def duplicate_record(modeladmin, request, qs):
 class CashRecordAdmin(admin.ModelAdmin):
     date_hierarchy = 'd'
     list_display = ('account', 'd', 'description', 'amt', 'cleared_f', 'ignored')
-    list_filter = ('cleared_f', ActiveAccountFilter, 'ignored')
+    list_filter = ('cleared_f', ActiveTradeAccountFilter, 'ignored')
     search_fields = ('account__name', 'description')
     ordering = ('account', '-d')
     actions = [duplicate_record, set_cleared_flag]

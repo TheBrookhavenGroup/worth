@@ -80,11 +80,11 @@ def price_mapper(x, d):
 
 
 def pnl_asof(d=None, a=None):
-    '''
+    """
     Calculate PnL from all trades - need that for cash flow.
     Calculate Cash balances.
     Return YTD data for active positions.
-    '''
+    """
 
     df = copy_trades_df(d=d, a=a)
 
