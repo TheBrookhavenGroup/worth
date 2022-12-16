@@ -108,6 +108,6 @@ def realized_gains(year):
 
     df = df[df.realized != 0]
 
-    realized = realized.append(df)
+    realized = pd.concat([realized, df])
 
     return realized, format_realized_rec
