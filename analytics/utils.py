@@ -1,8 +1,9 @@
 from datetime import date
 import pandas as pd
-from worth.dt import day_start_next_day, day_start
+from worth.dt import day_start_next_day, day_start, lbd_prior_month
 from worth.utils import cround, is_not_near_zero
-from trades.models import get_non_qualified_equity_trades_df
+from trades.models import get_non_qualified_equity_trades_df, NOT_FUTURES_EXCHANGES
+from trades.utils import pnl_asof
 
 
 def pcnt_change(initial, final=None, delta=None):
@@ -79,7 +80,9 @@ def format_realized_rec(a, t, realized):
 
 def realized_gains(year):
     d = date(year, 1, 1)
+    eoy = lbd_prior_month(date(year, 1, 1))
 
+    # Equity Gains
     trades_df = get_non_qualified_equity_trades_df()
     sells_df = stocks_sold(trades_df, year)
     a_t = sells_df.loc[:, ['a', 't']]
@@ -90,6 +93,21 @@ def realized_gains(year):
     df['d'] = pd.to_datetime(df.dt).dt.date
     realized = df.groupby(['a', 't']).apply(fifo, d).reset_index(name="realized")
 
-    # TODO: add in futures gains
+    # Futures Gains
+
+    pnl, _ = pnl_asof()
+    pnl_eoy, _ = pnl_asof(d=eoy)
+
+    pnl = pnl[~pnl.e.isin(NOT_FUTURES_EXCHANGES)]
+    pnl_eoy = pnl_eoy[~pnl_eoy.e.isin(NOT_FUTURES_EXCHANGES)]
+    df = pd.merge(pnl, pnl_eoy, on=['a', 't'], how='outer', suffixes=('', '_year'))
+    df = df.fillna(value=0)
+
+    df['realized'] = df.pnl - df.pnl_year
+    df = pd.DataFrame({'a': df.a, 't': df.t, 'realized': df.realized})
+
+    df = df[df.realized != 0]
+
+    realized = realized.append(df)
 
     return realized, format_realized_rec

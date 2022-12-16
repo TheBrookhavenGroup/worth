@@ -84,7 +84,7 @@ class RealizedPnLTests(TestCase):
         make_lifo_trades()
 
     def test_realized(self):
-        realized = realized_gains(2022)
+        realized, _ = realized_gains(2022)
 
         expected = pd.DataFrame({'a': ['Fidelity', 'Fidelity', 'Schwab'],
                                  't': ['AAPL', 'AMZN', 'AAPL'],
