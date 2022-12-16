@@ -1,4 +1,4 @@
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 
 from plotly.offline import plot
 import plotly.graph_objs as go
@@ -37,21 +37,30 @@ class PnLView(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         getter = self.request.GET.get
         account = getter('account')
+        days = getter('days')
 
-        d = getter('d')
-        if d is not None:
-            try:
-                d = datetime.strptime(d, '%Y%m%d').date()
-            except Exception:
-                n = 0
-                if d.isnumeric():
-                    n = int(d)
-                    d = our_now()
-                    while n > 0:
-                        d = lbd_prior_month(d)
-                        n -= 1
+        if days is not None:
+            days = int(days)
+            d = our_now() - timedelta(days=days)
+            d = d.date()
+        else:
+            d = getter('d')
 
-            context['d'] = d
+            if d is not None:
+                try:
+                    d = datetime.strptime(d, '%Y%m%d').date()
+                except Exception:
+                    n = 0
+                    if d.isnumeric():
+                        n = int(d)
+                        d = our_now()
+                        while n > 0:
+                            d = lbd_prior_month(d)
+                            n -= 1
+            else:
+                d = our_now().date()
+
+        context['d'] = d
         context['headings1'], context['data1'], context['formats'], total_worth = \
             pnl_summary(d=d, a=account)
         context['title'] = 'PPM'
