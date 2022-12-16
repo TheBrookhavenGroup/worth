@@ -1,6 +1,8 @@
 import datetime
+import pandas as pd
 from django.test import TestCase, override_settings
-from trades.tests import make_trades, make_trades_split
+from trades.tests import make_trades, make_trades_split, make_lifo_trades
+from analytics.utils import realized_gains
 from analytics.pnl import pnl
 from markets.utils import get_price
 
@@ -74,3 +76,18 @@ class PnLSplitTests(TestCase):
         # In a reverse split the split q is negative
         x = [(150, 125), (-100, 0), (-25, 330)]
         self.check_pnl(self.msft_ticker, df, x)
+
+
+@override_settings(USE_PRICE_FEED=False)
+class RealizedPnLTests(TestCase):
+    def setUp(self):
+        make_lifo_trades()
+
+    def test_realized(self):
+        realized = realized_gains(2022)
+
+        expected = pd.DataFrame({'a': ['Fidelity', 'Fidelity', 'Schwab'],
+                                 't': ['AAPL', 'AMZN', 'AAPL'],
+                                 'realized': [300.0, 750.0, 100.0]})
+
+        pd.testing.assert_frame_equal(realized, expected)

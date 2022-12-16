@@ -24,9 +24,16 @@
                     </tr>
                     <tr>
                         <th><a href="{% url 'analytics:pnl' %}">PnL</a></th>
+                        <th><a href="{% url 'analytics:pnl' %}?days=1">PPM Yesterday</a></th>
                         <th><a href="{% url 'analytics:pnl' %}?d=1">PPM Last Month</a></th>
                         <th><a href="{% url 'analytics:pnl' %}?d=2">PPM 2 Months Ago</a></th>
                         <th><a href="{% url 'admin:index' %}analytics/ppmresult/">PPM History</a></th>
+                    </tr>
+                    <tr>
+                        <th></th>
+                        <th><a href="{% url 'analytics:realized' %}">Realized this year.</a></th>
+                        <th></th>
+                        <th></th>
                         <th></th>
                     </tr>
                 </table>
@@ -34,5 +41,4 @@
             </th>
     </tr>
   </table>
-  Note: To fill in missing prices for a given day: http://127.0.0.1:8020/ppm/?d=20221007<br>
 </div>

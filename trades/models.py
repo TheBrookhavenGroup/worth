@@ -81,6 +81,7 @@ def get_trades_df(a=None):
     else:
         qs = Trade.objects.filter(account__active_f=True)
 
+    qs.order_by('dt')
     return trades_qs_to_df(qs)
 
 
@@ -95,5 +96,5 @@ def copy_trades_df(d=None, a=None):
 
 
 def get_non_qualified_equity_trades_df():
-    qs = Trade.equity_trades(only_non_qualified=True)
+    qs = Trade.equity_trades(only_non_qualified=True).order_by('dt')
     return trades_qs_to_df(qs)
