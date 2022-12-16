@@ -95,8 +95,8 @@ def realized_gains(year):
 
     # Futures Gains
 
-    pnl, _ = pnl_asof()
-    pnl_eoy, _ = pnl_asof(d=eoy)
+    pnl, _ = pnl_asof(only_non_qualified=True)
+    pnl_eoy, _ = pnl_asof(d=eoy, only_non_qualified=True)
 
     pnl = pnl[~pnl.e.isin(NOT_FUTURES_EXCHANGES)]
     pnl_eoy = pnl_eoy[~pnl_eoy.e.isin(NOT_FUTURES_EXCHANGES)]

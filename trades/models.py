@@ -75,18 +75,21 @@ def trades_qs_to_df(qs):
 
 
 @lru_cache(maxsize=10)
-def get_trades_df(a=None):
+def get_trades_df(a=None, only_non_qualified=False):
     if a is not None:
         qs = Trade.objects.filter(account__name=a)
     else:
         qs = Trade.objects.filter(account__active_f=True)
 
+    if only_non_qualified:
+        qs = qs.filter(account__qualified_f=False)
+
     qs.order_by('dt')
     return trades_qs_to_df(qs)
 
 
-def copy_trades_df(d=None, a=None):
-    df = get_trades_df(a=a)
+def copy_trades_df(d=None, a=None, only_non_qualified=False):
+    df = get_trades_df(a=a, only_non_qualified=only_non_qualified)
     df = df.copy(deep=True)
     if d is not None:
         dt = day_start_next_day(d)

@@ -79,14 +79,14 @@ def price_mapper(x, d):
     return price
 
 
-def pnl_asof(d=None, a=None):
+def pnl_asof(d=None, a=None, only_non_qualified=False):
     """
     Calculate PnL from all trades - need that for cash flow.
     Calculate Cash balances.
     Return YTD data for active positions.
     """
 
-    df = copy_trades_df(d=d, a=a)
+    df = copy_trades_df(d=d, a=a, only_non_qualified=only_non_qualified)
 
     if df.empty:
         pnl = pd.DataFrame(columns=['a', 't', 'qp', 'q', 'e', 'price', 'pnl', 'value'])
