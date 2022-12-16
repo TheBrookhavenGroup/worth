@@ -80,6 +80,70 @@ def make_trades_split():
     return aapl_ticker, msft_ticker
 
 
+def make_lifo_trades():
+    fidelity = Account.objects.create(name='Fidelity', owner='MS', broker='Fidelity', broker_account='123',
+                                      description='Fidelity Testing Account', active_f=True)
+    schwab = Account.objects.create(name='Schwab', owner='MS', broker='Fidelity', broker_account='456',
+                                    description='Schwab Testing Account', active_f=True)
+
+    d = datetime.date(year=2021, month=10, day=21)
+    CashRecord.objects.create(account=fidelity, d=d, category='DE', description='Open account', amt=1e6, cleared_f=True)
+    CashRecord.objects.create(account=schwab, d=d, category='DE', description='Open account', amt=1e6, cleared_f=True)
+
+    m = Market.objects.create(symbol='CASH', name='cash', ib_exchange='CASH', yahoo_exchange='CASH', cs=1, commission=0,
+                              ib_price_factor=1, yahoo_price_factor=1, pprec=4, vprec=3)
+    Ticker.objects.create(ticker='CASH', market=m, fixed_price=1.0)
+
+    m = Market.objects.create(symbol='STOCK', name='Equity', ib_exchange='STOCK', yahoo_exchange='STOCK', cs=1,
+                              commission=0, ib_price_factor=1, yahoo_price_factor=1, pprec=4, vprec=0)
+    aapl = Ticker.objects.create(ticker='AAPL', market=m)
+    amzn = Ticker.objects.create(ticker='AMZN', market=m)
+    msft = Ticker.objects.create(ticker='MSFT', market=m)
+
+    a = fidelity
+
+    t = aapl
+    dt = our_localize(datetime.datetime(year=2020, month=3, day=22, hour=10, minute=0, second=0))
+    Trade.objects.create(dt=dt, account=a, ticker=t, q=100, p=300, reinvest=False)
+    dt = our_localize(datetime.datetime(year=2020, month=4, day=25, hour=11, minute=0, second=0))
+    Trade.objects.create(dt=dt, account=a, ticker=t, q=-100, p=301, reinvest=False)
+
+    dt = our_localize(datetime.datetime(year=2021, month=10, day=22, hour=10, minute=0, second=0))
+    Trade.objects.create(dt=dt, account=a, ticker=t, q=100, p=300, reinvest=False)
+    dt = our_localize(datetime.datetime(year=2021, month=10, day=25, hour=11, minute=0, second=0))
+    Trade.objects.create(dt=dt, account=a, ticker=t, q=-50, p=301, reinvest=False)
+    dt = our_localize(datetime.datetime(year=2021, month=10, day=26, hour=11, minute=0, second=0))
+    Trade.objects.create(dt=dt, account=a, ticker=t, q=10, p=306, reinvest=False)
+    dt = our_localize(datetime.datetime(year=2022, month=1, day=6, hour=11, minute=0, second=0))
+    Trade.objects.create(dt=dt, account=a, ticker=t, q=10, p=307, reinvest=False)
+    dt = our_localize(datetime.datetime(year=2022, month=2, day=6, hour=11, minute=0, second=0))
+    Trade.objects.create(dt=dt, account=a, ticker=t, q=-20, p=315, reinvest=False)
+    dt = our_localize(datetime.datetime(year=2022, month=3, day=6, hour=11, minute=0, second=0))
+    Trade.objects.create(dt=dt, account=a, ticker=t, q=10, p=310, reinvest=False)
+
+    t = amzn
+    dt = our_localize(datetime.datetime(year=2021, month=10, day=20, hour=10, minute=30, second=0))
+    Trade.objects.create(dt=dt, account=a, ticker=t, q=100, p=100, reinvest=False)
+    dt = our_localize(datetime.datetime(year=2022, month=4, day=20, hour=10, minute=30, second=0))
+    Trade.objects.create(dt=dt, account=a, ticker=t, q=-50, p=115, reinvest=False)
+
+    a = schwab
+
+    t = aapl
+    dt = our_localize(datetime.datetime(year=2021, month=6, day=22, hour=10, minute=0, second=0))
+    Trade.objects.create(dt=dt, account=a, ticker=t, q=100, p=300, reinvest=False)
+    dt = our_localize(datetime.datetime(year=2021, month=7, day=25, hour=11, minute=0, second=0))
+    Trade.objects.create(dt=dt, account=a, ticker=t, q=-50, p=301, reinvest=False)
+    dt = our_localize(datetime.datetime(year=2022, month=8, day=6, hour=11, minute=0, second=0))
+    Trade.objects.create(dt=dt, account=a, ticker=t, q=-10, p=310, reinvest=False)
+
+    t = msft
+    dt = our_localize(datetime.datetime(year=2021, month=3, day=12, hour=10, minute=0, second=0))
+    Trade.objects.create(dt=dt, account=a, ticker=t, q=20, p=300, reinvest=False)
+    dt = our_localize(datetime.datetime(year=2021, month=9, day=25, hour=11, minute=0, second=0))
+    Trade.objects.create(dt=dt, account=a, ticker=t, q=-20, p=300, reinvest=False)
+
+
 class TradesTests(TestCase):
     def setUp(self):
         make_trades()

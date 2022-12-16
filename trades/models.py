@@ -32,7 +32,7 @@ class Trade(models.Model):
         super().save(*args, **kwargs)
 
     @classmethod
-    def more_filtering(cls, account, ticker=None):
+    def more_filtering(cls, account, ticker=None, only_non_qualified=False):
         qs = Trade.objects
         if account is not None:
             qs = qs.filter(account__name=account)
@@ -41,37 +41,28 @@ class Trade(models.Model):
             ticker = ticker.upper()
             qs = qs.filter(ticker__ticker=ticker)
 
+        if only_non_qualified:
+            qs = qs.filter(account__qualified_f=False)
+
         return qs
 
     @classmethod
-    def futures_trades(cls, account=None, ticker=None):
-        qs = cls.more_filtering(account, ticker)
+    def futures_trades(cls, account=None, ticker=None, only_non_qualified=False):
+        qs = cls.more_filtering(account, ticker, only_non_qualified)
         return qs.filter(~Q(ticker__market__ib_exchange__in=(NOT_FUTURES_EXCHANGES)))
 
     @classmethod
-    def equity_trades(cls, account=None, ticker=None):
-        qs = cls.more_filtering(account, ticker)
+    def equity_trades(cls, account=None, ticker=None, only_non_qualified=False):
+        qs = cls.more_filtering(account, ticker, only_non_qualified)
         return qs.filter(ticker__market__ib_exchange__in=(NOT_FUTURES_EXCHANGES))
 
 
-@lru_cache(maxsize=10)
-def get_trades_df(a=None):
+def trades_qs_to_df(qs):
     fields = ('account__name', 'ticker__ticker',
               'ticker__market__ib_exchange', 'ticker__market__cs',
               'dt', 'q', 'p', 'commission', 'reinvest')
 
-    qs = Trade.objects.values_list(*fields)
-    if a is not None:
-        qs = qs.filter(account__name=a)
-    else:
-        qs = qs.filter(account__active_f=True)
-
-    # q = Q(ticker__market__ib_exchange__in=NOT_FUTURES_EXCHANGES)
-    # if futures:
-    #     qs = qs.filter(~q)
-    # else:
-    #     qs = qs.filter(q)
-
+    qs = qs.values_list(*fields)
     df = pd.DataFrame.from_records(list(qs))
 
     df.columns = ['a', 't', 'e', 'cs', 'dt', 'q', 'p', 'c', 'r']
@@ -83,11 +74,30 @@ def get_trades_df(a=None):
     return df
 
 
-def copy_trades_df(d=None, a=None):
-    df = get_trades_df(a=a)
+@lru_cache(maxsize=10)
+def get_trades_df(a=None, only_non_qualified=False):
+    if a is not None:
+        qs = Trade.objects.filter(account__name=a)
+    else:
+        qs = Trade.objects.filter(account__active_f=True)
+
+    if only_non_qualified:
+        qs = qs.filter(account__qualified_f=False)
+
+    qs.order_by('dt')
+    return trades_qs_to_df(qs)
+
+
+def copy_trades_df(d=None, a=None, only_non_qualified=False):
+    df = get_trades_df(a=a, only_non_qualified=only_non_qualified)
     df = df.copy(deep=True)
     if d is not None:
         dt = day_start_next_day(d)
         mask = df['dt'] < dt
         df = df.loc[mask]
     return df
+
+
+def get_non_qualified_equity_trades_df():
+    qs = Trade.equity_trades(only_non_qualified=True).order_by('dt')
+    return trades_qs_to_df(qs)

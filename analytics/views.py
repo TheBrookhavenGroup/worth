@@ -7,9 +7,10 @@ from django.views.generic.base import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from analytics.cash import cash_sums, total_cash
 from analytics.pnl import pnl_summary
+from analytics.utils import realized_gains
 from trades.ib_flex import get_trades
 from worth.dt import lbd_prior_month, our_now, lbd_of_month
-from worth.utils import is_near_zero
+from worth.utils import is_near_zero, df_to_jqtable
 from markets.tbgyahoo import yahoo_url
 from markets.models import Ticker
 from trades.utils import weighted_average_price
@@ -147,4 +148,17 @@ class ValueChartView(LoginRequiredMixin, TemplateView):
 
         context['plot_div'] = plot({'data': fig}, output_type='div')
 
+        return context
+
+
+class RealizedGainView(LoginRequiredMixin, TemplateView):
+    template_name = 'analytics/table.html'
+
+    def get_context_data(self, **kwargs):
+        year = 2022
+        realized, formatter = realized_gains(year)
+
+        context = super().get_context_data(**kwargs)
+        context['headings1'], context['data1'], context['formats'] = df_to_jqtable(df=realized, formatter=formatter)
+        context['title'] = f'Realized Gains ({year})'
         return context
