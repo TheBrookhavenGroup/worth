@@ -1,6 +1,7 @@
 import datetime
 import pandas as pd
 from django.test import TestCase, override_settings
+from trades.models import get_non_qualified_equity_trades_df
 from trades.tests import make_trades, make_trades_split, make_lifo_trades
 from analytics.utils import realized_gains
 from analytics.pnl import pnl
@@ -84,7 +85,8 @@ class RealizedPnLTests(TestCase):
         make_lifo_trades()
 
     def test_realized(self):
-        realized, _ = realized_gains(2022)
+        trades_df = get_non_qualified_equity_trades_df()
+        realized = realized_gains(trades_df, 2022)
 
         expected = pd.DataFrame({'a': ['Fidelity', 'Fidelity', 'Schwab'],
                                  't': ['AAPL', 'AMZN', 'AAPL'],

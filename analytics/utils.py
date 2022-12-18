@@ -76,12 +76,8 @@ def format_realized_rec(a, t, realized):
     return [a, t, realized]
 
 
-def realized_gains(year):
+def realized_gains(trades_df, year):
     d = date(year, 1, 1)
-    eoy = lbd_prior_month(date(year, 1, 1))
-
-    # Equity Gains
-    trades_df = get_non_qualified_equity_trades_df()
     sells_df = stocks_sold(trades_df, year)
     a_t = sells_df.loc[:, ['a', 't']]
 
@@ -91,8 +87,18 @@ def realized_gains(year):
     df['d'] = pd.to_datetime(df.dt).dt.date
     realized = df.groupby(['a', 't']).apply(fifo, d).reset_index(name="realized")
 
-    # Futures Gains
+    return realized
 
+
+def total_realized_gains(year):
+    d = date(year, 1, 1)
+    eoy = lbd_prior_month(date(year, 1, 1))
+
+    # Equity Gains
+    trades_df = get_non_qualified_equity_trades_df()
+    realized = realized_gains(trades_df, year)
+
+    # Futures Gains
     pnl, _ = pnl_asof(only_non_qualified=True)
     pnl_eoy, _ = pnl_asof(d=eoy, only_non_qualified=True)
 
