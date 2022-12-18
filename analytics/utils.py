@@ -6,10 +6,8 @@ from trades.models import get_non_qualified_equity_trades_df, NOT_FUTURES_EXCHAN
 from trades.utils import pnl_asof
 
 
-def pcnt_change(initial, final=None, delta=None):
+def roi(initial, delta):
     if is_not_near_zero(initial):
-        if delta is None:
-            delta = final - initial
         return delta / initial
 
     return 0

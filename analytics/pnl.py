@@ -7,7 +7,7 @@ from worth.utils import cround, is_near_zero, df_to_jqtable
 from worth.dt import our_now, lbd_prior_month, prior_business_day
 from markets.models import get_ticker, NOT_FUTURES_EXCHANGES
 from analytics.models import PPMResult
-from analytics.utils import pcnt_change
+from analytics.utils import roi
 from trades.utils import pnl_asof
 from markets.utils import ticker_url
 from accounts.utils import get_account_url
@@ -29,7 +29,7 @@ def format_rec(a, t, pos=0, price=1, value=0, daily=0, mtd=0, ytd=0, pnl=0):
         price = ''
     else:
         price = cround(price, pprec)
-    daily_pcnt = cround(pcnt_change(value - daily, delta=daily), 1, symbol='%')
+    daily_pcnt = cround(roi(value - daily, daily), 1, symbol='%')
     if is_near_zero(value):
         value = ''
     else:
