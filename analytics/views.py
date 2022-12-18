@@ -7,7 +7,7 @@ from django.views.generic.base import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from analytics.cash import cash_sums, total_cash
 from analytics.pnl import pnl_summary
-from analytics.utils import realized_gains
+from analytics.utils import total_realized_gains
 from trades.ib_flex import get_trades
 from worth.dt import lbd_prior_month, our_now, lbd_of_month
 from worth.utils import is_near_zero, df_to_jqtable
@@ -156,7 +156,7 @@ class RealizedGainView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         year = 2022
-        realized, formatter = realized_gains(year)
+        realized, formatter = total_realized_gains(year)
 
         context = super().get_context_data(**kwargs)
         context['headings1'], context['data1'], context['formats'] = df_to_jqtable(df=realized, formatter=formatter)
