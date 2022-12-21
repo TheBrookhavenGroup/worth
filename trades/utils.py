@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-from worth.utils import is_near_zero
+from moneycounter.str_utils import is_near_zero
 from accounts.models import Account, copy_cash_df
 from markets.models import get_ticker, NOT_FUTURES_EXCHANGES
 from trades.models import Trade, copy_trades_df

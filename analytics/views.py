@@ -10,7 +10,8 @@ from analytics.pnl import pnl_summary
 from analytics.utils import total_realized_gains
 from trades.ib_flex import get_trades
 from moneycounter.dt import lbd_prior_month, our_now, lbd_of_month
-from worth.utils import is_near_zero, df_to_jqtable
+from moneycounter.str_utils import is_near_zero
+from worth.utils import df_to_jqtable
 from markets.tbgyahoo import yahoo_url
 from markets.models import Ticker
 from trades.utils import weighted_average_price
