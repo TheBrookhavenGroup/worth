@@ -1,9 +1,10 @@
 import datetime
 import pandas as pd
+from moneycounter import realized_gains
 from django.test import TestCase, override_settings
 from trades.models import get_non_qualified_equity_trades_df
 from trades.tests import make_trades, make_trades_split, make_lifo_trades
-from analytics.utils import realized_gains
+
 from analytics.pnl import pnl
 from markets.utils import get_price
 
