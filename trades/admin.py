@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.admin import SimpleListFilter
 from django.db.models import Q
-from worth.dt import our_now, day_start, prior_business_day
+from moneycounter.dt import our_now, day_start, prior_business_day
 from markets.models import NOT_FUTURES_EXCHANGES
 from trades.models import Trade
 from trades.ib_flex import get_trades, lbd

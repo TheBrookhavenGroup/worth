@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.admin import SimpleListFilter
 from .models import Account, CashRecord
-from worth.dt import our_now
+from moneycounter.dt import our_now
 
 
 class ActiveAccountFilter(SimpleListFilter):
