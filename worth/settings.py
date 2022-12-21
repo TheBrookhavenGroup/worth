@@ -1,6 +1,7 @@
 import os
 from os import environ as env
 from pathlib import Path
+from moneycounter import dt as mc_dt
 
 
 IB_FTP_USER = env.get('IB_FTP_USER')
@@ -101,6 +102,7 @@ LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'America/New_York'
 USE_I18N = True
 USE_TZ = True
+mc_dt.time_zone = TIME_ZONE
 
 STATIC_URL = 'static/'
 STATIC_ROOT = 'static/'
