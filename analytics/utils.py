@@ -43,4 +43,8 @@ def total_realized_gains(year):
 
     realized = pd.concat([realized, df])
 
+    total = pd.DataFrame({'a': ['Total'], 't':[''], 'realized': [realized.realized.sum()]})
+
+    realized = pd.concat([realized, total])
+
     return realized, format_realized_rec
