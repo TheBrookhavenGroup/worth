@@ -1,73 +1,24 @@
 import pandas as pd
 import numpy as np
 
-from moneycounter.str_utils import is_near_zero
-from accounts.models import Account, copy_cash_df
+from accounts.models import copy_cash_df
 from markets.models import get_ticker, NOT_FUTURES_EXCHANGES
 from trades.models import Trade, copy_trades_df
 from markets.utils import get_price
-
-
-'''
-weighted_average_price(t, a) - query db values q,p and calculate wap
-get_balances(d, a, t) - query trades and cash,  calculate cash realized contributions, balances[k]=v
-valuations(d, account, ticker) - use get_balances() for query - for each pos get price and value it.
-
-These two functions get everything even if pos is zero or no trades in date range.
-get_futures_pnl(a, d) - query trade sums and return [[t, p, pos, pnl]], total
-get_equities_pnl(a, d) - same as get_futures_pnl but just equities
-
-'''
-
-
-def wap(data):
-    # weighted average price
-    n = len(data)
-
-    #  close out lifo trades
-    for i in range(1, n):
-        (q, p) = data[i]
-        for j in range(i - 1, -1, -1):
-            q2 = data[j][0]
-            if q * q2 >= 0.0:
-                continue
-            if abs(q) <= abs(q2):
-                q2 += q
-                q = 0
-            else:
-                q += q2
-                q2 = 0
-            data[j][0] = q2
-            if is_near_zero(q):
-                break
-        data[i][0] = q
-
-    # Calculate WAP
-    pqsum = 0.0
-    qsum = 0.0
-    for x in data:
-        (q, p) = x
-        pqsum += p * q
-        qsum += q
-
-    if 0 == is_near_zero(qsum):
-        wap = pqsum / qsum
-    else:
-        wap = 0.0
-    return qsum, wap
+from moneycounter import wap_calc
 
 
 def weighted_average_price(ticker, account=None):
     if type(ticker) == str:
         ticker = get_ticker(ticker)
 
-    if account is None:
-        qs = Trade.objects.filter(ticker=ticker).values_list('q', 'p').order_by('dt')
-    else:
-        if type(account) == str:
-            account = Account.objects.get(name=account)
-        qs = Trade.objects.filter(account=account, ticker=ticker).values_list('q', 'p').order_by('dt')
-    return wap([list(i) for i in qs])
+    qs = Trade.equity_trades(account=account, ticker=ticker)
+    df = Trade.qs_to_df(qs)
+
+    pos = df.q.sum()
+    wap = wap_calc(df)
+
+    return pos, wap
 
 
 def price_mapper(x, d):
