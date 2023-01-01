@@ -38,8 +38,11 @@ class Trade(models.Model):
             qs = qs.filter(account__name=account)
 
         if ticker is not None:
-            ticker = ticker.upper()
-            qs = qs.filter(ticker__ticker=ticker)
+            if type(ticker) is str:
+                ticker = ticker.upper()
+                qs = qs.filter(ticker__ticker=ticker)
+            else:
+                qs = qs.filter(ticker=ticker)
 
         if only_non_qualified:
             qs = qs.filter(account__qualified_f=False)
@@ -48,30 +51,33 @@ class Trade(models.Model):
 
     @classmethod
     def futures_trades(cls, account=None, ticker=None, only_non_qualified=False):
+        if type(account) == str:
+            account = Account.objects.get(name=account)
         qs = cls.more_filtering(account, ticker, only_non_qualified)
         return qs.filter(~Q(ticker__market__ib_exchange__in=(NOT_FUTURES_EXCHANGES)))
 
     @classmethod
     def equity_trades(cls, account=None, ticker=None, only_non_qualified=False):
+        if type(account) == str:
+            account = Account.objects.get(name=account)
         qs = cls.more_filtering(account, ticker, only_non_qualified)
         return qs.filter(ticker__market__ib_exchange__in=(NOT_FUTURES_EXCHANGES))
 
+    @classmethod
+    def qs_to_df(cls, qs):
+        fields = ('account__name', 'ticker__ticker',
+                  'ticker__market__ib_exchange', 'ticker__market__cs',
+                  'dt', 'q', 'p', 'commission', 'reinvest')
 
-def trades_qs_to_df(qs):
-    fields = ('account__name', 'ticker__ticker',
-              'ticker__market__ib_exchange', 'ticker__market__cs',
-              'dt', 'q', 'p', 'commission', 'reinvest')
+        qs = qs.values_list(*fields)
+        df = pd.DataFrame.from_records(list(qs))
+        df.columns = ['a', 't', 'e', 'cs', 'dt', 'q', 'p', 'c', 'r']
 
-    qs = qs.values_list(*fields)
-    df = pd.DataFrame.from_records(list(qs))
+        factor = settings.PPM_FACTOR
+        if factor is not False:
+            df.q *= factor
 
-    df.columns = ['a', 't', 'e', 'cs', 'dt', 'q', 'p', 'c', 'r']
-
-    factor = settings.PPM_FACTOR
-    if factor is not False:
-        df.q *= factor
-
-    return df
+        return df
 
 
 @lru_cache(maxsize=10)
@@ -85,7 +91,7 @@ def get_trades_df(a=None, only_non_qualified=False):
         qs = qs.filter(account__qualified_f=False)
 
     qs.order_by('dt')
-    return trades_qs_to_df(qs)
+    return Trade.qs_to_df(qs)
 
 
 def copy_trades_df(d=None, a=None, only_non_qualified=False):
@@ -100,4 +106,4 @@ def copy_trades_df(d=None, a=None, only_non_qualified=False):
 
 def get_non_qualified_equity_trades_df():
     qs = Trade.equity_trades(only_non_qualified=True).order_by('dt')
-    return trades_qs_to_df(qs)
+    return Trade.qs_to_df(qs)
