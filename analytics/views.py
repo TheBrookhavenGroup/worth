@@ -5,6 +5,7 @@ import plotly.graph_objs as go
 
 from django.views.generic.base import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib import messages
 from analytics.cash import cash_sums, total_cash
 from analytics.pnl import pnl_summary
 from analytics.utils import total_realized_gains
@@ -156,10 +157,17 @@ class RealizedGainView(LoginRequiredMixin, TemplateView):
     template_name = 'analytics/table.html'
 
     def get_context_data(self, **kwargs):
-        year = 2022
+        context = super().get_context_data(**kwargs)
+
+        year = self.request.GET.get('year')
+        if year is None:
+            messages.info(self.request, 'You can set the year.  ex: ?year=2022')
+            year = date.today().year
+        else:
+            year = int(year)
+
         realized, formatter = total_realized_gains(year)
 
-        context = super().get_context_data(**kwargs)
         context['headings1'], context['data1'], context['formats'] = df_to_jqtable(df=realized, formatter=formatter)
         context['title'] = f'Realized Gains ({year})'
         return context
