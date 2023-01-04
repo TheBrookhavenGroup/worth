@@ -1,3 +1,4 @@
+from datetime import date
 import pandas as pd
 import numpy as np
 
@@ -19,6 +20,16 @@ def weighted_average_price(ticker, account=None):
     wap = wap_calc(df)
 
     return pos, wap
+
+
+def open_pnl(ticker=None, account=None):
+    qs = Trade.equity_trades(account=account, ticker=ticker)
+    df = Trade.qs_to_df(qs)
+
+    pnl = open_position_pnl(df)
+    open_pnl = pnl.pnl.sum()
+
+    return open_pnl
 
 
 def price_mapper(x, d):
@@ -87,3 +98,29 @@ def pnl_asof(d=None, a=None, only_non_qualified=False):
     cash.rename(columns={'q_x': 'q'}, inplace=True)
 
     return pnl, cash
+
+
+def open_position_pnl(df):
+    """
+    :param df: trades dataframe
+    :return: dataframe of open positions and pnl if realized today.
+    """
+
+    # Get only trades that are in position.
+    pos = pd.pivot_table(df, index=["a", "t"], aggfunc={'q': np.sum, 'cs': 'first'}).reset_index(['a', 't'])
+    pos = pos[pos.q != 0]
+    df = pd.merge(df, pos, how='inner', on=['a', 't'])
+    df.drop(['q_y', 'cs_y'], axis=1, inplace=True)
+    df.rename(columns={'q_x': 'q', 'cs_x': 'cs'}, inplace=True)
+
+    df = df.groupby(['a', 't']).apply(wap_calc).reset_index(name='wap')
+
+    df = pd.merge(df, pos, how='inner', on=['a', 't'])
+
+    df['price'] = df.apply(lambda x: price_mapper(x, d=date.today()), axis=1)
+
+    df['pnl'] = df.cs * df.q * (df.price - df.wap)
+
+    df.sort_values(by=["pnl"], ignore_index=True, inplace=True)
+
+    return df

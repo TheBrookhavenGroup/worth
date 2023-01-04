@@ -4,12 +4,14 @@ import pandas as pd
 from datetime import date
 from collections import OrderedDict
 from moneycounter.str_utils import cround, is_near_zero
+from moneycounter import wap_calc
 from worth.utils import df_to_jqtable
 from moneycounter.dt import our_now, lbd_prior_month, prior_business_day
 from markets.models import get_ticker, NOT_FUTURES_EXCHANGES
 from analytics.models import PPMResult
 from analytics.utils import roi
-from trades.utils import pnl_asof
+from trades.models import copy_trades_df
+from trades.utils import pnl_asof, price_mapper, open_position_pnl
 from markets.utils import ticker_url
 from accounts.utils import get_account_url
 
@@ -131,3 +133,39 @@ def pnl_summary(d=None, a=None):
     headings, data, formats = df_to_jqtable(df=result, formatter=format_rec)
 
     return headings, data, formats, total_worth
+
+
+def format_if_closed(a, t, wap=0, cs=1, q=0, price=0, pnl=0):
+    t = get_ticker(t)
+    pprec = t.market.pprec
+    vprec = t.market.vprec
+    t = ticker_url(t)
+
+    q = cround(q, 0)
+    if is_near_zero(price):
+        price = ''
+    else:
+        price = cround(price, pprec)
+
+    cs = cround(cs, pprec)
+    wap = cround(wap, pprec)
+    q = cround(q, vprec)
+    pnl = cround(pnl, vprec)
+
+    a = get_account_url(a)
+    return [a, t, cs, q, wap, price, pnl]
+
+
+def pnl_if_closed(a=None):
+    """
+        Copy trades_df
+        Remove all closed positions.
+        Add close out trade for each open position.
+        total_realized_gains() just like RealizedGainView to calculate expected realized gains.
+    """
+
+    df = copy_trades_df(a=a)
+    df = df[df.e.isin(NOT_FUTURES_EXCHANGES)]
+    df = open_position_pnl(df)
+
+    return df, format_if_closed
