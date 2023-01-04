@@ -1,11 +1,9 @@
 import datetime
 import pandas as pd
-from moneycounter import realized_gains
 from django.test import TestCase, override_settings
-from trades.models import get_non_qualified_equity_trades_df
 from trades.tests import make_trades, make_trades_split, make_lifo_trades
 
-from analytics.pnl import pnl
+from analytics.pnl import pnl, pnl_if_closed
 from markets.utils import get_price
 
 
@@ -78,3 +76,21 @@ class PnLSplitTests(TestCase):
         # In a reverse split the split q is negative
         x = [(150, 125), (-100, 0), (-25, 330)]
         self.check_pnl(self.msft_ticker, df, x)
+
+
+@override_settings(USE_PRICE_FEED=False)
+class PnLIfClosedTests(TestCase):
+    def setUp(self):
+        make_trades()
+
+    def test_if_closed(self):
+        expected = pd.DataFrame({'a': ['MSFidelity', 'MSFidelity'],
+                                 't': ['MSFT', 'AMZN'],
+                                 'wap': [310.00, 69.10526],
+                                 'cs': [1.0, 1.0],
+                                 'q': [10.0, 95.0],
+                                 'price': [305.0, 115.0],
+                                 'pnl': [-50.0, 4360.000]})
+
+        df, format_rec = pnl_if_closed()
+        pd.testing.assert_frame_equal(df, expected)

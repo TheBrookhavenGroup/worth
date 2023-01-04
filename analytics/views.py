@@ -7,7 +7,7 @@ from django.views.generic.base import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from analytics.cash import cash_sums, total_cash
-from analytics.pnl import pnl_summary
+from analytics.pnl import pnl_summary, pnl_if_closed
 from analytics.utils import total_realized_gains
 from trades.ib_flex import get_trades
 from moneycounter.dt import lbd_prior_month, our_now, lbd_of_month
@@ -15,7 +15,7 @@ from moneycounter.str_utils import is_near_zero
 from worth.utils import df_to_jqtable
 from markets.tbgyahoo import yahoo_url
 from markets.models import Ticker
-from trades.utils import weighted_average_price
+from trades.utils import weighted_average_price, open_pnl
 from markets.utils import get_price, ticker_admin_url
 
 
@@ -65,7 +65,7 @@ class PnLView(LoginRequiredMixin, TemplateView):
         context['d'] = d
         context['headings1'], context['data1'], context['formats'], total_worth = \
             pnl_summary(d=d, a=account)
-        context['title'] = 'PPM'
+        context['title'] = 'PnL'
         return context
 
 
@@ -99,11 +99,13 @@ class TickerView(LoginRequiredMixin, TemplateView):
         context['title'] = yahoo_url(ticker)
         context['description'] = ticker.description
         pos, wap = weighted_average_price(ticker)
+        opnl = open_pnl(ticker=ticker)
         if is_near_zero(pos):
             context['msg'] = 'Zero position.'
         else:
             context['pos'] = pos
             context['open_price'] = wap
+            context['open_pnl'] = opnl
 
             try:
                 price = get_price(ticker)
@@ -170,4 +172,18 @@ class RealizedGainView(LoginRequiredMixin, TemplateView):
 
         context['headings1'], context['data1'], context['formats'] = df_to_jqtable(df=realized, formatter=formatter)
         context['title'] = f'Realized Gains ({year})'
+        return context
+
+
+class PnLIfClosedView(LoginRequiredMixin, TemplateView):
+    template_name = 'analytics/table.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        losses, formatter = pnl_if_closed()
+
+        context['headings1'], context['data1'], context['formats'] = df_to_jqtable(df=losses, formatter=formatter)
+        context['title'] = 'Worth - Losers'
+        context['d'] = f'PnL if closed today.'
         return context
