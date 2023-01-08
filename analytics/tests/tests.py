@@ -30,10 +30,10 @@ class PnLTests(TestCase):
         amzn = get_pnl('AMZN')
         aapl = get_pnl('AAPL')
 
-        return {'TOTAL': total, 'COH': coh, 'CASH': cash, 'MSFT': msft, 'AAPL': aapl, 'AMZN': amzn}
+        return {'TOTAL': total, 'COH': coh, 'CASH': cash, 'MSFT': msft, 'AAPL': aapl, 'AMZN': amzn}, df
 
     def test_today(self):
-        data = self.results()
+        data, _ = self.results()
 
         self.assertAlmostEqual(1017420.0, data['TOTAL'])
 
@@ -43,11 +43,17 @@ class PnLTests(TestCase):
         self.assertAlmostEqual(7370, data['AMZN'])
 
     def test_givendate(self):
-        data = self.results(d=datetime.date(2021, 10, 23))
+        data, _ = self.results(d=datetime.date(2021, 10, 23))
         self.assertAlmostEqual(500, data['AAPL'])
 
-        data = self.results(d=datetime.date(2021, 10, 30))
+        data, _ = self.results(d=datetime.date(2021, 10, 30))
         self.assertAlmostEqual(100, data['AAPL'])
+
+    def test_sell(self):
+        # AAPL was sold on 10/25/2021
+        data, df = self.results(d=datetime.date(2021, 10, 25))
+        aapl_today = df[df.Ticker == 'AAPL'].Today[0]
+        self.assertAlmostEqual(-400, aapl_today)
 
 
 @override_settings(USE_PRICE_FEED=False)
