@@ -46,7 +46,7 @@ class PnLTests(TestCase):
         data, _ = self.results(d=datetime.date(2021, 10, 23))
         self.assertAlmostEqual(500, data['AAPL'])
 
-        data = self.results(d=datetime.date(2021, 10, 30))
+        data, _ = self.results(d=datetime.date(2021, 10, 30))
         self.assertAlmostEqual(100, data['AAPL'])
 
     def test_sell(self):
