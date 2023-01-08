@@ -129,14 +129,12 @@ class ValueChartView(LoginRequiredMixin, TemplateView):
 
         d = datetime.today().date()
         n_months = getter('n_months')
-        if n_months is not None:
-            x_axis = [d] + [d := lbd_prior_month(d) for i in range(int(n_months))]
-            x_axis.reverse()
-        else:
-            y = d.year
-            m = d.month
-            x_axis = [lbd_of_month(date(y, i, 1)) for i in range(1, m)]
-            x_axis.append(d)
+
+        if n_months is None:
+            n_months = 24
+
+        x_axis = [d] + [d := lbd_prior_month(d) for i in range(int(n_months))]
+        x_axis.reverse()
 
         accnt = getter('accnt')
 

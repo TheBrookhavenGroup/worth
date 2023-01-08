@@ -98,7 +98,7 @@ def get_price(ticker, d=None):
                         DailyPrice.objects.create(ticker=ticker, d=d, c=p)
                     else:
                         print(f"Cannot find price in TBGDaily: {d} {ticker}")
-                        print("Try https://www.barchart.com/futures/quotes/NGV19/interactive-chart")
+                        print(f"Try https://www.barchart.com/futures/quotes/{ticker}/interactive-chart")
                         p = 0.0
                 else:
                     d_bar, o, h, l, c, v, oi = bar
