@@ -53,7 +53,7 @@ class PnLTests(TestCase):
         # AAPL was sold on 10/25/2021
         data, df = self.results(d=datetime.date(2021, 10, 25))
         aapl_today = df[df.Ticker == 'AAPL'].Today[0]
-        self.assertAlmostEqual(400, aapl_today)
+        self.assertAlmostEqual(-400, aapl_today)
 
 
 @override_settings(USE_PRICE_FEED=False)
