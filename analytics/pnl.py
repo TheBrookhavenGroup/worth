@@ -109,12 +109,13 @@ def pnl(d=None, a=None):
     cash['PnL'] = 0
     cash.drop(['q', 'q_eod', 'q_eom', 'q_eoy'], axis=1, inplace=True)
 
-    result = pd.concat([result, cash])
-    result.reset_index(inplace=True, drop=True)
-
     today_total = result.Today.sum()
     mtd_total = result.MTD.sum()
     ytd_total = result.YTD.sum()
+
+    result = pd.concat([result, cash])
+    result.reset_index(inplace=True, drop=True)
+
     result.loc[len(result) + 1] = ['TOTAL', '', 0, 0, total_worth, today_total, mtd_total, ytd_total, 0]
 
     coh = result[result.Ticker == "CASH"]
