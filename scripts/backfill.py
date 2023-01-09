@@ -1,8 +1,9 @@
 import re
-from datetime import datetime
+from datetime import datetime, date
 from cachetools import cached
 from django.db import IntegrityError
-from markets.models import TBGDailyBar, Market, Ticker
+from markets.models import TBGDailyBar, Market, Ticker, DailyPrice
+from markets.tbgyahoo import yahooHistory
 
 
 def tbg_ticker2ticker(ticker):
@@ -46,8 +47,11 @@ def get_ticker(ticker):
 def insert(ti, d, o, h, l, c, v=0, oi=0):
     if '-' in d:
         d = datetime.strptime(d, '%Y-%m-%d')
+    elif '/' in d:
+        d = datetime.strptime(d, '%m/%d/%Y')
     else:
         d = datetime.strptime(d, '%Y%m%d')
+    d = date(d.year, d.month, d.day)
     o = float(o)
     h = float(h)
     l = float(l)
@@ -64,8 +68,10 @@ def insert(ti, d, o, h, l, c, v=0, oi=0):
         print(f"No ticker for {ti}")
     else:
         try:
-            bar = TBGDailyBar.objects.create(ticker=ticker, d=d, o=o, h=h, l=l, c=c, v=v, oi=oi)
-        except IntegrityError:
+            bar = TBGDailyBar.objects.update_or_create(ticker=ticker, d=d,
+                                                       defaults={'o': o, 'h': h, 'l': l, 'c': c, 'v': v, 'oi': oi})
+        except IntegrityError as e:
+            print(e)
             print(f'Could not add {ti} {d} {o} {h} {l} {c} {oi}')
 
 
@@ -132,3 +138,38 @@ def do_txt():
         ti, d, o, h, l, c = line.split()
         print(f'{ti} {d} {o} {h} {l} {c}')
         insert(ti, d, o, h, l, c)
+
+
+def do_investing_com(ticker):
+    fn = f'/Users/ms/Downloads/{ticker}.csv'
+    with open(fn, 'r') as fh:
+        l = fh.readline()
+        while len(l):
+            l = fh.readline()
+            l = l.replace('"', '')
+            if not l:
+                continue
+            # NOTE: Price is before ohl
+            print(l)
+            try:
+                d, c, o, h, l, _, _ = l.strip().split(',')
+            except ValueError as e:
+                print(e)
+
+            insert(ticker, d, o, h, l, c)
+
+
+# May 16, 2019 - July 10, 2019
+def copy_bevvf_to_bee():
+    #  BEVVF prices are good enough for estimating portfolio values
+    bevvf = Ticker.objects.get(ticker='BEVVF')
+    data = yahooHistory(bevvf)
+    # fd = date(2019, 5, 16)
+    # ld = date(2019, 7, 10)
+
+    ticker = 'BEE'
+    for d, o, h, l, c, v, oi in data:
+        print(ticker, d, c)
+        # insert(ticker, str(d), o, h, l, c, v=0, oi=0)
+
+# XLNX WORK BEE FLIR

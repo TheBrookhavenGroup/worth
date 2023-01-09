@@ -29,10 +29,12 @@ def yahooHistory(ticker):
     data = yahoo_get(url)
     data = json.loads(data)
     data = data['chart']['result']
-    if data is None:
+    if (data is None) or ('timestamp' not in data[0]):
+        print(f"Cannot get prices for {ticker} from yahoo.")
         return []
     else:
         data = data[0]
+
     times = data['timestamp']
     times = [datetime.fromtimestamp(t).date() for t in times]
     data = data['indicators']['quote'][0]
