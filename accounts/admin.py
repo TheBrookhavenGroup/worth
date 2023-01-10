@@ -60,6 +60,12 @@ def duplicate_record(modeladmin, request, qs):
         new_rec.save()
 
 
+def toggle_ignored_flag(modeladmin, request, qs):
+    for rec in qs:
+        rec.ignored = not rec.ignored
+        rec.save()
+
+
 @admin .register(CashRecord)
 class CashRecordAdmin(admin.ModelAdmin):
     date_hierarchy = 'd'
@@ -67,4 +73,4 @@ class CashRecordAdmin(admin.ModelAdmin):
     list_filter = ('cleared_f', ActiveTradeAccountFilter, 'ignored')
     search_fields = ('account__name', 'description')
     ordering = ('account', '-d')
-    actions = [duplicate_record, set_cleared_flag]
+    actions = [duplicate_record, set_cleared_flag, toggle_ignored_flag]
