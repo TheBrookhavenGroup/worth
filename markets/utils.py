@@ -33,6 +33,7 @@ def ticker_admin_url(request, ticker):
 
 @ttl_cache(maxsize=1000, ttl=10)
 def get_yahoo_history(ticker):
+    print(f"Getting yahoo history for {ticker}.")
     if type(ticker) == str:
         ticker = Ticker.objects.get(ticker=ticker)
     return yahooHistory(ticker)
@@ -51,6 +52,7 @@ def populate_historical_price_data(ticker, d_i=None, d_f=None, lbd_f=True):
 
 
 def get_historical_bar(ticker, d):
+    print(f"Getting yahoo history for {ticker} on {d}.")
     data = get_yahoo_history(ticker)
     bar = next(filter(lambda x: x[0] >= d, data), None)
     if bar:
