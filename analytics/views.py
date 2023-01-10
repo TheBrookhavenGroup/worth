@@ -9,13 +9,15 @@ from django.contrib import messages
 from analytics.cash import cash_sums, total_cash
 from analytics.pnl import pnl_summary, pnl_if_closed
 from analytics.utils import total_realized_gains
+from analytics.models import PPMResult
 from trades.ib_flex import get_trades
+from trades.utils import weighted_average_price, open_pnl
 from moneycounter.dt import lbd_prior_month, our_now, lbd_of_month
 from moneycounter.str_utils import is_near_zero
-from worth.utils import df_to_jqtable
 from markets.tbgyahoo import yahoo_url
 from markets.models import Ticker
-from trades.utils import weighted_average_price, open_pnl
+from worth.utils import df_to_jqtable
+
 from markets.utils import get_price, ticker_admin_url
 
 
@@ -136,12 +138,19 @@ class ValueChartView(LoginRequiredMixin, TemplateView):
         x_axis = [d] + [d := lbd_prior_month(d) for i in range(int(n_months))]
         x_axis.reverse()
 
-        accnt = getter('accnt')
+        account = getter('a')
+        if account is None:
+            d_exists = PPMResult.objects.filter(d__in=x_axis).values_list('d', flat=True)
+            for d in set(x_axis) - set(d_exists):
+                pnl_summary(d)
+            y_axis = PPMResult.objects.filter(d__in=x_axis).order_by('d').values_list('value', flat=True)
+            y_axis = [i / 1.e6 for i in y_axis]
+            context['title'] = self.title
+        else:
+            y_axis = [pnl_summary(d, a=account)[-1] / 1.e6 for d in x_axis]
+            context['title'] = f"{self.title} for {account}"
 
-        y_axis = [pnl_summary(i, a=accnt)[-1] / 1.e6 for i in x_axis]
         x_axis = [f'{d:%Y-%m}' for d in x_axis]
-
-        context['title'] = self.title
 
         fig = go.Figure(data=go.Scatter(x=x_axis, y=y_axis,
                         mode='lines', name='value',

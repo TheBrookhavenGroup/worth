@@ -10,7 +10,7 @@ from markets.models import get_ticker, NOT_FUTURES_EXCHANGES
 from analytics.models import PPMResult
 from analytics.utils import roi
 from trades.models import copy_trades_df
-from trades.utils import pnl_asof, price_mapper, open_position_pnl
+from trades.utils import pnl_asof, open_position_pnl
 from markets.utils import ticker_url
 from accounts.utils import get_account_url
 
@@ -127,10 +127,11 @@ def pnl(d=None, a=None):
 def pnl_summary(d=None, a=None):
     result, total_worth = pnl(d=d, a=a)
 
-    if d is not None:
-        d = datetime(d.year, d.month, d.day, 23, 59, 59)
-        d = our_localize(d)
-    PPMResult.objects.update_or_create(dt=d, defaults={'value': total_worth})
+    if not d:
+        d = date.today()
+
+    if a is None:
+        PPMResult.objects.update_or_create(d=d, defaults={'value': total_worth})
 
     headings, data, formats = df_to_jqtable(df=result, formatter=format_rec)
 

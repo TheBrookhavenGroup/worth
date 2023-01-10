@@ -1,10 +1,10 @@
+from datetime import date
 from django.db import models
-from django.utils import timezone
 
 
 class PPMResult(models.Model):
-    dt = models.DateTimeField(default=timezone.now, unique=True)
+    d = models.DateField(default=date.today, unique=True)
     value = models.FloatField()
 
     def __str__(self):
-        return f"{self.dt} {self.value/1.e6:.3f}M"
+        return f"{self.d} {self.value/1.e6:.3f}M"
