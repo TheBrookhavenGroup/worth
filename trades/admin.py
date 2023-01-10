@@ -3,9 +3,9 @@ from django.contrib.admin import SimpleListFilter
 from django.db.models import Q
 from moneycounter.dt import our_now, day_start, prior_business_day
 from markets.models import NOT_FUTURES_EXCHANGES
+from accounts.models import Account
 from trades.models import Trade
 from trades.ib_flex import get_trades, lbd
-from accounts.admin import ActiveAccountFilter
 
 
 class GetTradesFilter(SimpleListFilter):
@@ -57,6 +57,36 @@ class ExchangeTypeFilter(SimpleListFilter):
         return queryset
 
 
+class IsActiveAccountFilter(SimpleListFilter):
+    title = "Active Accounts Only"
+    parameter_name = 'activeaccount'
+
+    def lookups(self, request, model_admin):
+        return [('active', 'Active'), ('not_active', 'Not Active')]
+
+    def queryset(self, request, queryset):
+        v = self.value()
+        if v:
+            flag = 'active' == v
+            return queryset.filter(account__active_f=flag)
+        return queryset
+
+
+class TradesAccountFilter(SimpleListFilter):
+    title = "Active Account"
+    parameter_name = 'active_account'
+
+    def lookups(self, request, model_admin):
+        active = Account.objects.filter(active_f=True).all()
+        return [(a.id, a.name) for a in active]
+
+    def queryset(self, request, queryset):
+        v = self.value()
+        if v:
+            return queryset.filter(account_id=v)
+        return queryset
+
+
 class BuySellFilter(SimpleListFilter):
     title = "Buy/Sell"
     parameter_name = 'buy_sell'
@@ -99,6 +129,6 @@ class TradeAdmin(admin.ModelAdmin):
 
     list_display = ('dt', 'account', 'ticker', 'q', 'p', 'commission', 'reinvest', 'trade_id', 'note')
     list_filter = (GetTradesFilter, NoCommissionFilter, BuySellFilter, ExchangeTypeFilter,
-                   ActiveAccountFilter, SplitsFilter, 'reinvest')
+                   TradesAccountFilter, IsActiveAccountFilter, SplitsFilter, 'reinvest')
     search_fields = ('account__name', 'dt', 'note', 'ticker__ticker')
     ordering = ('account', '-dt')
