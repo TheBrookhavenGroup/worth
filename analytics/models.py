@@ -3,7 +3,7 @@ from django.utils import timezone
 
 
 class PPMResult(models.Model):
-    dt = models.DateTimeField(default=timezone.now)
+    dt = models.DateTimeField(default=timezone.now, unique=True)
     value = models.FloatField()
 
     def __str__(self):

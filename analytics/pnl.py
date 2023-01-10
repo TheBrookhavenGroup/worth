@@ -1,12 +1,11 @@
 
 import numpy as np
 import pandas as pd
-from datetime import date
+from datetime import date, datetime
 from collections import OrderedDict
 from moneycounter.str_utils import cround, is_near_zero
-from moneycounter import wap_calc
 from worth.utils import df_to_jqtable
-from moneycounter.dt import our_now, lbd_prior_month, prior_business_day
+from moneycounter.dt import our_now, lbd_prior_month, prior_business_day, our_localize
 from markets.models import get_ticker, NOT_FUTURES_EXCHANGES
 from analytics.models import PPMResult
 from analytics.utils import roi
@@ -128,8 +127,10 @@ def pnl(d=None, a=None):
 def pnl_summary(d=None, a=None):
     result, total_worth = pnl(d=d, a=a)
 
-    if (d is None) or (d == date.today()):
-        PPMResult.objects.create(value=total_worth)
+    if d is not None:
+        d = datetime(d.year, d.month, d.day, 23, 59, 59)
+        d = our_localize(d)
+    PPMResult.objects.update_or_create(dt=d, defaults={'value': total_worth})
 
     headings, data, formats = df_to_jqtable(df=result, formatter=format_rec)
 
