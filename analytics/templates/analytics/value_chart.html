@@ -2,8 +2,6 @@
 
 {% load humanize %}
 
-{% block title %}{{ title }}{% endblock title %}
-
 {% block page_style %}
     <style>
         body {background-color: lightyellow;}
@@ -18,12 +16,14 @@
 {% endblock page_style %}
 
 {% block content %}
+    <a href="/admin">Admin</a>
     {% include "admin/quick_links.html" with show_changelinks=True %}
 
+    {% block title %}{{ title }}{% endblock title %}
     <p>
         {{ plot_div | safe }}
     <p>
     Try using `n_months=20` as an argument here.<br>
-    Try using `accnt=TDA` as argument here.
+    Try using `a=TDA` as argument here.
     </p>
 {% endblock content %}

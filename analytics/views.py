@@ -145,17 +145,17 @@ class ValueChartView(LoginRequiredMixin, TemplateView):
                 pnl_summary(d)
             y_axis = PPMResult.objects.filter(d__in=x_axis).order_by('d').values_list('value', flat=True)
             y_axis = [i / 1.e6 for i in y_axis]
-            context['title'] = self.title
+            name = self.title
         else:
             y_axis = [pnl_summary(d, a=account)[-1] / 1.e6 for d in x_axis]
-            context['title'] = f"{self.title} for {account}"
+            name = f"{self.title} for {account}"
 
         x_axis = [f'{d:%Y-%m}' for d in x_axis]
 
         fig = go.Figure(data=go.Scatter(x=x_axis, y=y_axis,
-                        mode='lines', name='value',
+                        mode='lines', name=name,
                         opacity=0.8, marker_color='green'))
-        fig.update_layout({'title_text': 'Value', 'yaxis_title': 'Millions($)'})
+        fig.update_layout({'title_text': name, 'yaxis_title': 'Millions($)'})
 
         context['plot_div'] = plot({'data': fig}, output_type='div')
 
