@@ -29,7 +29,7 @@ def gpg_decrypt(fn, fn_out=None):
     with open(fn, 'rb') as f:
         status = gpg.decrypt_file(f, output=fn_out, passphrase=gpgpass)
 
-    print('Errors: ')
+    print('Errors:')
     print(status.GPG_ERROR_CODES)
     print(status.GPG_SYSTEM_ERROR_CODES)
 
