@@ -35,10 +35,11 @@ class PnLTests(TestCase):
     def test_today(self):
         data, _ = self.results()
 
-        self.assertAlmostEqual(1017420.0, data['TOTAL'])
+        self.assertAlmostEqual(1021456.2, data['TOTAL'])
 
-        self.assertAlmostEqual(1003445.0, data['CASH'])
-        self.assertEqual('1M', data['COH'])
+        cash = data['CASH']
+        self.assertAlmostEqual(974435.0, cash)
+        self.assertEqual('974,435', data['COH'])
         self.assertAlmostEqual(-50.0, data['MSFT'])
         self.assertAlmostEqual(7370, data['AMZN'])
 
@@ -97,13 +98,13 @@ class PnLIfClosedTests(TestCase):
         make_trades()
 
     def test_if_closed(self):
-        expected = pd.DataFrame({'a': ['MSFidelity', 'MSFidelity'],
-                                 't': ['MSFT', 'AMZN'],
-                                 'wap': [310.00, 69.10526],
-                                 'cs': [1.0, 1.0],
-                                 'q': [10.0, 95.0],
-                                 'price': [305.0, 115.0],
-                                 'pnl': [-50.0, 4360.000]})
+        expected = pd.DataFrame({'a': ['MSFidelity', 'MSFidelity', 'MSFidelity'],
+                                 't': ['MSFT', 'MBXIX', 'AMZN'],
+                                 'wap': [310.00, 29.01431, 69.10526],
+                                 'cs': [1.0, 1.0, 1.0],
+                                 'q': [10.0, 1001.4, 95.0],
+                                 'price': [305.0, 33.0, 115.0],
+                                 'pnl': [-50.0, 3991.274, 4360.000]})
 
         df, format_rec = pnl_if_closed()
         pd.testing.assert_frame_equal(df, expected)

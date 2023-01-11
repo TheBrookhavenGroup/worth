@@ -57,15 +57,18 @@ def pnl_asof(d=None, a=None, only_non_qualified=False):
 
     df['qp'] = -df.q * df.p
 
+    reinvested_recs = df[df.r == True]
+    df['qpr'] = reinvested_recs.qp - reinvested_recs.c
+
     pnl = pd.pivot_table(df, index=["a", "t"],
-                         aggfunc={'qp': np.sum, 'q': np.sum, 'cs': np.max, 'c': np.sum, 'e': 'first'}
+                         aggfunc={'qp': np.sum, 'qpr': np.sum, 'q': np.sum, 'cs': np.max, 'c': np.sum, 'e': 'first'}
                          ).reset_index(['a', 't'])
     pnl['price'] = pnl.apply(lambda x: price_mapper(x, d), axis=1)
     pnl['pnl'] = pnl.cs * (pnl.qp + pnl.q * pnl.price) - pnl.c
     pnl['value'] = pnl.cs * pnl.q * pnl.price
 
     # Need to add cash flow to cash records for each account.
-    pnl['cash_flow'] = pnl.qp - pnl.c
+    pnl['cash_flow'] = pnl.qp - pnl.c - pnl.qpr
 
     # The full pnl for futures should be added to cash
     # The cs * sum(q*p) for everything else, not the pnl, should be added to cash
