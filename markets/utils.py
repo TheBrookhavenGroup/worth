@@ -69,7 +69,7 @@ def get_historical_bar(ticker, d):
     return None
 
 
-fixed_prices = {'AAPL': 305.0, 'MSFT': 305.0, 'AMZN': 115.0, 'ESZ2021': 4300.0}
+fixed_prices = {'AAPL': 305.0, 'MSFT': 305.0, 'AMZN': 115.0, 'ESZ2021': 4300.0, 'MBXIX': 33.0}
 
 
 @ttl_cache(maxsize=1000, ttl=10)

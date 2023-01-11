@@ -11,7 +11,7 @@ def make_trades():
     a = Account.objects.create(name='MSFidelity', owner='MS', broker='Fidelity', broker_account='123',
                                description='Testing Account', active_f=True)
 
-    d = datetime.date(year=2021, month=10, day=21)
+    d = datetime.date(year=2016, month=10, day=21)
     CashRecord.objects.create(account=a, d=d, category='DE', description='Open account', amt=1e6, cleared_f=True)
 
     m = Market.objects.create(symbol='CASH', name='cash', ib_exchange='CASH', yahoo_exchange='CASH', cs=1, commission=0,
@@ -37,6 +37,12 @@ def make_trades():
     for q, p in [(80, 68.0), (-80, 72.0), (100, 75.0), (120, 77.00), (75, 99.00), (-190, 101.0), (-10, 110.0)]:
         dt = next_business_day(dt)
         Trade.objects.create(dt=dt, account=a, ticker=t, q=q, p=p, reinvest=False)
+
+    t = Ticker.objects.create(ticker='MBXIX', market=m)
+    dt = our_localize(datetime.datetime(year=2017, month=1, day=19, hour=16, minute=15, second=0))
+    Trade.objects.create(dt=dt, account=a, ticker=t, q=1000, p=29.01, reinvest=False)
+    dt = our_localize(datetime.datetime(year=2017, month=12, day=15, hour=16, minute=15, second=0))
+    Trade.objects.create(dt=dt, account=a, ticker=t, q=1.4, p=32.09, reinvest=True)
 
     m = Market.objects.create(symbol='ES', name='EMini SP500', ib_exchange='CME', yahoo_exchange='CME', cs=50,
                               commission=2.1, ib_price_factor=1, yahoo_price_factor=1, pprec=2, vprec=0)
