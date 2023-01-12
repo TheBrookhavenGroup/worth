@@ -127,10 +127,12 @@ def pnl(d=None, a=None):
 def pnl_summary(d=None, a=None):
     result, total_worth = pnl(d=d, a=a)
 
-    if not d:
-        d = date.today()
+    today = date.today()
 
-    if a is None:
+    if not d:
+        d = today
+
+    if (a is None) and (d != today):
         PPMResult.objects.update_or_create(d=d, defaults={'value': total_worth})
 
     headings, data, formats = df_to_jqtable(df=result, formatter=format_rec)
