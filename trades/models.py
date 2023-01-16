@@ -14,7 +14,7 @@ class Trade(models.Model):
     account = models.ForeignKey(Account, on_delete=models.CASCADE)
     ticker = models.ForeignKey(Ticker, on_delete=models.CASCADE)
     reinvest = models.BooleanField(default=False, blank=False, null=False)
-    q = models.FloatField(blank=False, null=False)
+    q = models.DecimalField(max_digits=20, decimal_places=10, default=0, blank=False, null=False)
     p = models.FloatField(blank=False, null=False)
     commission = models.FloatField(default=0.0, validators=[MinValueValidator(0.0)])
     note = models.CharField(max_length=180, blank=True, null=True)
@@ -70,22 +70,25 @@ class Trade(models.Model):
                   'dt', 'q', 'p', 'commission', 'reinvest')
 
         qs = qs.values_list(*fields)
-        df = pd.DataFrame.from_records(list(qs))
+        df = pd.DataFrame.from_records(list(qs), coerce_float=True)
         df.columns = ['a', 't', 'e', 'cs', 'dt', 'q', 'p', 'c', 'r']
 
         factor = settings.PPM_FACTOR
         if factor is not False:
             df.q *= factor
 
+        # df = df.convert_dtypes(convert_string=True)
         return df
 
 
 @lru_cache(maxsize=10)
-def get_trades_df(a=None, only_non_qualified=False):
+def get_trades_df(a=None, only_non_qualified=False, active_f=True):
+    qs = Trade.objects
     if a is not None:
-        qs = Trade.objects.filter(account__name=a)
-    else:
-        qs = Trade.objects.filter(account__active_f=True)
+        qs = qs.filter(account__name=a)
+
+    if active_f:
+        qs = qs.filter(account__active_f=True)
 
     if only_non_qualified:
         qs = qs.filter(account__qualified_f=False)
@@ -94,8 +97,8 @@ def get_trades_df(a=None, only_non_qualified=False):
     return Trade.qs_to_df(qs)
 
 
-def copy_trades_df(d=None, a=None, only_non_qualified=False):
-    df = get_trades_df(a=a, only_non_qualified=only_non_qualified)
+def copy_trades_df(d=None, a=None, only_non_qualified=False, active_f=True):
+    df = get_trades_df(a=a, only_non_qualified=only_non_qualified, active_f=active_f)
     df = df.copy(deep=True)
     if d is not None:
         dt = day_start_next_day(d)
@@ -104,6 +107,9 @@ def copy_trades_df(d=None, a=None, only_non_qualified=False):
     return df
 
 
-def get_non_qualified_equity_trades_df():
-    qs = Trade.equity_trades(only_non_qualified=True).order_by('dt')
+def get_non_qualified_equity_trades_df(active_f=True):
+    qs = Trade.equity_trades(only_non_qualified=True)
+    if active_f:
+        qs = qs.filter(account__active_f=True)
+    qs = qs.order_by('dt')
     return Trade.qs_to_df(qs)
