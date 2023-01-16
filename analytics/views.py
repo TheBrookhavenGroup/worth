@@ -142,12 +142,12 @@ class ValueChartView(LoginRequiredMixin, TemplateView):
         if account is None:
             d_exists = PPMResult.objects.filter(d__in=x_axis).values_list('d', flat=True)
             for d in set(x_axis) - set(d_exists):
-                pnl_summary(d)
+                pnl_summary(d, active_f=False)
             y_axis = PPMResult.objects.filter(d__in=x_axis).order_by('d').values_list('value', flat=True)
             y_axis = [i / 1.e6 for i in y_axis]
             name = self.title
         else:
-            y_axis = [pnl_summary(d, a=account)[-1] / 1.e6 for d in x_axis]
+            y_axis = [pnl_summary(d, a=account, active_f=False)[-1] / 1.e6 for d in x_axis]
             name = f"{self.title} for {account}"
 
         x_axis = [f'{d:%Y-%m}' for d in x_axis]

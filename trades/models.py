@@ -77,6 +77,7 @@ class Trade(models.Model):
         if factor is not False:
             df.q *= factor
 
+        # df = df.convert_dtypes(convert_string=True)
         return df
 
 

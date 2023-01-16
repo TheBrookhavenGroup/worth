@@ -51,7 +51,7 @@ def format_rec(a, t, pos=0, price=1, value=0, daily=0, mtd=0, ytd=0, pnl=0):
     return [a, t, pos, price, value, daily, mtd, ytd, pnl]
 
 
-def pnl(d=None, a=None):
+def pnl(d=None, a=None, active_f=True):
     if d is None:
         d = our_now().date()
 
@@ -59,10 +59,10 @@ def pnl(d=None, a=None):
     eoy = lbd_prior_month(date(d.year, 1, 1))
     lm = lbd_prior_month(d)
 
-    pnl_total, cash = pnl_asof(d=d, a=a)
-    pnl_eod, cash_eod = pnl_asof(d=yesterday, a=a)
-    pnl_eom, cash_eom = pnl_asof(d=lm, a=a)
-    pnl_eoy, cash_eoy = pnl_asof(d=eoy, a=a)
+    pnl_total, cash = pnl_asof(d=d, a=a, active_f=active_f)
+    pnl_eod, cash_eod = pnl_asof(d=yesterday, a=a, active_f=active_f)
+    pnl_eom, cash_eom = pnl_asof(d=lm, a=a, active_f=active_f)
+    pnl_eoy, cash_eoy = pnl_asof(d=eoy, a=a, active_f=active_f)
 
     # The Value of Futures positions is already added to the cash and should not be added to the total again.
     total_worth = pnl_total[pnl_total.e.isin(NOT_FUTURES_EXCHANGES)]
@@ -124,8 +124,8 @@ def pnl(d=None, a=None):
     return result, total_worth
 
 
-def pnl_summary(d=None, a=None):
-    result, total_worth = pnl(d=d, a=a)
+def pnl_summary(d=None, a=None, active_f=True):
+    result, total_worth = pnl(d=d, a=a, active_f=active_f)
 
     today = date.today()
 

@@ -33,7 +33,8 @@ def open_pnl(ticker=None, account=None):
 
 
 def price_mapper(x, d):
-    if x.q == 0:
+    epsilon = 1e-10
+    if x.q > -epsilon and x.q < epsilon:
         price = 0
     else:
         ti = get_ticker(x.t)
@@ -41,14 +42,14 @@ def price_mapper(x, d):
     return price
 
 
-def pnl_asof(d=None, a=None, only_non_qualified=False):
+def pnl_asof(d=None, a=None, only_non_qualified=False, active_f=True):
     """
     Calculate PnL from all trades - need that for cash flow.
     Calculate Cash balances.
     Return YTD data for active positions.
     """
 
-    df = copy_trades_df(d=d, a=a, only_non_qualified=only_non_qualified)
+    df = copy_trades_df(d=d, a=a, only_non_qualified=only_non_qualified, active_f=active_f)
 
     if df.empty:
         pnl = pd.DataFrame(columns=['a', 't', 'qp', 'q', 'e', 'price', 'pnl', 'value'])
