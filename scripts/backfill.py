@@ -2,7 +2,7 @@ import re
 from datetime import datetime, date
 from cachetools import cached
 from django.db import IntegrityError
-from markets.models import TBGDailyBar, Market, Ticker, DailyPrice
+from markets.models import TBGDailyBar, Market, Ticker
 from markets.tbgyahoo import yahooHistory
 
 
