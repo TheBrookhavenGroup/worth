@@ -52,21 +52,19 @@ def pnl_asof(d=None, a=None, only_non_qualified=False, active_f=True):
     df = copy_trades_df(d=d, a=a, only_non_qualified=only_non_qualified, active_f=active_f)
 
     if df.empty:
-        pnl = pd.DataFrame(columns=['a', 't', 'qp', 'q', 'e', 'price', 'pnl', 'value'])
-        cash = pd.DataFrame(columns=['a', 'q'])
-        return pnl, cash
+        pnl = pd.DataFrame(columns=['a', 't', 'qp', 'qpr', 'q', 'cs', 'c', 'e', 'price', 'pnl', 'value'])
+    else:
+        df['qp'] = -df.q * df.p
 
-    df['qp'] = -df.q * df.p
+        reinvested_recs = df[df.r == True]
+        df['qpr'] = reinvested_recs.qp - reinvested_recs.c
 
-    reinvested_recs = df[df.r == True]
-    df['qpr'] = reinvested_recs.qp - reinvested_recs.c
-
-    pnl = pd.pivot_table(df, index=["a", "t"],
-                         aggfunc={'qp': np.sum, 'qpr': np.sum, 'q': np.sum, 'cs': np.max, 'c': np.sum, 'e': 'first'}
-                         ).reset_index(['a', 't'])
-    pnl['price'] = pnl.apply(lambda x: price_mapper(x, d), axis=1)
-    pnl['pnl'] = pnl.cs * (pnl.qp + pnl.q * pnl.price) - pnl.c
-    pnl['value'] = pnl.cs * pnl.q * pnl.price
+        pnl = pd.pivot_table(df, index=["a", "t"],
+                             aggfunc={'qp': np.sum, 'qpr': np.sum, 'q': np.sum, 'cs': np.max, 'c': np.sum, 'e': 'first'}
+                             ).reset_index(['a', 't'])
+        pnl['price'] = pnl.apply(lambda x: price_mapper(x, d), axis=1)
+        pnl['pnl'] = pnl.cs * (pnl.qp + pnl.q * pnl.price) - pnl.c
+        pnl['value'] = pnl.cs * pnl.q * pnl.price
 
     # Need to add cash flow to cash records for each account.
     pnl['cash_flow'] = pnl.qp - pnl.c - pnl.qpr
@@ -94,6 +92,7 @@ def pnl_asof(d=None, a=None, only_non_qualified=False, active_f=True):
         cash_adj.drop(['cash_flow', 'pnl'], axis=1, inplace=True)
 
     cash = copy_cash_df(d=d, a=a, pivot=True)
+    # if empty: cash = pd.DataFrame(columns=['a', 'q'])
     # concat with axis=1 is an outer join
     cash = pd.merge(cash, cash_adj, on='a', how='outer')
     cash.fillna(0, inplace=True)

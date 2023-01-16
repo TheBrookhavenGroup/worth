@@ -107,9 +107,12 @@ def get_cash_df(a=None, d=None, pivot=False):
 
     qs = qs.values('account__name').order_by('account__name').annotate(total=Sum('amt'))
 
-    df = pd.DataFrame.from_records(list(qs))
-    df.columns = ['a', 'q']
-
+    columns = ['a', 'q']
+    if len(qs):
+        df = pd.DataFrame.from_records(list(qs))
+        df.columns = columns
+    else:
+        df = pd.DataFrame(columns=columns)
     if pivot:
         df = df.groupby('a')['q'].sum().reset_index()
 

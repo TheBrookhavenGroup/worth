@@ -42,6 +42,7 @@ class PnLView(LoginRequiredMixin, TemplateView):
         getter = self.request.GET.get
         account = getter('account')
         days = getter('days')
+        active_f = bool(getter('active_f', True))
 
         if days is not None:
             days = int(days)
@@ -66,7 +67,7 @@ class PnLView(LoginRequiredMixin, TemplateView):
 
         context['d'] = d
         context['headings1'], context['data1'], context['formats'], total_worth = \
-            pnl_summary(d=d, a=account)
+            pnl_summary(d=d, a=account, active_f=active_f)
         context['title'] = 'PnL'
         return context
 
