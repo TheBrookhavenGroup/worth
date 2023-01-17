@@ -12,7 +12,7 @@ from analytics.utils import total_realized_gains
 from analytics.models import PPMResult
 from trades.ib_flex import get_trades
 from trades.utils import weighted_average_price, open_pnl
-from moneycounter.dt import lbd_prior_month, our_now, lbd_of_month
+from moneycounter.dt import lbd_prior_month, our_now, prior_business_day
 from moneycounter.str_utils import is_near_zero
 from markets.tbgyahoo import yahoo_url
 from markets.models import Ticker
@@ -42,6 +42,7 @@ class PnLView(LoginRequiredMixin, TemplateView):
         getter = self.request.GET.get
         account = getter('account')
         days = getter('days')
+        active_f = bool(getter('active_f', True))
 
         if days is not None:
             days = int(days)
@@ -66,7 +67,7 @@ class PnLView(LoginRequiredMixin, TemplateView):
 
         context['d'] = d
         context['headings1'], context['data1'], context['formats'], total_worth = \
-            pnl_summary(d=d, a=account)
+            pnl_summary(d=d, a=account, active_f=active_f)
         context['title'] = 'PnL'
         return context
 
@@ -135,7 +136,7 @@ class ValueChartView(LoginRequiredMixin, TemplateView):
         if n_months is None:
             n_months = 24
 
-        x_axis = [d] + [d := lbd_prior_month(d) for i in range(int(n_months))]
+        x_axis = [d, prior_business_day(d)] + [d := lbd_prior_month(d) for i in range(int(n_months))]
         x_axis.reverse()
 
         account = getter('a')

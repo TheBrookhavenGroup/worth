@@ -70,8 +70,12 @@ class Trade(models.Model):
                   'dt', 'q', 'p', 'commission', 'reinvest')
 
         qs = qs.values_list(*fields)
-        df = pd.DataFrame.from_records(list(qs), coerce_float=True)
-        df.columns = ['a', 't', 'e', 'cs', 'dt', 'q', 'p', 'c', 'r']
+        columns = ['a', 't', 'e', 'cs', 'dt', 'q', 'p', 'c', 'r']
+        if len(qs):
+            df = pd.DataFrame.from_records(list(qs), coerce_float=True)
+            df.columns = columns
+        else:
+            df = pd.DataFrame.from_records(list(qs), coerce_float=True, columns=columns)
 
         factor = settings.PPM_FACTOR
         if factor is not False:
@@ -100,7 +104,7 @@ def get_trades_df(a=None, only_non_qualified=False, active_f=True):
 def copy_trades_df(d=None, a=None, only_non_qualified=False, active_f=True):
     df = get_trades_df(a=a, only_non_qualified=only_non_qualified, active_f=active_f)
     df = df.copy(deep=True)
-    if d is not None:
+    if (not df.empty) and (d is not None):
         dt = day_start_next_day(d)
         mask = df['dt'] < dt
         df = df.loc[mask]
