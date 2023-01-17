@@ -91,7 +91,7 @@ def pnl_asof(d=None, a=None, only_non_qualified=False, active_f=True):
         cash_adj['q'] = cash_adj.cash_flow + cash_adj.pnl
         cash_adj.drop(['cash_flow', 'pnl'], axis=1, inplace=True)
 
-    cash = copy_cash_df(d=d, a=a, pivot=True)
+    cash = copy_cash_df(d=d, a=a, pivot=True, active_f=active_f)
     # if empty: cash = pd.DataFrame(columns=['a', 'q'])
     # concat with axis=1 is an outer join
     cash = pd.merge(cash, cash_adj, on='a', how='outer')

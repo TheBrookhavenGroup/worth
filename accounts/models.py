@@ -98,8 +98,12 @@ class CashRecord(models.Model):
 
 
 @lru_cache(maxsize=10)
-def get_cash_df(a=None, d=None, pivot=False):
-    qs = CashRecord.objects.filter(ignored=False, account__active_f=True)
+def get_cash_df(a=None, d=None, pivot=False, active_f=True):
+    qs = CashRecord.objects.filter(ignored=False)
+
+    if active_f:
+        qs = qs.filter(account__active_f=True)
+
     if d is not None:
         qs = qs.filter(d__lte=d)
     if a is not None:
@@ -120,7 +124,7 @@ def get_cash_df(a=None, d=None, pivot=False):
     return df
 
 
-def copy_cash_df(d=None, a=None, pivot=False):
-    df = get_cash_df(d=d, a=a, pivot=pivot)
+def copy_cash_df(d=None, a=None, pivot=False, active_f=True):
+    df = get_cash_df(d=d, a=a, pivot=pivot, active_f=active_f)
     df = df.copy(deep=True)
     return df
