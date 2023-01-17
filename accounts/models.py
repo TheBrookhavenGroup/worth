@@ -113,6 +113,7 @@ def get_cash_df(a=None, d=None, pivot=False):
         df.columns = columns
     else:
         df = pd.DataFrame(columns=columns)
+
     if pivot:
         df = df.groupby('a')['q'].sum().reset_index()
 
