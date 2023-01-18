@@ -121,11 +121,11 @@ def pnl(d=None, a=None, active_f=True):
     coh = coh.Pos.sum()
     result.loc[len(result) + 1] = ['ALL COH', '', '', '', '', '', '', '', cround(coh, 0)]
 
-    return result, total_worth
+    return result, total_worth, today_total
 
 
 def pnl_summary(d=None, a=None, active_f=True):
-    result, total_worth = pnl(d=d, a=a, active_f=active_f)
+    result, total_worth, total_today = pnl(d=d, a=a, active_f=active_f)
 
     today = date.today()
 
@@ -137,7 +137,7 @@ def pnl_summary(d=None, a=None, active_f=True):
 
     headings, data, formats = df_to_jqtable(df=result, formatter=format_rec)
 
-    return headings, data, formats, total_worth
+    return headings, data, formats, total_worth, total_today
 
 
 def format_if_closed(a, t, wap=0, cs=1, q=0, price=0, pnl=0):

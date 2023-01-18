@@ -16,6 +16,6 @@ class Command(BaseCommand):
         x = get_trades()
         for i in x[1]:
             print(i)
-        df, total = pnl()
+        df, total, total_today = pnl()
         df = df[df.Account == 'TOTAL']
         print(df.to_string())

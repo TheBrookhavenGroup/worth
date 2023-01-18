@@ -15,7 +15,7 @@ class PnLTests(TestCase):
     @staticmethod
     def results(d=None):
 
-        df, total = pnl(d=d)
+        df, total, total_today = pnl(d=d)
 
         def get_pnl(ticker):
             try:
@@ -79,7 +79,7 @@ class PnLSplitTests(TestCase):
         self.assertAlmostEqual(expected_pnl, pnl)
 
     def test_split(self):
-        df, total = pnl(a='MSFidelity')
+        df, total, total_today = pnl(a='MSFidelity')
 
         # Split
         # These are the trades used for testing with zero for price on split shares added.

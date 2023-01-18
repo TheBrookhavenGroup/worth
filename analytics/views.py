@@ -36,7 +36,7 @@ class CheckingView(LoginRequiredMixin, TemplateView):
 
 
 class PnLView(LoginRequiredMixin, FormView):
-    template_name = 'analytics/table.html'
+    template_name = 'analytics/pnl.html'
     form_class = PnLForm
     success_url = '.'
     account = None
@@ -77,9 +77,11 @@ class PnLView(LoginRequiredMixin, FormView):
                 d = our_now().date()
 
         context['d'] = d
-        context['headings1'], context['data1'], context['formats'], total_worth = \
+        context['headings1'], context['data1'], context['formats'], total_worth, total_today = \
             pnl_summary(d=d, a=account, active_f=active_f)
         context['title'] = 'PnL'
+        context['total_worth'] = total_worth
+        context['total_today'] = total_today
         return context
 
     def form_valid(self, form):
