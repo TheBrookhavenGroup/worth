@@ -19,6 +19,26 @@
         {% endwith %}
         </p>
 
+        {% if form %}
+            {%  load crispy_forms_tags %}
+            <form method="post">
+                        {% csrf_token %}
+                        <div class="form-row">
+                            <div class="form-group col-4">
+                                {{ form.account | as_crispy_field }}
+                            </div>
+                            <div class="form-group col-4">
+                                {{ form.days | as_crispy_field }}
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-4">
+                                <input type="submit" class="btn btn-primary">
+                            </div>
+                        </div>
+            </form>
+        {% endif %}
+
         <div style="width: 850px">
             {%  block d %}
                 <p><div class="text-center"><strong>{{ d }}</strong></div></p>
