@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.humanize',
+    'crispy_forms',
     'accounts',
     'markets',
     'trades',
@@ -66,6 +67,7 @@ TEMPLATES = [
     },
 ]
 
+CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
 WSGI_APPLICATION = 'worth.wsgi.application'
 

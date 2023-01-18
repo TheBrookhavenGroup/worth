@@ -3,13 +3,14 @@ from datetime import datetime, date, timedelta
 from plotly.offline import plot
 import plotly.graph_objs as go
 
-from django.views.generic.base import TemplateView
+from django.views.generic import TemplateView, FormView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from analytics.cash import cash_sums, total_cash
 from analytics.pnl import pnl_summary, pnl_if_closed
 from analytics.utils import total_realized_gains
 from analytics.models import PPMResult
+from analytics.forms import PnLForm
 from trades.ib_flex import get_trades
 from trades.utils import weighted_average_price, open_pnl
 from moneycounter.dt import lbd_prior_month, our_now, prior_business_day
@@ -34,8 +35,12 @@ class CheckingView(LoginRequiredMixin, TemplateView):
         return context
 
 
-class PnLView(LoginRequiredMixin, TemplateView):
+class PnLView(LoginRequiredMixin, FormView):
     template_name = 'analytics/table.html'
+    form_class = PnLForm
+    success_url = '.'
+    account = None
+    days = None
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -43,6 +48,12 @@ class PnLView(LoginRequiredMixin, TemplateView):
         account = getter('account')
         days = getter('days')
         active_f = bool(getter('active_f', True))
+
+        if self.days:
+            days = self.days
+
+        if self.account:
+            account = self.account
 
         if days is not None:
             days = int(days)
@@ -70,6 +81,12 @@ class PnLView(LoginRequiredMixin, TemplateView):
             pnl_summary(d=d, a=account, active_f=active_f)
         context['title'] = 'PnL'
         return context
+
+    def form_valid(self, form):
+        data = form.cleaned_data
+        self.account = data['account']
+        self.days = data['days']
+        return self.render_to_response(self.get_context_data(form=form))
 
 
 class TotalCashView(LoginRequiredMixin, TemplateView):
