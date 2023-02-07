@@ -1,4 +1,4 @@
-{% extends "admin/base_site.html" %}
+{% extends "base.html" %}
 
 {% load humanize %}
 
@@ -18,12 +18,35 @@
 {% endblock page_style %}
 
 {% block content %}
+    <div class="container">
+        <p>
+        <a href="/admin">Admin</a>
+        {% with exclude_quick_links_caption=True %}
+            {% include "admin/quick_links.html" with show_changelinks=True %}
+        {% endwith %}
+        </p>
+
+        {%  load crispy_forms_tags %}
+        <form method="post">
+                    {% csrf_token %}
+                    <div class="form-row">
+                        <div class="form-group col-4">
+                            {{ form.account | as_crispy_field }}
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-4">
+                            <input type="submit" class="btn btn-primary">
+                        </div>
+                    </div>
+        </form>
 
     <p>
         Account: {{ account }} <br>
         Balance: {{ balance|floatformat:2|intcomma }} <br>
         Statement Balance: {{ statement_balance|floatformat:2|intcomma }} <br>
-        <a href="/admin/accounts/cashrecord/?active=56">Cash Records</a><br>
+        <a href="/admin/accounts/cashrecord/?active={{ acount_id }}">Cash Records</a><br>
     </p>
+    </div>
 
 {% endblock content %}

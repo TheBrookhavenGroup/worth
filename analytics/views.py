@@ -6,16 +6,16 @@ import plotly.graph_objs as go
 from django.views.generic import TemplateView, FormView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
-from moneycounter.dt import prior_business_day
 from analytics.cash import cash_sums, total_cash
 from analytics.pnl import pnl_summary, pnl_if_closed
 from analytics.utils import total_realized_gains
 from analytics.models import PPMResult
-from analytics.forms import PnLForm
+from analytics.forms import PnLForm, CheckingForm
 from trades.ib_flex import get_trades
 from trades.utils import weighted_average_price, open_pnl
 from moneycounter.dt import lbd_prior_month, our_now, prior_business_day
 from moneycounter.str_utils import is_near_zero
+from accounts.models import Account
 from markets.tbgyahoo import yahoo_url
 from markets.models import Ticker
 from worth.utils import df_to_jqtable
@@ -23,23 +23,51 @@ from worth.utils import df_to_jqtable
 from markets.utils import get_price, ticker_admin_url
 
 
-class CheckingView(LoginRequiredMixin, TemplateView):
-    template_name = 'analytics/checking.html'
+class MyFormView(FormView):
+    title = 'No Title'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        account_name = 'BofA'
+        context['title'] = self.title
+        return context
+
+
+class CheckingView(LoginRequiredMixin, MyFormView):
+    template_name = 'analytics/checking.html'
+    form_class = CheckingForm
+    success_url = '.'
+    account = None
+    title = 'Checking'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        getter = self.request.GET.get
+
+        if self.account:
+            account_name = self.account
+        else:
+            account_name = getter('account', default='BofA')
+
+        account_id = Account.objects.get(name=account_name).id
+
         context['account'] = account_name
+        context['acount_id'] = account_id
         balance, statement_balance = cash_sums(account_name)
         context['balance'] = balance
         context['statement_balance'] = statement_balance
         return context
 
+    def form_valid(self, form):
+        data = form.cleaned_data
+        self.account = data['account']
+        return self.render_to_response(self.get_context_data(form=form))
 
-class PnLView(LoginRequiredMixin, FormView):
+
+class PnLView(LoginRequiredMixin, MyFormView):
     template_name = 'analytics/pnl.html'
     form_class = PnLForm
     success_url = '.'
+    title = 'PnL'
     account = None
     days = None
 
@@ -83,7 +111,6 @@ class PnLView(LoginRequiredMixin, FormView):
         context['d'] = d
         context['headings1'], context['data1'], context['formats'], total_worth, total_today = \
             pnl_summary(d=d, a=account, active_f=active_f)
-        context['title'] = 'PnL'
         context['total_worth'] = total_worth
         context['total_today'] = total_today
         return context
