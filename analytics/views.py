@@ -6,6 +6,7 @@ import plotly.graph_objs as go
 from django.views.generic import TemplateView, FormView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
+from moneycounter.dt import prior_business_day
 from analytics.cash import cash_sums, total_cash
 from analytics.pnl import pnl_summary, pnl_if_closed
 from analytics.utils import total_realized_gains
@@ -56,9 +57,12 @@ class PnLView(LoginRequiredMixin, FormView):
             account = self.account
 
         if days is not None:
-            days = int(days)
-            d = our_now() - timedelta(days=days)
-            d = d.date()
+            if days.lower() == 'lbd':
+                d = prior_business_day(date.today())
+            else:
+                days = int(days)
+                d = our_now() - timedelta(days=days)
+                d = d.date()
         else:
             d = getter('d')
 
