@@ -125,7 +125,6 @@ def pnl(d=None, a=None, active_f=True):
 
 
 def pnl_summary(d=None, a=None, active_f=True):
-
     result, total_worth, total_today = pnl(d=d, a=a, active_f=active_f)
 
     today = date.today()
