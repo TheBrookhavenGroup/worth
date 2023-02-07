@@ -14,5 +14,4 @@ foo.py
 junk.txt
 redis_dumps
 secrets.ini
-
-
+BackfillData/
