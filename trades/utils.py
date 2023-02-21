@@ -58,6 +58,8 @@ def open_pnl(ticker=None, account=None):
 
 
 def price_mapper(t, d):
+    if type(t) is pd.core.series.Series:
+        t = t.t
     ti = get_ticker(t)
     price = get_price(ti, d)
     return price
