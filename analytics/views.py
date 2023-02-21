@@ -151,6 +151,7 @@ class TickerView(LoginRequiredMixin, TemplateView):
         context['tickeradmin'] = ticker_admin_url(self.request, ticker)
         context['title'] = yahoo_url(ticker)
         context['description'] = ticker.description
+
         pos, wap = weighted_average_price(ticker)
         opnl = open_pnl(ticker=ticker)
         if is_near_zero(pos):

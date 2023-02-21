@@ -9,21 +9,46 @@ from markets.utils import get_price
 from moneycounter import wap_calc
 
 
-def weighted_average_price(ticker, account=None):
+def reindexed_wap(df):
+    df.reset_index(inplace=True)
+    wap = wap_calc(df)
+    a = df.loc[0, 'a']
+    t = df.loc[0, 't']
+    cs = df.loc[0, 'cs']
+    position = df.q.sum()
+    result = pd.DataFrame({'a': [a], 't': [t], 'position': [position], 'wap': [wap], 'cs': cs})
+    return result
+
+
+def wap_df(df):
+    # Must compute WAP separately for each account to make sure
+    # trades are closed out against trades in the same account.
+    g1 = df.groupby(['a', 't'], group_keys=False)
+    df = g1[['a', 't', 'q', 'p', 'cs']].apply(reindexed_wap)
+    df = df[df.position != 0]
+    df.reset_index(inplace=True, drop=True)
+    return df
+
+
+def weighted_average_price(ticker):
     if type(ticker) == str:
         ticker = get_ticker(ticker)
 
-    qs = Trade.equity_trades(account=account, ticker=ticker)
+    qs = Trade.equity_trades(ticker=ticker).filter(account__active_f=True).order_by('dt')
+
     df = Trade.qs_to_df(qs)
 
-    pos = df.q.sum()
-    wap = wap_calc(df)
+    x = wap_df(df)
+
+    pnl = x.position * (1.0 - x.wap)
+    pos = x.position.sum()
+    wap = 1.0 - pnl.sum() / pos
 
     return pos, wap
 
 
 def open_pnl(ticker=None, account=None):
-    qs = Trade.equity_trades(account=account, ticker=ticker)
+    qs = Trade.equity_trades(account=account, ticker=ticker).filter(account__active_f=True)
     df = Trade.qs_to_df(qs)
 
     pnl = open_position_pnl(df)
@@ -32,13 +57,9 @@ def open_pnl(ticker=None, account=None):
     return open_pnl
 
 
-def price_mapper(x, d):
-    epsilon = 1e-10
-    if x.q > -epsilon and x.q < epsilon:
-        price = 0
-    else:
-        ti = get_ticker(x.t)
-        price = get_price(ti, d)
+def price_mapper(t, d):
+    ti = get_ticker(t)
+    price = get_price(ti, d)
     return price
 
 
@@ -103,27 +124,28 @@ def pnl_asof(d=None, a=None, only_non_qualified=False, active_f=True):
     return pnl, cash
 
 
-def open_position_pnl(df):
-    """
-    :param df: trades dataframe
-    :return: dataframe of open positions and pnl if realized today.
-    """
-
+def trades_with_position(df):
     # Get only trades that are in position.
+
     pos = pd.pivot_table(df, index=["a", "t"], aggfunc={'q': np.sum, 'cs': 'first'}).reset_index(['a', 't'])
     pos = pos[pos.q != 0]
     df = pd.merge(df, pos, how='inner', on=['a', 't'])
     df.drop(['q_y', 'cs_y'], axis=1, inplace=True)
     df.rename(columns={'q_x': 'q', 'cs_x': 'cs'}, inplace=True)
 
-    df = df.groupby(['a', 't']).apply(wap_calc).reset_index(name='wap')
+    return df
 
-    df = pd.merge(df, pos, how='inner', on=['a', 't'])
 
-    df['price'] = df.apply(lambda x: price_mapper(x, d=date.today()), axis=1)
+def open_position_pnl(df):
+    """
+    :param df: trades dataframe
+    :return: dataframe of open positions and pnl if realized today.
+    """
 
-    df['pnl'] = df.cs * df.q * (df.price - df.wap)
-
+    df = trades_with_position(df)
+    df = wap_df(df)
+    price = df.t.apply(lambda x: price_mapper(x, d=date.today()))
+    df['pnl'] = df.cs * df.position * (price - df.wap)
     df.sort_values(by=["pnl"], ignore_index=True, inplace=True)
 
     return df
