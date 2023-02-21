@@ -47,6 +47,8 @@ class Trade(models.Model):
         if only_non_qualified:
             qs = qs.filter(account__qualified_f=False)
 
+        qs.order_by('dt')
+
         return qs
 
     @classmethod
@@ -54,14 +56,14 @@ class Trade(models.Model):
         if type(account) == str:
             account = Account.objects.get(name=account)
         qs = cls.more_filtering(account, ticker, only_non_qualified)
-        return qs.filter(~Q(ticker__market__ib_exchange__in=(NOT_FUTURES_EXCHANGES)))
+        return qs.filter(~Q(ticker__market__ib_exchange__in=(NOT_FUTURES_EXCHANGES))).order_by('dt')
 
     @classmethod
     def equity_trades(cls, account=None, ticker=None, only_non_qualified=False):
         if type(account) == str:
             account = Account.objects.get(name=account)
         qs = cls.more_filtering(account, ticker, only_non_qualified)
-        return qs.filter(ticker__market__ib_exchange__in=(NOT_FUTURES_EXCHANGES))
+        return qs.filter(ticker__market__ib_exchange__in=(NOT_FUTURES_EXCHANGES)).order_by('dt')
 
     @classmethod
     def qs_to_df(cls, qs):

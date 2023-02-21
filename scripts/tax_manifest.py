@@ -22,7 +22,7 @@ os.chdir(wd)
 out_filename = os.path.join(wd, f"{y}SchwarzschildTax.pdf")
 cover_filename = f"{y}Cover.pdf"
 doc_order = [cover_filename, 'w2', '1099', '1256', '1098',
-             'FSA', 'K1', 'DonationsDivider.pdf']
+             'HSA', 'K1', 'DonationsDivider.pdf']
 
 fns = glob(os.path.join(wd, '*.tex'))
 tex_files = [f.strip('.tex') for f in fns]
