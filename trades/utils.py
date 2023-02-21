@@ -13,7 +13,7 @@ def weighted_average_price(ticker, account=None):
     if type(ticker) == str:
         ticker = get_ticker(ticker)
 
-    qs = Trade.equity_trades(account=account, ticker=ticker).order_by('dt')
+    qs = Trade.equity_trades(account=account, ticker=ticker)
     df = Trade.qs_to_df(qs)
 
     pos = df.q.sum()
