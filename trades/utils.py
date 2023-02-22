@@ -1,12 +1,12 @@
 from datetime import date
 import pandas as pd
 import numpy as np
-
+from moneycounter import wap_calc
+from moneycounter.str_utils import is_near_zero
 from accounts.models import copy_cash_df
 from markets.models import get_ticker, NOT_FUTURES_EXCHANGES
 from trades.models import Trade, copy_trades_df
 from markets.utils import get_price
-from moneycounter import wap_calc
 
 
 def reindexed_wap(df):
@@ -59,7 +59,9 @@ def open_pnl(ticker=None, account=None):
 
 def price_mapper(t, d):
     try:
-        t = t.t
+        t, q = t.t, t.q
+        if is_near_zero(q):
+            return 0
     except AttributeError:
         pass
 
