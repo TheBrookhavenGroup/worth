@@ -66,6 +66,13 @@ class Trade(models.Model):
         return qs.filter(ticker__market__ib_exchange__in=(NOT_FUTURES_EXCHANGES)).order_by('dt')
 
     @classmethod
+    def any_trades(cls, account=None, ticker=None, only_non_qualified=False):
+        if type(account) == str:
+            account = Account.objects.get(name=account)
+        qs = cls.more_filtering(account, ticker, only_non_qualified).order_by('dt')
+        return qs
+
+    @classmethod
     def qs_to_df(cls, qs):
         fields = ('account__name', 'ticker__ticker',
                   'ticker__market__ib_exchange', 'ticker__market__cs',

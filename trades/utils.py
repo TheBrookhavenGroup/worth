@@ -34,21 +34,23 @@ def weighted_average_price(ticker):
     if type(ticker) == str:
         ticker = get_ticker(ticker)
 
-    qs = Trade.equity_trades(ticker=ticker).filter(account__active_f=True).order_by('dt')
+    # qs = Trade.equity_trades(ticker=ticker).filter(account__active_f=True)
+    qs = Trade.any_trades(ticker=ticker).filter(account__active_f=True)
 
     df = Trade.qs_to_df(qs)
+    cs = df.loc[0, 'cs']
 
     x = wap_df(df)
 
-    pnl = x.position * (1.0 - x.wap)
+    pnl = cs * x.position * (1.0 - x.wap)
     pos = x.position.sum()
-    wap = 1.0 - pnl.sum() / pos
+    wap = 1.0 - pnl.sum() / pos / cs
 
     return pos, wap
 
 
 def open_pnl(ticker=None, account=None):
-    qs = Trade.equity_trades(account=account, ticker=ticker).filter(account__active_f=True)
+    qs = Trade.any_trades(account=account, ticker=ticker).filter(account__active_f=True)
     df = Trade.qs_to_df(qs)
 
     pnl = open_position_pnl(df)
