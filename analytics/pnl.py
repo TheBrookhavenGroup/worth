@@ -161,7 +161,7 @@ def format_if_closed(a, t, wap=0, cs=1, q=0, price=0, pnl=0):
     return [a, t, cs, q, wap, price, pnl]
 
 
-def pnl_if_open(a=None):
+def pnl_if_closed(a=None):
     """
         Copy trades_df
         Remove all closed positions.
