@@ -149,8 +149,8 @@ def open_position_pnl(df):
 
     df = trades_with_position(df)
     df = wap_df(df)
-    price = df.t.apply(lambda x: price_mapper(x, d=date.today()))
-    df['pnl'] = df.cs * df.position * (price - df.wap)
+    df['price'] = df.t.apply(lambda x: price_mapper(x, d=date.today()))
+    df['pnl'] = df.cs * df.position * (df.price - df.wap)
     df.sort_values(by=["pnl"], ignore_index=True, inplace=True)
 
     return df

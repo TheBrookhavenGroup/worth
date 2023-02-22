@@ -100,9 +100,9 @@ class PnLIfClosedTests(TestCase):
     def test_if_closed(self):
         expected = pd.DataFrame({'a': ['MSFidelity', 'MSFidelity', 'MSFidelity'],
                                  't': ['MSFT', 'MBXIX', 'AMZN'],
+                                 'position': [10.0, 1001.4, 95.0],
                                  'wap': [310.00, 29.01431, 69.10526],
                                  'cs': [1.0, 1.0, 1.0],
-                                 'q': [10.0, 1001.4, 95.0],
                                  'price': [305.0, 33.0, 115.0],
                                  'pnl': [-50.0, 3991.274, 4360.000]})
 
