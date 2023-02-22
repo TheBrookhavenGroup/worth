@@ -7,7 +7,7 @@ from django.views.generic import TemplateView, FormView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from analytics.cash import cash_sums, total_cash
-from analytics.pnl import pnl_summary, pnl_if_closed
+from analytics.pnl import pnl_summary, pnl_if_open
 from analytics.utils import total_realized_gains
 from analytics.models import PPMResult
 from analytics.forms import PnLForm, CheckingForm
@@ -240,7 +240,7 @@ class PnLIfClosedView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        losses, formatter = pnl_if_closed()
+        losses, formatter = pnl_if_open()
 
         context['headings1'], context['data1'], context['formats'] = df_to_jqtable(df=losses, formatter=formatter)
         context['title'] = 'Worth - Losers'

@@ -3,7 +3,7 @@ import pandas as pd
 from django.test import TestCase, override_settings
 from trades.tests import make_trades, make_trades_split, make_lifo_trades
 
-from analytics.pnl import pnl, pnl_if_closed
+from analytics.pnl import pnl, pnl_if_open
 from markets.utils import get_price
 
 
@@ -106,5 +106,5 @@ class PnLIfClosedTests(TestCase):
                                  'price': [305.0, 33.0, 115.0],
                                  'pnl': [-50.0, 3991.274, 4360.000]})
 
-        df, format_rec = pnl_if_closed()
+        df, format_rec = pnl_if_open()
         pd.testing.assert_frame_equal(df, expected)
