@@ -5,11 +5,12 @@ from moneycounter import wap_calc
 from moneycounter.str_utils import is_near_zero
 from accounts.models import copy_cash_df
 from markets.models import get_ticker, NOT_FUTURES_EXCHANGES
-from trades.models import Trade, copy_trades_df
+from trades.models import copy_trades_df
 from markets.utils import get_price
 
 
 def reindexed_wap(df):
+    df.sort_values(by=['dt'])
     df.reset_index(inplace=True)
     wap = wap_calc(df)
     a = df.loc[0, 'a']
@@ -24,7 +25,7 @@ def wap_df(df):
     # Must compute WAP separately for each account to make sure
     # trades are closed out against trades in the same account.
     g1 = df.groupby(['a', 't'], group_keys=False)
-    df = g1[['a', 't', 'q', 'p', 'cs']].apply(reindexed_wap)
+    df = g1[['a', 't', 'dt', 'q', 'p', 'cs']].apply(reindexed_wap)
     df = df[df.position != 0]
     df.reset_index(inplace=True, drop=True)
     return df
@@ -34,29 +35,13 @@ def weighted_average_price(ticker):
     if type(ticker) == str:
         ticker = get_ticker(ticker)
 
-    # qs = Trade.equity_trades(ticker=ticker).filter(account__active_f=True)
-    qs = Trade.any_trades(ticker=ticker).filter(account__active_f=True)
-
-    df = Trade.qs_to_df(qs)
-    cs = df.loc[0, 'cs']
-
-    x = wap_df(df)
-
-    pnl = cs * x.position * (1.0 - x.wap)
-    pos = x.position.sum()
-    wap = 1.0 - pnl.sum() / pos / cs
+    df = copy_trades_df(t=ticker, active_f=True)
+    wap = wap_df(df)
+    pos = wap.position.sum()
+    qp = wap.wap * wap.position
+    wap = qp.sum() / pos
 
     return pos, wap
-
-
-def open_pnl(ticker=None, account=None):
-    qs = Trade.any_trades(account=account, ticker=ticker).filter(account__active_f=True)
-    df = Trade.qs_to_df(qs)
-
-    pnl = open_position_pnl(df)
-    open_pnl = pnl.pnl.sum()
-
-    return open_pnl
 
 
 def price_mapper(t, d):

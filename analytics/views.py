@@ -7,12 +7,12 @@ from django.views.generic import TemplateView, FormView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from analytics.cash import cash_sums, total_cash
-from analytics.pnl import pnl_summary, pnl_if_closed
+from analytics.pnl import pnl_summary, pnl_if_closed, ticker_pnl
 from analytics.utils import total_realized_gains
 from analytics.models import PPMResult
 from analytics.forms import PnLForm, CheckingForm
 from trades.ib_flex import get_trades
-from trades.utils import weighted_average_price, open_pnl
+from trades.utils import weighted_average_price
 from moneycounter.dt import lbd_prior_month, our_now, prior_business_day
 from moneycounter.str_utils import is_near_zero
 from accounts.models import Account
@@ -153,19 +153,19 @@ class TickerView(LoginRequiredMixin, TemplateView):
         context['description'] = ticker.description
 
         pos, wap = weighted_average_price(ticker)
-        opnl = open_pnl(ticker=ticker)
+
         if is_near_zero(pos):
             context['msg'] = 'Zero position.'
         else:
             context['pos'] = pos
             context['open_price'] = wap
-            context['open_pnl'] = opnl
 
             try:
                 price = get_price(ticker)
                 context['price'] = price
                 context['capital'] = pos * price
-                context['pnl'] = ticker.market.cs * pos * (price - wap)
+                context['realizable_pnl'] = ticker.market.cs * pos * (price - wap)
+                context['total_pnl'] = ticker_pnl(ticker)
             except IndexError:
                 context['msg'] = 'Could not get a price for this ticker.'
 

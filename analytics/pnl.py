@@ -1,17 +1,18 @@
 
 import numpy as np
 import pandas as pd
-from datetime import date, datetime
+from datetime import date
 from collections import OrderedDict
 from moneycounter.str_utils import cround, is_near_zero
 from worth.utils import df_to_jqtable
 from moneycounter.dt import our_now, lbd_prior_month, prior_business_day, our_localize
+from moneycounter.pnl import pnl_calc
 from markets.models import get_ticker, NOT_FUTURES_EXCHANGES
 from analytics.models import PPMResult
 from analytics.utils import roi
 from trades.models import copy_trades_df
 from trades.utils import pnl_asof, open_position_pnl
-from markets.utils import ticker_url
+from markets.utils import ticker_url, get_price
 from accounts.utils import get_account_url
 
 
@@ -163,6 +164,8 @@ def format_if_closed(a, t, wap=0, cs=1, q=0, price=0, pnl=0):
 
 def pnl_if_closed(a=None):
     """
+        What would the PnL be if we closed out the position today?
+
         Copy trades_df
         Remove all closed positions.
         Add close out trade for each open position.
@@ -174,3 +177,26 @@ def pnl_if_closed(a=None):
     df = open_position_pnl(df)
 
     return df, format_if_closed
+
+
+def pnl_one(df):
+    if df.empty:
+        return 0
+
+    t = df.iloc[0].t
+    price = get_price(t)
+    return pnl_calc(df, price)
+
+
+def ticker_pnl(t):
+    """
+    What is the total pnl earned for the given ticker
+    :param t:
+    :return:
+    """
+
+    df = copy_trades_df(t=t)
+    g1 = df.groupby(['a', 't'], group_keys=False)
+    pnl = g1.apply(pnl_one)
+    pnl = pnl.sum()
+    return pnl
