@@ -190,7 +190,7 @@ def pnl_one(df):
 
 def ticker_pnl(t):
     """
-    What is the total pnl earned for the given ticker
+    What is the total pnl earned for the given ticker?
     :param t:
     :return:
     """

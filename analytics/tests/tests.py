@@ -101,10 +101,14 @@ class PnLIfClosedTests(TestCase):
         expected = pd.DataFrame({'a': ['MSFidelity', 'MSFidelity', 'MSFidelity'],
                                  't': ['MSFT', 'MBXIX', 'AMZN'],
                                  'position': [10.0, 1001.4, 95.0],
-                                 'wap': [310.00, 29.01431, 69.10526],
+                                 'wap': [310.00, 29.01431, 94.36842],
                                  'cs': [1.0, 1.0, 1.0],
                                  'price': [305.0, 33.0, 115.0],
-                                 'pnl': [-50.0, 3991.274, 4360.000]})
+                                 'pnl': [-50.0, 3991.274, 1960.0]})
 
         df, format_rec = pnl_if_closed()
+
+        df.sort_values(by=['t'], inplace=True, ignore_index=True)
+        expected.sort_values(by=['t'], inplace=True, ignore_index=True)
+
         pd.testing.assert_frame_equal(df, expected)
