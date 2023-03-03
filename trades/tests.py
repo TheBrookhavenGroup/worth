@@ -158,7 +158,7 @@ class TradesTests(TestCase):
 
     def test_setup(self):
         self.assertEqual('MSFidelity', self.a.name)
-        self.assertAlmostEqual(100, self.trade.q)
+        self.assertAlmostEqual(1000, self.trade.q)
 
     def test_wap(self):
         # Test weighted average price

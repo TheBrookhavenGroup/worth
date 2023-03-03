@@ -31,8 +31,8 @@
         {% endif %}
         {% if price %}
             Price: {{ price|floatformat:2|intcomma }} <br>
-            PnL: {{ pnl|floatformat:2|intcomma }} <br>
-            Realizable PnL: {{ open_pnl|floatformat:2|intcomma }} if we close position today.<br>
+            Total PnL: {{ total_pnl|floatformat:2|intcomma }} <br>
+            Realizable PnL: {{ realizable_pnl|floatformat:2|intcomma }} if we close position today.<br>
         {% endif %}
         {% if msg %}
             <p>

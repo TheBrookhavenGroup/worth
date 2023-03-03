@@ -20,6 +20,9 @@ class Trade(models.Model):
     note = models.CharField(max_length=180, blank=True, null=True)
     trade_id = models.IntegerField(blank=True, null=True)
 
+    class Meta:
+        ordering = ['dt']
+
     def __str__(self):
         return f"{self.account} {self.dt} {self.ticker.ticker} {self.q} @ {self.p} c={self.commission} id={self.trade_id}"
 
@@ -95,10 +98,14 @@ class Trade(models.Model):
 
 
 @lru_cache(maxsize=10)
-def get_trades_df(a=None, only_non_qualified=False, active_f=True):
+def get_trades_df(a=None, t=None, only_non_qualified=False, active_f=True):
+    #  Use copy_trades_df() which calls this to preserve the cached df
     qs = Trade.objects
     if a is not None:
         qs = qs.filter(account__name=a)
+
+    if t is not None:
+        qs = qs.filter(ticker__ticker=t)
 
     if active_f:
         qs = qs.filter(account__active_f=True)
@@ -107,11 +114,12 @@ def get_trades_df(a=None, only_non_qualified=False, active_f=True):
         qs = qs.filter(account__qualified_f=False)
 
     qs.order_by('dt')
-    return Trade.qs_to_df(qs)
+    df = Trade.qs_to_df(qs)
+    return df
 
 
-def copy_trades_df(d=None, a=None, only_non_qualified=False, active_f=True):
-    df = get_trades_df(a=a, only_non_qualified=only_non_qualified, active_f=active_f)
+def copy_trades_df(d=None, t=None, a=None, only_non_qualified=False, active_f=True):
+    df = get_trades_df(a=a, t=t, only_non_qualified=only_non_qualified, active_f=active_f)
     df = df.copy(deep=True)
     if (not df.empty) and (d is not None):
         dt = day_start_next_day(d)
