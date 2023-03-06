@@ -1,4 +1,4 @@
-
+from datetime import date
 from cachetools.func import lru_cache
 import pandas as pd
 from django.db.models import Sum
@@ -25,10 +25,11 @@ def get_bofa_account():
 
 
 class Receivable(models.Model):
-    invoiced = models.DateField(auto_now_add=True)
-    expected = models.DateField()
-    received = models.DateField()
-    description = models.CharField(max_length=180)
+    invoiced = models.DateField(default=date.today)
+    expected = models.DateField(blank=True, null=True)
+    received = models.DateField(blank=True, null=True)
+    client = models.CharField(max_length=100, blank=True)
+    invoice = models.CharField(max_length=80, blank=True)
     amt = models.FloatField()
 
 
