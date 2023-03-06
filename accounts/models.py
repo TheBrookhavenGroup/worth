@@ -1,3 +1,4 @@
+
 from cachetools.func import lru_cache
 import pandas as pd
 from django.db.models import Sum
@@ -21,6 +22,14 @@ class Account(models.Model):
 
 def get_bofa_account():
     return Account.objects.get(name='BofA')
+
+
+class Receivable(models.Model):
+    invoiced = models.DateField(auto_now_add=True)
+    expected = models.DateField()
+    received = models.DateField()
+    description = models.CharField(max_length=180)
+    amt = models.FloatField()
 
 
 class CashRecord(models.Model):
