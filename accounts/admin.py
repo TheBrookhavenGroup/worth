@@ -69,7 +69,7 @@ def toggle_ignored_flag(modeladmin, request, qs):
 @admin.register(Receivable)
 class ReceivableAdmin(admin.ModelAdmin):
     date_hierarchy = 'invoiced'
-    list_display = ('invoiced', 'received', 'description', 'amt')
+    list_display = ('invoice', 'invoiced', 'received', 'client', 'amt')
     ordering = ('-invoiced', )
 
 
