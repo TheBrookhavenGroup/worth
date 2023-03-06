@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.admin import SimpleListFilter
-from .models import Account, CashRecord
+from .models import Account, Receivable, CashRecord
 from moneycounter.dt import our_now
 
 
@@ -66,7 +66,14 @@ def toggle_ignored_flag(modeladmin, request, qs):
         rec.save()
 
 
-@admin .register(CashRecord)
+@admin.register(Receivable)
+class ReceivableAdmin(admin.ModelAdmin):
+    date_hierarchy = 'invoiced'
+    list_display = ('invoiced', 'received', 'description', 'amt')
+    ordering = ('-invoiced', )
+
+
+@admin.register(CashRecord)
 class CashRecordAdmin(admin.ModelAdmin):
     date_hierarchy = 'd'
     list_display = ('account', 'd', 'description', 'amt', 'cleared_f', 'ignored')
