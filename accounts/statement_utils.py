@@ -26,17 +26,16 @@ def gpg_decrypt(fn, fn_out=None):
     # If fn = foo.txt.asc then output file would be foo.txt.
     # gpg --homedir ~/.gnupg fn.txt.asc
 
+    if fn_out is None:
+        fn_out = fn.strip('.pgp')
+
     with open(fn, 'rb') as f:
         status = gpg.decrypt_file(f, output=fn_out, passphrase=gpgpass)
 
-    print('Errors: ')
-    print(status.GPG_ERROR_CODES)
-    print(status.GPG_SYSTEM_ERROR_CODES)
-
-    return status
+    return fn_out
 
 
-def ib_statements():
+def ib_statements(decrypt=False):
     user = settings.IB_FTP_USER
     pw = settings.IB_FTP_PW
     server = settings.IB_FTP_SERVER
@@ -53,4 +52,7 @@ def ib_statements():
         print(f'Saving {fn}')
         with open(fn, 'wb') as fh:
             ftp.retrbinary('RETR ' + f, fh.write)
+    if decrypt:
+        file_names = [gpg_decrypt(fn) for fn in file_names]
+
     return file_names
