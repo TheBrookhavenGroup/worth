@@ -18,7 +18,7 @@ from moneycounter.str_utils import is_near_zero
 from accounts.models import Account
 from markets.tbgyahoo import yahoo_url
 from markets.models import Ticker
-from worth.utils import df_to_jqtable
+from worth.utils import df_to_jqtable, nice_headings
 
 from markets.utils import get_price, ticker_admin_url
 
@@ -242,7 +242,8 @@ class PnLIfClosedView(LoginRequiredMixin, TemplateView):
 
         losses, formatter = pnl_if_closed()
 
-        context['headings1'], context['data1'], context['formats'] = df_to_jqtable(df=losses, formatter=formatter)
+        h, context['data1'], context['formats'] = df_to_jqtable(df=losses, formatter=formatter)
+        context['headings1'] = nice_headings(h)
         context['title'] = 'Worth - Losers'
         context['d'] = f'PnL if closed today.'
         return context
