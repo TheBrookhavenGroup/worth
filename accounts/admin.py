@@ -54,12 +54,43 @@ def duplicate_receivable(modeladmin, request, qs):
         new_rec.save()
 
 
+def recievable2cash(modeladmin, request, qs):
+    d = our_now().date()
+    a = Account.objects.get(name='TBG')
+    for rec in qs:
+        if rec.received is None:
+            description = f"{rec.client} - {rec.invoice}"
+            new_rec = CashRecord(d=d, description=description, account=a,
+                                 category="DE", amt=rec.amt)
+            new_rec.save()
+
+            rec.received = d
+            rec.save()
+
+
+class ReceivableNotReceivedFilter(SimpleListFilter):
+    title = "Recieved"
+    parameter_name = 'received'
+
+    def lookups(self, request, model_admin):
+        return [('no', 'Not Received'), ('yes', 'Received')]
+
+    def queryset(self, request, queryset):
+        if 'no' == self.value():
+            return queryset.filter(received=None)
+        elif 'yes' == self.value():
+            return queryset.filter(received__isnull=False)
+
+        return queryset
+
+
 @admin.register(Receivable)
 class ReceivableAdmin(admin.ModelAdmin):
     date_hierarchy = 'invoiced'
     list_display = ('invoice', 'invoiced', 'received', 'client', 'amt')
     ordering = ('-invoiced', )
-    actions = [duplicate_receivable]
+    actions = [duplicate_receivable, recievable2cash]
+    list_filter = [ReceivableNotReceivedFilter]
 
 
 def set_cleared_flag(modeladmin, request, qs):
