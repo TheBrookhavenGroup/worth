@@ -141,7 +141,7 @@ def pnl_summary(d=None, a=None, active_f=True):
     return headings, data, formats, total_worth, total_today
 
 
-def format_if_closed(a, t, wap=0, cs=1, q=0, price=0, pnl=0):
+def format_if_closed(a, t, q=0, wap=0, cs=1, price=0, pnl=0):
     t = get_ticker(t)
     pprec = t.market.pprec
     vprec = t.market.vprec
@@ -159,7 +159,7 @@ def format_if_closed(a, t, wap=0, cs=1, q=0, price=0, pnl=0):
     pnl = cround(pnl, vprec)
 
     a = get_account_url(a)
-    return [a, t, cs, q, wap, price, pnl]
+    return [a, t, q, wap, cs, price, pnl]
 
 
 def pnl_if_closed(a=None):
