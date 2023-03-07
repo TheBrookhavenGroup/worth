@@ -46,6 +46,22 @@ class AccountAdmin(admin.ModelAdmin):
     actions = [set_qualified_flag, clear_qualified_flag]
 
 
+def duplicate_receivable(modeladmin, request, qs):
+    d = our_now().date()
+    for rec in qs:
+        invoice = rec.invoice[:-8] + d.strftime("%Y%m%d")
+        new_rec = Receivable(expected=rec.expected, client=rec.client, invoice=invoice, amt=rec.amt)
+        new_rec.save()
+
+
+@admin.register(Receivable)
+class ReceivableAdmin(admin.ModelAdmin):
+    date_hierarchy = 'invoiced'
+    list_display = ('invoice', 'invoiced', 'received', 'client', 'amt')
+    ordering = ('-invoiced', )
+    actions = [duplicate_receivable]
+
+
 def set_cleared_flag(modeladmin, request, qs):
     for rec in qs:
         rec.cleared_f = True
@@ -64,13 +80,6 @@ def toggle_ignored_flag(modeladmin, request, qs):
     for rec in qs:
         rec.ignored = not rec.ignored
         rec.save()
-
-
-@admin.register(Receivable)
-class ReceivableAdmin(admin.ModelAdmin):
-    date_hierarchy = 'invoiced'
-    list_display = ('invoice', 'invoiced', 'received', 'client', 'amt')
-    ordering = ('-invoiced', )
 
 
 @admin.register(CashRecord)
