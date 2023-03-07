@@ -11,7 +11,7 @@ class GetIBStatementsView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['filenames'] = ib_statements()
+        context['filenames'] = ib_statements(decrypt=True)
         context['title'] = 'IB Statements Retrieved'
         return context
 
