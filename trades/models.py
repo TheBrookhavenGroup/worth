@@ -4,7 +4,7 @@ from django.db import models
 from django.db.models import Q
 from django.core.validators import MinValueValidator
 from django.conf import settings
-from moneycounter.dt import day_start_next_day
+from tbgutils.dt import day_start_next_day
 from markets.models import Ticker, NOT_FUTURES_EXCHANGES
 from accounts.models import Account
 

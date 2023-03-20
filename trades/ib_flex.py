@@ -1,7 +1,7 @@
 import json
 from django.conf import settings
 from ib_insync.flexreport import FlexReport, FlexError
-from moneycounter.dt import dt2dt, set_tz
+from tbgutils.dt import dt2dt, set_tz
 from accounts.models import Account
 from trades.models import Trade
 from markets.utils import ib_symbol2ticker
