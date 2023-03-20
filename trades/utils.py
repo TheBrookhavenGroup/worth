@@ -2,7 +2,7 @@ from datetime import date
 import pandas as pd
 import numpy as np
 from moneycounter import wap_calc
-from moneycounter.str_utils import is_near_zero
+from tbgutils.str import is_near_zero
 from accounts.models import copy_cash_df
 from markets.models import get_ticker, NOT_FUTURES_EXCHANGES
 from trades.models import copy_trades_df

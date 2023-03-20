@@ -13,8 +13,8 @@ from analytics.models import PPMResult
 from analytics.forms import PnLForm, CheckingForm
 from trades.ib_flex import get_trades
 from trades.utils import weighted_average_price
-from moneycounter.dt import lbd_prior_month, our_now, prior_business_day
-from moneycounter.str_utils import is_near_zero
+from tbgutils.dt import lbd_prior_month, our_now, prior_business_day
+from tbgutils.str import is_near_zero
 from accounts.models import Account
 from markets.tbgyahoo import yahoo_url
 from markets.models import Ticker

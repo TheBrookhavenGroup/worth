@@ -1,6 +1,6 @@
 import datetime
 from django.test import TestCase
-from moneycounter.dt import our_localize, next_business_day
+from tbgutils.dt import our_localize, next_business_day
 from accounts.models import Account, CashRecord
 from markets.models import Market, Ticker
 from trades.models import Trade

@@ -11,5 +11,6 @@ ib-insync==0.9.77
 python-gnupg==0.5.0
 plotly==5.11.0
 django-crispy-forms==1.14.0
+tbgutils
 moneycounter
 

@@ -1,7 +1,7 @@
 import os
 from os import environ as env
 from pathlib import Path
-from moneycounter import dt as mc_dt
+from tbgutils import dt as mc_dt
 
 
 IB_FTP_USER = env.get('IB_FTP_USER')

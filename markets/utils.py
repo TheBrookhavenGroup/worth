@@ -3,7 +3,7 @@ from django.conf import settings
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 from datetime import date
-from moneycounter.dt import y1_to_y4, is_lbd_of_month, most_recent_business_day
+from tbgutils.dt import y1_to_y4, is_lbd_of_month, most_recent_business_day
 from markets.tbgyahoo import yahooHistory, yahooQuote
 from markets.models import DailyPrice, TBGDailyBar
 from markets.models import Ticker, Market, NOT_FUTURES_EXCHANGES
