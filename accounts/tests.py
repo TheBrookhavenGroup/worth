@@ -3,7 +3,7 @@ from django.test import TestCase, tag
 from .statement_utils import gpg_encrypt, gpg_decrypt
 
 
-@tag('gpg')
+@tag('inhibit_test')
 class GPGTests(TestCase):
     def setUp(self):
         self.fn = os.path.join(os.path.dirname(__file__), 'test_files/foo.txt')

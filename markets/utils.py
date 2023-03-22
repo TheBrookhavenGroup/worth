@@ -85,7 +85,6 @@ def get_price(ticker, d=None):
     if ticker.fixed_price is None:
         if (d is None) or (d == date.today()):
             p = yahooQuote(ticker)[0]
-            p *= ticker.market.yahoo_price_factor
         else:
             if DailyPrice.objects.filter(ticker=ticker).filter(d=d).exists():
                 p = DailyPrice.objects.filter(ticker=ticker).filter(d=d).first()
