@@ -5,7 +5,7 @@ from datetime import date
 from collections import OrderedDict
 from tbgutils.str import cround, is_near_zero
 from worth.utils import df_to_jqtable
-from tbgutils.dt import our_now, lbd_prior_month, prior_business_day, our_localize
+from tbgutils.dt import our_now, lbd_prior_month, prior_business_day
 from moneycounter.pnl import pnl_calc
 from markets.models import get_ticker, NOT_FUTURES_EXCHANGES
 from analytics.models import PPMResult

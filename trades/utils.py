@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from django.conf import settings
+from tbgutils.dt import our_now
 from moneycounter import wap_calc
 from tbgutils.str import is_near_zero
 from accounts.models import copy_cash_df
@@ -65,9 +66,17 @@ def get_current_price_mapper(tickers):
     if not settings.USE_PRICE_FEED:
         prices = {t.ticker: get_price(t) for t in tickers}
     else:
-        prices = {yahoo2worth_tickers[k]: v[0] for k, v in yahooQuotes(tickers).items()}
+        quotes = yahooQuotes(tickers)
+        prices = {yahoo2worth_tickers[k]: v[0] for k, v in quotes.items()}
 
     def mapper(t):
+        try:
+            t, q = t.t, t.q
+            if is_near_zero(q):
+                return 0
+        except AttributeError:
+            pass
+
         return prices[t]
 
     return mapper
@@ -93,7 +102,12 @@ def pnl_asof(d=None, a=None, only_non_qualified=False, active_f=True):
         pnl = pd.pivot_table(df, index=["a", "t"],
                              aggfunc={'qp': np.sum, 'qpr': np.sum, 'q': np.sum, 'cs': np.max, 'c': np.sum, 'e': 'first'}
                              ).reset_index(['a', 't'])
-        pnl['price'] = pnl.apply(lambda x: price_mapper(x, d), axis=1)
+        if d == our_now().date():
+            tickers = [t for t in pnl.t]
+            mapper = get_current_price_mapper(tickers)
+            pnl['price'] = pnl.apply(lambda x: mapper(x), axis=1)
+        else:
+            pnl['price'] = pnl.apply(lambda x: price_mapper(x, d), axis=1)
         pnl['pnl'] = pnl.cs * (pnl.qp + pnl.q * pnl.price) - pnl.c
         pnl['value'] = pnl.cs * pnl.q * pnl.price
 
