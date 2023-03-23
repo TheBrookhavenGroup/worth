@@ -1,12 +1,13 @@
-from datetime import date
 import pandas as pd
 import numpy as np
+from django.conf import settings
 from moneycounter import wap_calc
 from tbgutils.str import is_near_zero
 from accounts.models import copy_cash_df
-from markets.models import get_ticker, NOT_FUTURES_EXCHANGES
+from markets.models import get_ticker, get_tickers, NOT_FUTURES_EXCHANGES
 from trades.models import copy_trades_df
 from markets.utils import get_price
+from markets.tbgyahoo import yahooQuotes
 
 
 def reindexed_wap(df):
@@ -55,6 +56,21 @@ def price_mapper(t, d):
     ti = get_ticker(t)
     price = get_price(ti, d)
     return price
+
+
+def get_current_price_mapper(tickers):
+    tickers = get_tickers(tickers)
+    yahoo2worth_tickers = {t.yahoo_ticker: t.ticker for t in tickers}
+
+    if not settings.USE_PRICE_FEED:
+        prices = {t.ticker: get_price(t) for t in tickers}
+    else:
+        prices = {yahoo2worth_tickers[k]: v[0] for k, v in yahooQuotes(tickers).items()}
+
+    def mapper(t):
+        return prices[t]
+
+    return mapper
 
 
 def pnl_asof(d=None, a=None, only_non_qualified=False, active_f=True):
@@ -138,7 +154,9 @@ def open_position_pnl(df):
 
     df = trades_with_position(df)
     df = wap_df(df)
-    df['price'] = df.t.apply(lambda x: price_mapper(x, d=date.today()))
+    tickers = [t for t in df.t]
+    mapper = get_current_price_mapper(tickers)
+    df['price'] = df.t.apply(lambda x: mapper(x))
     df['pnl'] = df.cs * df.position * (df.price - df.wap)
     df.sort_values(by=["pnl"], ignore_index=True, inplace=True)
 

@@ -144,3 +144,7 @@ class TBGDailyBar(models.Model):
 @ttl_cache(maxsize=10000, ttl=10)
 def get_ticker(t):
     return Ticker.objects.get(ticker=t)
+
+
+def get_tickers(tickers):
+    return Ticker.objects.filter(ticker__in=tickers).all()
