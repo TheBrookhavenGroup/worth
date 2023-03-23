@@ -44,4 +44,4 @@ jobs:
         TEST_CLIENT_PW: ${{secrets.TEST_CLIENT_PW}}
       run:
         pip freeze
-        python manage.py migrate && python manage.py test --exclude-tag=gpg
+        python manage.py migrate && python manage.py test --exclude-tag=inhibit_test

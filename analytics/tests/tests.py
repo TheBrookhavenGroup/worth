@@ -1,7 +1,7 @@
 import datetime
 import pandas as pd
 from django.test import TestCase, override_settings
-from trades.tests import make_trades, make_trades_split, make_lifo_trades
+from trades.tests import make_trades, make_trades_split
 
 from analytics.pnl import pnl, pnl_if_closed
 from markets.utils import get_price

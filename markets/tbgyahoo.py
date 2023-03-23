@@ -60,13 +60,31 @@ def yahooHistory(ticker):
     return data
 
 
-def yahooQuote(ticker):
-    url = 'https://query1.finance.yahoo.com/v6/finance/quote?region=US&lang=en&symbols=' + ticker.yahoo_ticker
+def yahooQuotes(tickers):
+    yahoo2ticker = {t.yahoo_ticker: t for t in tickers}
+    tickers = [t.yahoo_ticker for t in tickers]
+    tickers = ','.join(tickers)
+    url = f'https://query1.finance.yahoo.com/v6/finance/quote?region=US&lang=en&symbols={tickers}'
     data = yahoo_get(url)
     data = json.loads(data)
-    data = data['quoteResponse']['result'][0]
-    multiplier = ticker.market.yahoo_price_factor
-    return data['regularMarketPrice'] * multiplier, data['regularMarketPreviousClose'] * multiplier
+
+    result = {}
+    for quote in data['quoteResponse']['result']:
+        symbol = quote['symbol']
+        ticker = yahoo2ticker[symbol]
+        multiplier = ticker.market.yahoo_price_factor
+        try:
+            price = quote['regularMarketPrice'] * multiplier, quote['regularMarketPreviousClose'] * multiplier
+            result[symbol] = price
+        except KeyError:
+            pass
+
+    return result
+
+
+def yahooQuote(ticker):
+    quotes = yahooQuotes([ticker])
+    return quotes[ticker.yahoo_ticker]
 
 
 def yahoo_url(ticker):
