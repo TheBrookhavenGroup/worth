@@ -24,16 +24,33 @@
             {{ description }} <br>
             {{ tickeradmin }} <br>
         {% endif %}
+        <table class="table">
+        <tbody>
         {% if pos %}
-            Position: {{ pos|floatformat:2|intcomma }} <br>
-            Open Price: {{ open_price|floatformat:2|intcomma }} <br>
-            Capital: {{ capital|floatformat:2|intcomma }} <br>
+            <tr>
+                <td>Position:</td><td>{{ pos|floatformat:2|intcomma }} </td>
+            </tr>
+            <tr>
+                <td>Weighted Average Price:</td><td>{{ wap|floatformat:2|intcomma }} </td>
+            </tr>
+            <tr>
+                <td>Capital:</td><td>{{ capital|floatformat:2|intcomma }}</td>
+            </tr>
         {% endif %}
+
         {% if price %}
-            Price: {{ price|floatformat:2|intcomma }} <br>
-            Total PnL: {{ total_pnl|floatformat:2|intcomma }} <br>
-            Realizable PnL: {{ realizable_pnl|floatformat:2|intcomma }} if we close position today.<br>
+            <tr>
+                <td>Price</td><td>{{ price|floatformat:2|intcomma }}</td>
+            </tr>
+            <tr>
+                <td>Total PnL</td><td>{{ total_pnl|floatformat:2|intcomma }}</td>
+            </tr>
+            <tr>
+                <td>Realizable PnL</td><td>{{ realizable_pnl|floatformat:2|intcomma }} if we close position today.</td>
+            </tr>
         {% endif %}
+        </tbody>
+        </table>
         {% if msg %}
             <p>
             {{ msg }}

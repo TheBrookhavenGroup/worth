@@ -158,7 +158,7 @@ class TickerView(LoginRequiredMixin, TemplateView):
             context['msg'] = 'Zero position.'
         else:
             context['pos'] = pos
-            context['open_price'] = wap
+            context['wap'] = wap
 
             try:
                 price = get_price(ticker)
