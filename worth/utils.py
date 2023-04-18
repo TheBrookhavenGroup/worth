@@ -21,6 +21,8 @@ def df_to_jqtable(df, formatter=lambda x: x):
             for i in range(len(df))]
 
     formats = json.dumps({'columnDefs': [{'targets': [i for i in range(1, len(headings))],
-                                          'className': 'dt-body-right'}], 'ordering': False})
+                                          'className': 'dt-body-right'}],
+                          'ordering': False,
+                          'pageLength': 100})
 
     return headings, data, formats
