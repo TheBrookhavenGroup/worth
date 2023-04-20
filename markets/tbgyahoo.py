@@ -2,6 +2,10 @@ from datetime import datetime
 import json
 import requests
 from django.utils.safestring import mark_safe
+# import yfinance as yf
+# from yahooquery import Ticker as yqTicker
+
+# https://developer.yahoo.com/api/
 
 
 def yahoo_get(url):
@@ -64,7 +68,7 @@ def yahooQuotes(tickers):
     yahoo2ticker = {t.yahoo_ticker: t for t in tickers}
     tickers = [t.yahoo_ticker for t in tickers]
     tickers = ','.join(tickers)
-    url = f'https://query1.finance.yahoo.com/v6/finance/quote?region=US&lang=en&symbols={tickers}'
+    url = f'https://query2.finance.yahoo.com/v6/finance/quote?region=US&lang=en&symbols={tickers}'
     data = yahoo_get(url)
     data = json.loads(data)
 
@@ -80,6 +84,52 @@ def yahooQuotes(tickers):
             pass
 
     return result
+
+
+# def yahooQuotes(tickers):
+#     yahoo2ticker = {t.yahoo_ticker: t for t in tickers}
+#     tickers = [t.yahoo_ticker for t in tickers]
+#     tickers_str = ' '.join(tickers)
+#     df = yf.download(tickers=tickers_str, period="2d", interval="1d", prepost=False, repair=True)
+#     df = df.stack(level=1).rename_axis(['Date', 'Ticker']).reset_index(level=1)
+#     oi = 0
+#     result = {}
+#     for ti in tickers:
+#         ticker = yahoo2ticker[ti]
+#         ti_df = df[df.Ticker==ti]
+#         if not ti_df.empty:
+#             rec = ti_df.iloc[-1]
+#             o = rec.Open
+#             h = rec.High
+#             l = rec.Low
+#             c = rec.Close
+#             v = rec.Volume
+#
+#             prev_c = ti_df.iloc[-1].Close
+#
+#             multiplier = ticker.market.yahoo_price_factor
+#             price = c * multiplier, prev_c * multiplier
+#             result[ti] = price
+#
+#     return result
+
+# def yahooQuotes(tickers):
+#     yahoo2ticker = {t.yahoo_ticker: t for t in tickers}
+#     tickers = [t.yahoo_ticker for t in tickers]
+#     tickers_str = ' '.join(tickers)
+#     data = yqTicker(tickers_str)
+#     result = {}
+#     for ti in tickers:
+#         ticker = yahoo2ticker[ti]
+#         try:
+#             quote = data[ti]
+#             multiplier = ticker.market.yahoo_price_factor
+#             price = quote['regularMarketPrice'] * multiplier, quote['regularMarketPreviousClose'] * multiplier
+#             result[ti] = price
+#         except KeyError:
+#             pass
+#
+#     return result
 
 
 def yahooQuote(ticker):
