@@ -16,6 +16,9 @@ class Account(models.Model):
     url = models.URLField(blank=True, null=True)
     reconciled_f = models.BooleanField(default=False)
 
+    class Meta:
+        ordering = ('-active_f', 'name', )
+
     def __str__(self):
         return f"{self.name}"
 

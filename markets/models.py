@@ -51,6 +51,9 @@ class Ticker(models.Model):
     fixed_price = models.FloatField(null=True, blank=True,
                                     help_text="If set then this is the price that will always be used.")
 
+    class Meta:
+        ordering = ('ticker', )
+
     def __str__(self):
         return f"{self.ticker}"
 
