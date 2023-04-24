@@ -119,6 +119,14 @@ class SplitsFilter(SimpleListFilter):
         return queryset
 
 
+def duplicate_record(modeladmin, request, qs):
+    t = our_now()
+    for rec in qs:
+        new_rec = Trade(dt=t, account=rec.account, ticker=rec.ticker, reinvest=rec.reinvest,
+                        q=rec.q, p=rec.p, commission=rec.commission, note=rec.note)
+        new_rec.save()
+
+
 @admin.register(Trade)
 class TradeAdmin(admin.ModelAdmin):
     def time_date(self, obj):
@@ -132,3 +140,4 @@ class TradeAdmin(admin.ModelAdmin):
                    TradesAccountFilter, IsActiveAccountFilter, SplitsFilter, 'reinvest')
     search_fields = ('account__name', 'dt', 'note', 'ticker__ticker')
     ordering = ('account', '-dt')
+    actions = [duplicate_record]
