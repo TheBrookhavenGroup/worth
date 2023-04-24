@@ -161,10 +161,11 @@ class TickerView(LoginRequiredMixin, TemplateView):
             context['wap'] = wap
 
             try:
+                cs = ticker.market.cs
                 price = get_price(ticker)
                 context['price'] = price
-                context['capital'] = pos * price
-                context['realizable_pnl'] = ticker.market.cs * pos * (price - wap)
+                context['capital'] = cs * pos * price
+                context['realizable_pnl'] = cs * pos * (price - wap)
                 context['total_pnl'] = ticker_pnl(ticker)
             except IndexError:
                 context['msg'] = 'Could not get a price for this ticker.'
