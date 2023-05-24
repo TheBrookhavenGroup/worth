@@ -77,11 +77,19 @@ def yahooQuotes(tickers):
         symbol = quote['symbol']
         ticker = yahoo2ticker[symbol]
         multiplier = ticker.market.yahoo_price_factor
+
         try:
-            price = quote['regularMarketPrice'] * multiplier, quote['regularMarketPreviousClose'] * multiplier
-            result[symbol] = price
+            market_price = quote['regularMarketPrice']
         except KeyError:
             pass
+
+        try:
+            prev_close = quote['regularMarketPreviousClose']
+        except KeyError:
+            if ticker.market == 'Cash':
+                prev_close = ticker.fixed_price
+
+        result[symbol] = market_price * multiplier, prev_close * multiplier
 
     return result
 
