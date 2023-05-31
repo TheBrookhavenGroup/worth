@@ -85,9 +85,13 @@ class PnLView(LoginRequiredMixin, MyFormView):
             account = self.account
 
         if days is not None:
-            if days.lower() == 'lbd':
-                d = prior_business_day(date.today())
-            else:
+            try:
+                if days.lower() == 'lbd':
+                    d = prior_business_day(date.today())
+                else:
+                    raise AttributeError("days arg not known")
+
+            except AttributeError:
                 days = int(days)
                 d = our_now() - timedelta(days=days)
                 d = d.date()

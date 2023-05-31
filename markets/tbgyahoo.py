@@ -2,10 +2,8 @@ from datetime import datetime
 import json
 import requests
 from django.utils.safestring import mark_safe
-# import yfinance as yf
+import yfinance as yf
 # from yahooquery import Ticker as yqTicker
-
-# https://developer.yahoo.com/api/
 
 
 def yahoo_get(url):
@@ -64,66 +62,66 @@ def yahooHistory(ticker):
     return data
 
 
-def yahooQuotes(tickers):
-    yahoo2ticker = {t.yahoo_ticker: t for t in tickers}
-    tickers = [t.yahoo_ticker for t in tickers]
-    tickers = ','.join(tickers)
-    url = f'https://query2.finance.yahoo.com/v6/finance/quote?region=US&lang=en&symbols={tickers}'
-    data = yahoo_get(url)
-    data = json.loads(data)
-
-    result = {}
-    for quote in data['quoteResponse']['result']:
-        symbol = quote['symbol']
-        ticker = yahoo2ticker[symbol]
-        multiplier = ticker.market.yahoo_price_factor
-
-        try:
-            market_price = quote['regularMarketPrice']
-        except KeyError:
-            pass
-
-        try:
-            prev_close = quote['regularMarketPreviousClose']
-        except KeyError:
-            if ticker.market == 'Cash':
-                prev_close = ticker.fixed_price
-
-        result[symbol] = market_price * multiplier, prev_close * multiplier
-
-    return result
-
-
 # def yahooQuotes(tickers):
 #     yahoo2ticker = {t.yahoo_ticker: t for t in tickers}
 #     tickers = [t.yahoo_ticker for t in tickers]
-#     tickers_str = ' '.join(tickers)
-#     df = yf.download(tickers=tickers_str, period="2d", interval="1d", prepost=False, repair=True)
-#     df = df.stack(level=1).rename_axis(['Date', 'Ticker']).reset_index(level=1)
-#     oi = 0
+#     tickers = ','.join(tickers)
+#     url = f'https://query2.finance.yahoo.com/v6/finance/quote?region=US&lang=en&symbols={tickers}'
+#     data = yahoo_get(url)
+#     data = json.loads(data)
+#
 #     result = {}
-#     for ti in tickers:
-#         ticker = yahoo2ticker[ti]
-#         ti_df = df[df.Ticker==ti]
-#         if not ti_df.empty:
-#             rec = ti_df.iloc[-1]
-#             o = rec.Open
-#             h = rec.High
-#             l = rec.Low
-#             c = rec.Close
-#             v = rec.Volume
+#     for quote in data['quoteResponse']['result']:
+#         symbol = quote['symbol']
+#         ticker = yahoo2ticker[symbol]
+#         multiplier = ticker.market.yahoo_price_factor
 #
-#             prev_c = ti_df.iloc[-1].Close
+#         try:
+#             market_price = quote['regularMarketPrice']
+#         except KeyError:
+#             pass
 #
-#             multiplier = ticker.market.yahoo_price_factor
-#             price = c * multiplier, prev_c * multiplier
-#             result[ti] = price
+#         try:
+#             prev_close = quote['regularMarketPreviousClose']
+#         except KeyError:
+#             if ticker.market == 'Cash':
+#                 prev_close = ticker.fixed_price
+#
+#         result[symbol] = market_price * multiplier, prev_close * multiplier
 #
 #     return result
 
+
+def yahooQuotes(tickers):
+    yahoo2ticker = {t.yahoo_ticker: t for t in tickers}
+    tickers = [t.yahoo_ticker for t in tickers]
+    tickers_str = ' '.join(tickers)
+    df = yf.download(tickers=tickers_str, period="2d", interval="1d", prepost=False, repair=True)
+    df = df.stack(level=1).rename_axis(['Date', 'Ticker']).reset_index(level=1)
+    # oi = 0
+    result = {}
+    for ti in tickers:
+        ticker = yahoo2ticker[ti]
+        ti_df = df[df.Ticker == ti]
+        if not ti_df.empty:
+            rec = ti_df.iloc[-1]
+            # o = rec.Open
+            # h = rec.High
+            # l = rec.Low
+            c = rec.Close
+            # v = rec.Volume
+
+            prev_c = ti_df.iloc[-1].Close
+
+            multiplier = ticker.market.yahoo_price_factor
+            price = c * multiplier, prev_c * multiplier
+            result[ti] = price
+
+    return result
+
 # def yahooQuotes(tickers):
 #     yahoo2ticker = {t.yahoo_ticker: t for t in tickers}
-#     tickers = [t.yahoo_ticker for t in tickers]
+#     tickers = list(yahoo2ticker.keys())
 #     tickers_str = ' '.join(tickers)
 #     data = yqTicker(tickers_str)
 #     result = {}
