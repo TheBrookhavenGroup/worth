@@ -60,7 +60,9 @@ def price_mapper(t, d):
 
 
 def get_current_price_mapper(tickers):
-    tickers = get_tickers(tickers)
+    tickers = [t for t in get_tickers(tickers)]
+    cash_prices = {t.ticker: t.fixed_price for t in tickers if t.market.is_cash}
+    tickers = [t for t in tickers if not t.market.is_cash]
     yahoo2worth_tickers = {t.yahoo_ticker: t.ticker for t in tickers}
 
     if not settings.USE_PRICE_FEED:
@@ -68,6 +70,8 @@ def get_current_price_mapper(tickers):
     else:
         quotes = yahooQuotes(tickers)
         prices = {yahoo2worth_tickers[k]: v[0] for k, v in quotes.items()}
+
+    prices.update(cash_prices)
 
     def mapper(t):
         try:
@@ -103,7 +107,7 @@ def pnl_asof(d=None, a=None, only_non_qualified=False, active_f=True):
                              aggfunc={'qp': np.sum, 'qpr': np.sum, 'q': np.sum, 'cs': np.max, 'c': np.sum, 'e': 'first'}
                              ).reset_index(['a', 't'])
         if d == our_now().date():
-            tickers = [t for t in pnl.t]
+            tickers = [t for t, f in zip(pnl.t, pnl.q == 0) if not f]
             mapper = get_current_price_mapper(tickers)
             pnl['price'] = pnl.apply(lambda x: mapper(x), axis=1)
         else:
