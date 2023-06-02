@@ -116,10 +116,11 @@ def pnl(d=None, a=None, active_f=True):
     result = pd.concat([result, cash])
     result.reset_index(inplace=True, drop=True)
 
-    result.loc[len(result) + 1] = ['TOTAL', '', 0, 0, total_worth, today_total, mtd_total, ytd_total, 0]
-
-    coh = result[result.Ticker == "CASH"]
+    cash_flags = result["Ticker"].apply(lambda x: get_ticker(x).market.is_cash)
+    coh = result[cash_flags]
     coh = coh.Pos.sum()
+
+    result.loc[len(result) + 1] = ['TOTAL', '', 0, 0, total_worth, today_total, mtd_total, ytd_total, 0]
     result.loc[len(result) + 1] = ['ALL COH', '', '', '', '', '', '', '', cround(coh, 0)]
 
     return result, total_worth, today_total
