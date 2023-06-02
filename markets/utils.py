@@ -16,6 +16,8 @@ def is_futures(exchange):
 def ticker_url(ticker):
     if ticker.market.is_cash:
         url = ticker.ticker
+        if url.lower() != 'cash':
+            url = f"CASH {url}"
     else:
         ticker = ticker.ticker
         url = reverse('analytics:ticker_view', kwargs={'ticker': ticker})

@@ -149,6 +149,12 @@ def pnl_asof(d=None, a=None, only_non_qualified=False, active_f=True):
     cash.drop(['q_y'], axis=1, inplace=True)
     cash.rename(columns={'q_x': 'q'}, inplace=True)
 
+    # cash columsn are 'a' and 'q'.
+    # pnl columns are 'a', 't', 'e' and 'q' where e=='CASH'
+    money_markets = pnl[pnl.e == 'CASH'][["a", "q"]]
+    cash = cash.append(money_markets)
+    cash = cash.groupby('a').sum().reset_index()
+
     return pnl, cash
 
 

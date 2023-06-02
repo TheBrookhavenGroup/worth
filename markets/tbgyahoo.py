@@ -95,21 +95,22 @@ def yahooHistory(ticker):
 def yahooQuotes(tickers):
     yahoo2ticker = {t.yahoo_ticker: t for t in tickers}
     tickers = [t.yahoo_ticker for t in tickers]
+    flag = len(tickers) != 1
     tickers_str = ' '.join(tickers)
     df = yf.download(tickers=tickers_str, period="2d", interval="1d", prepost=False, repair=True)
-    df = df.stack(level=1).rename_axis(['Date', 'Ticker']).reset_index(level=1)
-    # oi = 0
+    if flag:
+        df = df.stack(level=1).rename_axis(['Date', 'Ticker']).reset_index(level=1)
+
     result = {}
     for ti in tickers:
         ticker = yahoo2ticker[ti]
-        ti_df = df[df.Ticker == ti]
+        if flag:
+            ti_df = df[df.Ticker == ti]
+        else:
+            ti_df = df
         if not ti_df.empty:
             rec = ti_df.iloc[-1]
-            # o = rec.Open
-            # h = rec.High
-            # l = rec.Low
             c = rec.Close
-            # v = rec.Volume
 
             prev_c = ti_df.iloc[-1].Close
 

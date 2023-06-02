@@ -19,3 +19,13 @@ class YahooTests(TestCase):
             price, prev_close = v
             self.assertTrue(price > 1e-4)
             self.assertTrue(prev_close > 1e-4)
+
+    def test_single_quotes(self):
+        tickers = ['AAPL']
+        tickers_objs = [i for i in Ticker.objects.filter(ticker__in=tickers)]
+        result = yahooQuotes(tickers=tickers_objs)
+        for k, v in result.items():
+            self.assertIn(k, tickers)
+            price, prev_close = v
+            self.assertTrue(price > 1e-4)
+            self.assertTrue(prev_close > 1e-4)
