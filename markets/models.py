@@ -60,11 +60,10 @@ class Ticker(models.Model):
     @property
     def description(self):
         if self.name is None:
-            market = self.market
-            if 'STOCK' == market.yahoo_exchange:
-                return 'STOCK'
-            else:
+            if self.market.is_futures:
                 return self.market.description()
+            else:
+                return self.ticker
         else:
             return self.name
 
