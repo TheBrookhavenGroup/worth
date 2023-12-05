@@ -109,6 +109,10 @@ class CashRecord(models.Model):
         get_cash_df.cache_clear()
         super().save(*args, **kwargs)
 
+    def __str__(self):
+        return f"{self.account} {self.d} {self.category} {self.description} " \
+               f"{self.amt} {self.cleared_f} {self.ignored}"
+
 
 @lru_cache(maxsize=10)
 def get_cash_df(a=None, d=None, pivot=False, active_f=True):
