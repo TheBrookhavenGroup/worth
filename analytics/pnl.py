@@ -67,7 +67,12 @@ def pnl(d=None, a=None, active_f=True):
 
     # The Value of Futures positions is already added to the cash and should not be added to the total again.
     total_worth = pnl_total[pnl_total.e.isin(NOT_FUTURES_EXCHANGES)]
-    total_worth = total_worth.value.sum() + cash.q.sum()
+    try:
+        cash_sum = cash.q.sum()
+    except AttributeError:
+        cash_sum = 0
+
+    total_worth = total_worth.value.sum() + cash_sum
 
     df = pd.merge(pnl_eod, pnl_eoy, on=['a', 't'], how='outer', suffixes=('_yesterday', '_year'))
     # Note - merge only uses suffixes if both df's have the same column headings.
@@ -97,19 +102,43 @@ def pnl(d=None, a=None, active_f=True):
     cash = pd.merge(cash, cash_eoy, how='outer', on='a', suffixes=('', '_eoy'))
     cash.fillna(0, inplace=True)
 
-    cash_balance = cash.q
+    try:
+        cash_balance = cash.q
+    except AttributeError:
+        cash_balance = 0
+
+    try:
+        q_eod = cash.q_eod
+    except AttributeError:
+        q_eod = 0
+
+    try:
+        q_eom = cash.q_eom
+    except AttributeError:
+        q_eom = 0
+
+    try:
+        q_eoy = cash.q_eoy
+    except AttributeError:
+        q_eoy = 0
 
     cash.reset_index(inplace=True, drop=True)
     cash.rename(columns={'a': 'Account'}, inplace=True)
     cash['Ticker'] = 'CASH'
-    cash['Pos'] = cash.q
+    cash['Pos'] = cash_balance
     cash['Price'] = 1.0
     cash['Value'] = cash.Pos
-    cash['Today'] = cash.Pos - cash.q_eod
-    cash['MTD'] = cash.Pos - cash.q_eom
-    cash['YTD'] = cash.Pos - cash.q_eoy
+    cash['Today'] = cash.Pos - q_eod
+    cash['MTD'] = cash.Pos - q_eom
+    cash['YTD'] = cash.Pos - q_eoy
     cash['PnL'] = 0
-    cash.drop(['q', 'q_eod', 'q_eom', 'q_eoy'], axis=1, inplace=True)
+    try:
+        cash.drop(['q', 'q_eod', 'q_eom', 'q_eoy'], axis=1, inplace=True)
+    except KeyError:
+        try:
+            cash.drop(['q', 'q_eod', 'q_eom'], axis=1, inplace=True)
+        except KeyError:
+            pass
 
     today_total = result.Today.sum()
     mtd_total = result.MTD.sum()
@@ -120,7 +149,11 @@ def pnl(d=None, a=None, active_f=True):
 
     cash_flags = result["Ticker"].apply(lambda x: get_ticker(x).market.is_cash)
     coh = result[cash_flags]
-    coh = coh.Pos.sum()
+
+    try:
+        coh = coh.Pos.sum()
+    except AttributeError:
+        coh = 0
 
     result.loc[len(result) + 1] = ['TOTAL', '', 0, 0, total_worth, today_total, mtd_total, ytd_total, 0]
     result.loc[len(result) + 1] = ['ALL COH', '', '', '', '', '', '', '', cround(coh, 0)]
