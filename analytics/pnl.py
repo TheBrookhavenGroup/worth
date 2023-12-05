@@ -97,6 +97,8 @@ def pnl(d=None, a=None, active_f=True):
     cash = pd.merge(cash, cash_eoy, how='outer', on='a', suffixes=('', '_eoy'))
     cash.fillna(0, inplace=True)
 
+    cash_balance = cash.q
+
     cash.reset_index(inplace=True, drop=True)
     cash.rename(columns={'a': 'Account'}, inplace=True)
     cash['Ticker'] = 'CASH'
@@ -123,11 +125,11 @@ def pnl(d=None, a=None, active_f=True):
     result.loc[len(result) + 1] = ['TOTAL', '', 0, 0, total_worth, today_total, mtd_total, ytd_total, 0]
     result.loc[len(result) + 1] = ['ALL COH', '', '', '', '', '', '', '', cround(coh, 0)]
 
-    return result, total_worth, today_total
+    return result, total_worth, today_total, cash_balance
 
 
 def pnl_summary(d=None, a=None, active_f=True):
-    result, total_worth, total_today = pnl(d=d, a=a, active_f=active_f)
+    result, total_worth, total_today, _ = pnl(d=d, a=a, active_f=active_f)
 
     today = date.today()
 
