@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.contrib.admin import SimpleListFilter
+from django.contrib import messages
 from .models import Account, Receivable, CashRecord
 from tbgutils.dt import our_now
 
@@ -113,6 +114,14 @@ def toggle_ignored_flag(modeladmin, request, qs):
         rec.save()
 
 
+def sum_amt(modeladmin, request, qs):
+    total = 0
+    for rec in qs:
+        total += rec.amt
+
+    messages.add_message(request, messages.INFO, f"Total: {total}")
+
+
 @admin.register(CashRecord)
 class CashRecordAdmin(admin.ModelAdmin):
     date_hierarchy = 'd'
@@ -120,4 +129,5 @@ class CashRecordAdmin(admin.ModelAdmin):
     list_filter = ('cleared_f', ActiveTradeAccountFilter, 'ignored')
     search_fields = ('account__name', 'description')
     ordering = ('account', '-d')
-    actions = [duplicate_record, set_cleared_flag, toggle_ignored_flag]
+    actions = [duplicate_record, set_cleared_flag, toggle_ignored_flag,
+               sum_amt]
