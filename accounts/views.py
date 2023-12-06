@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView, FormView
 from accounts.statement_utils import ib_statements
+from .utils import get_receivables
 from .forms import AccountForm
 from .models import Account
 
@@ -34,3 +35,14 @@ class AccountsView(LoginRequiredMixin, FormView):
             Account.objects.filter(id__in=ids).update(reconciled_f=True)
 
         return render(request, self.template_name, {'form': form})
+
+
+class ReceivablesView(LoginRequiredMixin, TemplateView):
+    template_name = 'analytics/table.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['headings1'], context['data1'], context['formats'] = (
+            get_receivables())
+        context['title'] = 'Receivables'
+        return context
