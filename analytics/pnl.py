@@ -132,11 +132,10 @@ def pnl(d=None, a=None, active_f=True):
     cash['MTD'] = cash.Pos - q_eom
     cash['YTD'] = cash.Pos - q_eoy
     cash['PnL'] = 0
-    try:
-        cash.drop(['q', 'q_eod', 'q_eom', 'q_eoy'], axis=1, inplace=True)
-    except KeyError:
+
+    for col in 'q', 'q_eod', 'q_eom', 'q_eoy':
         try:
-            cash.drop(['q', 'q_eod', 'q_eom'], axis=1, inplace=True)
+            cash.drop([col], axis=1, inplace=True)
         except KeyError:
             pass
 
