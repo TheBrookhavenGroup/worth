@@ -68,7 +68,10 @@ def get_current_price_mapper(tickers):
     if not settings.USE_PRICE_FEED:
         prices = {t.ticker: get_price(t) for t in tickers}
     else:
-        quotes = yahooQuotes(tickers)
+        if tickers:
+            quotes = yahooQuotes(tickers)
+        else:
+            quotes = {}
         prices = {yahoo2worth_tickers[k]: v[0] for k, v in quotes.items()}
 
     prices.update(cash_prices)
