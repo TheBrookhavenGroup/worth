@@ -20,7 +20,6 @@ def format_realized_rec(a, t, realized):
 
 
 def total_realized_gains(year):
-    d = date(year, 1, 1)
     eoy = lbd_prior_month(date(year, 1, 1))
 
     # Equity Gains
@@ -33,7 +32,8 @@ def total_realized_gains(year):
 
     pnl = pnl[~pnl.e.isin(NOT_FUTURES_EXCHANGES)]
     pnl_eoy = pnl_eoy[~pnl_eoy.e.isin(NOT_FUTURES_EXCHANGES)]
-    df = pd.merge(pnl, pnl_eoy, on=['a', 't'], how='outer', suffixes=('', '_year'))
+    df = pd.merge(pnl, pnl_eoy, on=['a', 't'], how='outer',
+                  suffixes=('', '_year'))
     df = df.fillna(value=0)
 
     df['realized'] = df.pnl - df.pnl_year
@@ -43,7 +43,8 @@ def total_realized_gains(year):
 
     realized = pd.concat([realized, df])
 
-    total = pd.DataFrame({'a': ['Total'], 't': [''], 'realized': [realized.realized.sum()]})
+    total = pd.DataFrame({'a': ['Total'], 't': [''],
+                          'realized': [realized.realized.sum()]})
 
     realized = pd.concat([realized, total])
 

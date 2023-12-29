@@ -113,7 +113,8 @@ class PnLView(LoginRequiredMixin, MyFormView):
                 d = our_now().date()
 
         context['d'] = d
-        context['headings1'], context['data1'], context['formats'], total_worth, total_today = \
+        (context['headings1'], context['data1'], context['formats'],
+         total_worth, total_today) = \
             pnl_summary(d=d, a=account, active_f=active_f)
         context['total_worth'] = total_worth
         context['total_today'] = total_today
@@ -141,7 +142,8 @@ class GetIBTradesView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['headings1'], context['data1'], context['formats'] = get_trades()
+        context['headings1'], context['data1'], context['formats'] = \
+            get_trades()
         context['title'] = 'IB Futures Trades'
         return context
 
@@ -192,19 +194,23 @@ class ValueChartView(LoginRequiredMixin, TemplateView):
         if n_months is None:
             n_months = 24
 
-        x_axis = [d, prior_business_day(d)] + [d := lbd_prior_month(d) for i in range(int(n_months))]
+        x_axis = [d, prior_business_day(d)] + \
+                 [d := lbd_prior_month(d) for i in range(int(n_months))]
         x_axis.reverse()
 
         account = getter('a')
         if account is None:
-            d_exists = PPMResult.objects.filter(d__in=x_axis).values_list('d', flat=True)
+            d_exists = PPMResult.objects.filter(d__in=x_axis). \
+                values_list('d', flat=True)
             for d in set(x_axis) - set(d_exists):
                 pnl_summary(d, active_f=False)
-            y_axis = PPMResult.objects.filter(d__in=x_axis).order_by('d').values_list('value', flat=True)
+            y_axis = PPMResult.objects.filter(d__in=x_axis).order_by('d'). \
+                values_list('value', flat=True)
             y_axis = [i / 1.e6 for i in y_axis]
             name = self.title
         else:
-            y_axis = [pnl_summary(d, a=account, active_f=False)[-1] / 1.e6 for d in x_axis]
+            y_axis = [pnl_summary(d, a=account,
+                                  active_f=False)[-1] / 1.e6 for d in x_axis]
             name = f"{self.title} for {account}"
 
         x_axis = [f'{d:%Y-%m}' for d in x_axis]
@@ -234,7 +240,8 @@ class RealizedGainView(LoginRequiredMixin, TemplateView):
 
         realized, formatter = total_realized_gains(year)
 
-        context['headings1'], context['data1'], context['formats'] = df_to_jqtable(df=realized, formatter=formatter)
+        context['headings1'], context['data1'], context['formats'] = (
+            df_to_jqtable(df=realized, formatter=formatter))
         context['title'] = f'Realized Gains ({year})'
         return context
 
@@ -247,7 +254,8 @@ class PnLIfClosedView(LoginRequiredMixin, TemplateView):
 
         losses, formatter = pnl_if_closed()
 
-        h, context['data1'], context['formats'] = df_to_jqtable(df=losses, formatter=formatter)
+        h, context['data1'], context['formats'] = (
+            df_to_jqtable(df=losses, formatter=formatter))
         context['headings1'] = nice_headings(h)
         context['title'] = 'Worth - Losers'
         context['d'] = f'PnL if closed today.'
