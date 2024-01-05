@@ -8,6 +8,7 @@ IB_FTP_USER = env.get('IB_FTP_USER')
 IB_FTP_PW = env.get('IB_FTP_PW')
 IB_FTP_SERVER = env.get('IB_FTP_SERVER')
 IB_FLEX_TOKEN = env.get('IB_FLEX_TOKEN')
+IB_DEFAULT_ACCOUNT = env.get('IB_DEFAULT_ACCOUNT', 'MarcIB')
 
 PPM_FACTOR = eval(env.get('PPM_FACTOR', 'False'))
 USE_PRICE_FEED = eval(env.get('USE_PRICE_FEED', 'True'))

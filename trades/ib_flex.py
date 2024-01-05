@@ -34,7 +34,7 @@ def get_trades(report_id=daily):
     # {'TradeConfirm', 'FlexQueryResponse', 'FlexStatements', 'FlexStatement'}
 
     trades = report.extract('TradeConfirm')
-    account = Account.objects.get(name='MSRKIB')
+    account = Account.objects.get(name=settings.IB_DEFAULT_ACCOUNT)
     for i in trades:
         t = dt2dt(i.dateTime)
         ticker = ib_symbol2ticker(i.symbol)
