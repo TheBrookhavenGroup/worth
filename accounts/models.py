@@ -36,6 +36,32 @@ class Receivable(models.Model):
     amt = models.FloatField()
 
 
+class Vendor(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    description = models.CharField(max_length=200, blank=True)
+    url = models.URLField(blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.name}"
+
+
+def get_tbg_account():
+    return Account.objects.get(name='TBG')
+
+
+class Expense(models.Model):
+    account = models.ForeignKey(Account, on_delete=models.CASCADE,
+                                default=get_tbg_account)
+    vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE)
+    d = models.DateField()
+    description = models.CharField(max_length=180)
+    paid = models.DateField(blank=True, null=True)
+    amt = models.FloatField()
+
+    def __str__(self):
+        return f"{self.account} {self.d} {self.description} {self.amt}"
+
+
 class CashRecord(models.Model):
 
     AB = 'AB'
@@ -97,9 +123,11 @@ class CashRecord(models.Model):
         (GU, 'Gila UTMA')
     ]
 
-    account = models.ForeignKey(Account, on_delete=models.CASCADE, default=get_bofa_account)
+    account = models.ForeignKey(Account, on_delete=models.CASCADE,
+                                default=get_bofa_account)
     d = models.DateField()
-    category = models.CharField(max_length=3, choices=CATEGORY_CHOICES, default=GN)
+    category = models.CharField(max_length=3, choices=CATEGORY_CHOICES,
+                                default=GN)
     description = models.CharField(max_length=180)
     amt = models.FloatField()
     cleared_f = models.BooleanField(default=False)
@@ -126,7 +154,9 @@ def get_cash_df(a=None, d=None, pivot=False, active_f=True):
     if a is not None:
         qs = qs.filter(account__name=a)
 
-    qs = qs.values('account__name').order_by('account__name').annotate(total=Sum('amt'))
+    qs = (qs.values('account__name').
+          order_by('account__name').
+          annotate(total=Sum('amt')))
 
     columns = ['a', 'q']
     if len(qs):

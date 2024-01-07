@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.admin import SimpleListFilter
 from django.contrib import messages
-from .models import Account, Receivable, CashRecord
+from .models import Account, Receivable, CashRecord, Expense, Vendor
 from tbgutils.dt import our_now
 
 
@@ -51,7 +51,8 @@ def duplicate_receivable(modeladmin, request, qs):
     d = our_now().date()
     for rec in qs:
         invoice = rec.invoice[:-8] + d.strftime("%Y%m%d")
-        new_rec = Receivable(expected=rec.expected, client=rec.client, invoice=invoice, amt=rec.amt)
+        new_rec = Receivable(expected=rec.expected, client=rec.client,
+                             invoice=invoice, amt=rec.amt)
         new_rec.save()
 
 
@@ -103,8 +104,11 @@ def set_cleared_flag(modeladmin, request, qs):
 def duplicate_record(modeladmin, request, qs):
     d = our_now().date()
     for rec in qs:
-        new_rec = CashRecord(d=d, description=rec.description, account=rec.account,
-                             category=rec.category, amt=rec.amt)
+        new_rec = CashRecord(d=d,
+                             description=rec.description,
+                             account=rec.account,
+                             category=rec.category,
+                             amt=rec.amt)
         new_rec.save()
 
 
@@ -125,9 +129,47 @@ def sum_amt(modeladmin, request, qs):
 @admin.register(CashRecord)
 class CashRecordAdmin(admin.ModelAdmin):
     date_hierarchy = 'd'
-    list_display = ('account', 'd', 'description', 'amt', 'cleared_f', 'ignored')
+    list_display = ('account', 'd', 'description', 'amt',
+                    'cleared_f', 'ignored')
     list_filter = ('cleared_f', ActiveTradeAccountFilter, 'ignored')
     search_fields = ('account__name', 'description')
     ordering = ('account', '-d')
     actions = [duplicate_record, set_cleared_flag, toggle_ignored_flag,
                sum_amt]
+
+
+@admin.register(Vendor)
+class VendorAdmin(admin.ModelAdmin):
+    list_display = ('name', 'description', 'url')
+    ordering = ('name', )
+
+
+def duplicate_expense(modeladmin, request, qs):
+    d = our_now().date()
+    for rec in qs:
+        new_rec = Expense(vendor=rec.vendor,
+                          client=rec.client,
+                          invoice=invoice,
+                          amt=rec.amt)
+        new_rec.save()
+
+
+def duplicate_expense_record(modeladmin, request, qs):
+    d = our_now().date()
+    for rec in qs:
+        new_rec = Expense(d=d,
+                          description=rec.description,
+                          account=rec.account,
+                          vendor=rec.vendor,
+                          amt=rec.amt)
+        new_rec.save()
+
+
+@admin.register(Expense)
+class ExpenseAdmin(admin.ModelAdmin):
+    date_hierarchy = 'd'
+    list_display = ('vendor', 'd', 'description', 'amt', 'paid')
+    list_filter = ('vendor', 'account')
+    search_fields = ('vendor__name', 'description')
+    ordering = ('vendor', '-d')
+    actions = [duplicate_expense_record, sum_amt]
