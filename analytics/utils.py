@@ -1,10 +1,12 @@
 from datetime import date
+import json
 import pandas as pd
 from moneycounter import realized_gains
 from tbgutils.dt import lbd_prior_month
 from tbgutils.str import cround, is_not_near_zero
 from trades.models import get_non_qualified_equity_trades_df, NOT_FUTURES_EXCHANGES
 from trades.utils import pnl_asof
+from accounts.models import get_expenses_df
 
 
 def roi(initial, delta):
@@ -49,3 +51,31 @@ def total_realized_gains(year):
     realized = pd.concat([realized, total])
 
     return realized, format_realized_rec
+
+
+def format_expense_rec(vendor, description, amount):
+    amount = cround(amount, 2)
+    return vendor, description, amount
+
+
+def expenses(year):
+    expenses_df = get_expenses_df(year)
+
+    expenses_df = expenses_df.pivot_table(index=['description', 'vendor'],
+                                          values='amt', aggfunc='sum')
+    expenses_df = expenses_df.reset_index().set_index(['vendor', 'description'])
+    expenses_df = expenses_df.sort_index()
+    expenses_df = expenses_df.reset_index()
+
+    # Add row with total of amount
+    total = pd.DataFrame({'vendor': ['Total'], 'description': [''],
+                          'amt': [expenses_df.amt.sum()]})
+    expenses_df = pd.concat([expenses_df, total])
+
+    formats = json.dumps(
+        {'columnDefs': [{"targets": [0, 1], 'className': "dt-body-left"},
+                        {"targets": [2], 'className': "dt-body-right"}],
+         'ordering': False,
+         'pageLength': 100})
+
+    return expenses_df, formats
