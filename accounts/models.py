@@ -61,6 +61,28 @@ class Expense(models.Model):
     def __str__(self):
         return f"{self.account} {self.d} {self.description} {self.amt}"
 
+    @classmethod
+    def qs_to_df(cls, qs):
+        fields = ('vendor__name', 'description', 'amt')
+
+        qs = qs.values_list(*fields)
+        columns = ['vendor', 'description', 'amt']
+        if len(qs):
+            df = pd.DataFrame.from_records(list(qs), coerce_float=True)
+            df.columns = columns
+        else:
+            df = pd.DataFrame.from_records(list(qs), coerce_float=True,
+                                           columns=columns)
+
+        return df
+
+
+def get_expenses_df(year=None):
+    qs = Expense.objects.filter()
+    if year is not None:
+        qs = qs.filter(d__year=year)
+    return Expense.qs_to_df(qs)
+
 
 class CashRecord(models.Model):
 
