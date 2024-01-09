@@ -18,9 +18,11 @@ from accounts.utils import get_account_url
 
 def format_rec(a, t, pos=0, price=1, value=0, daily=0, mtd=0, ytd=0, pnl=0):
     if a == 'TOTAL':
-        return [a, '', '', '', cround(value, 2), cround(daily, 2), cround(mtd, 2), cround(ytd, 0), '']
+        return [a, '', '', '', cround(value, 2), cround(daily, 2),
+                cround(mtd, 2), cround(ytd, 0), '']
+
     if a == 'ALL COH':
-        return [a, '', '', '', '', '', '', '', cround(pnl, 0), ]
+        return [a, '', '', '', cround(value, 0), '', '', '', '']
 
     t = get_ticker(t)
     pprec = t.market.pprec
@@ -65,7 +67,8 @@ def pnl(d=None, a=None, active_f=True):
     pnl_eom, cash_eom = pnl_asof(d=lm, a=a, active_f=active_f)
     pnl_eoy, cash_eoy = pnl_asof(d=eoy, a=a, active_f=active_f)
 
-    # The Value of Futures positions is already added to the cash and should not be added to the total again.
+    # The Value of Futures positions is already added to the cash and should
+    # not be added to the total again.
     total_worth = pnl_total[pnl_total.e.isin(NOT_FUTURES_EXCHANGES)]
     try:
         cash_sum = cash.q.sum()
@@ -74,11 +77,13 @@ def pnl(d=None, a=None, active_f=True):
 
     total_worth = total_worth.value.sum() + cash_sum
 
-    df = pd.merge(pnl_eod, pnl_eoy, on=['a', 't'], how='outer', suffixes=('_yesterday', '_year'))
-    # Note - merge only uses suffixes if both df's have the same column headings.
+    df = pd.merge(pnl_eod, pnl_eoy, on=['a', 't'], how='outer',
+                  suffixes=('_yesterday', '_year'))
+    # Note: merge only uses suffixes if both df's have the same column headings.
     #        so this one wouldn't use them anyway
     df = pd.merge(df, pnl_total, on=['a', 't'], how='outer')
-    df = pd.merge(df, pnl_eom, on=['a', 't'], how='outer', suffixes=('', '_month'))
+    df = pd.merge(df, pnl_eom, on=['a', 't'], how='outer',
+                  suffixes=('', '_month'))
     df = df.fillna(value=0)
 
     result = pd.DataFrame(OrderedDict((('Account', df.a),
@@ -91,9 +96,11 @@ def pnl(d=None, a=None, active_f=True):
                                        ('YTD', df.pnl - df.pnl_year),
                                        ('PnL', df.pnl))))
 
-    # Remove old irrelevant records - things that did not have a position or a trade this year.
+    # Remove old irrelevant records - things that did not have a position or
+    # a trade this year.
     x = 0.001
-    filter_index = result[(np.abs(result.Pos) < x) & (np.abs(result.YTD) < x) & (np.abs(result.Value) < x)].index
+    filter_index = result[(np.abs(result.Pos) < x) & (np.abs(result.YTD) < x)
+                          & (np.abs(result.Value) < x)].index
     result.drop(filter_index, inplace=True)
 
     # Calculate Account Cash Balances
@@ -154,8 +161,9 @@ def pnl(d=None, a=None, active_f=True):
     except AttributeError:
         coh = 0
 
-    result.loc[len(result) + 1] = ['TOTAL', '', 0, 0, total_worth, today_total, mtd_total, ytd_total, 0]
-    result.loc[len(result) + 1] = ['ALL COH', '', '', '', '', '', '', '', cround(coh, 0)]
+    result.loc[len(result) + 1] = ['TOTAL', '', 0, 0, total_worth, today_total,
+                                   mtd_total, ytd_total, 0]
+    result.loc[len(result) + 1] = ['ALL COH', '', '', '', coh, '', '', '', '']
 
     return result, total_worth, today_total, cash_balance
 
@@ -204,7 +212,8 @@ def pnl_if_closed(a=None):
         Copy trades_df
         Remove all closed positions.
         Add close out trade for each open position.
-        total_realized_gains() just like RealizedGainView to calculate expected realized gains.
+        total_realized_gains() just like RealizedGainView to calculate
+        expected realized gains.
     """
 
     df = copy_trades_df(a=a)
