@@ -7,12 +7,12 @@ from trades.models import Trade
 from markets.utils import ib_symbol2ticker
 
 
-daily = '224849'
-lbd = '224850'
-last30days = '646507'
+daily = '905409'
+lbd = '905414'
+last30days = '905412'
 
 
-def get_trades(report_id='224849'):
+def get_trades(report_id=daily):
     formats = json.dumps({'columnDefs': [{"targets": [0], 'className': "dt-nowrap"},
                                          {"targets": [1], 'className': "dt-body-left"},
                                          {'targets': [2, 3, 4], 'className': 'dt-body-right'}],
@@ -34,7 +34,7 @@ def get_trades(report_id='224849'):
     # {'TradeConfirm', 'FlexQueryResponse', 'FlexStatements', 'FlexStatement'}
 
     trades = report.extract('TradeConfirm')
-    account = Account.objects.get(name='MSRKIB')
+    account = Account.objects.get(name=settings.IB_DEFAULT_ACCOUNT)
     for i in trades:
         t = dt2dt(i.dateTime)
         ticker = ib_symbol2ticker(i.symbol)

@@ -3,18 +3,20 @@ from datetime import datetime, date, timedelta
 from plotly.offline import plot
 import plotly.graph_objs as go
 
+from django.http import HttpResponse
 from django.views.generic import TemplateView, FormView
+from django.urls import reverse
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from analytics.cash import cash_sums, total_cash
 from analytics.pnl import pnl_summary, pnl_if_closed, ticker_pnl
-from analytics.utils import total_realized_gains
+from analytics.utils import total_realized_gains, expenses
 from analytics.models import PPMResult
 from analytics.forms import PnLForm, CheckingForm
 from trades.ib_flex import get_trades
 from trades.utils import weighted_average_price
 from tbgutils.dt import lbd_prior_month, our_now, prior_business_day
-from tbgutils.str import is_near_zero
+from tbgutils.str import is_near_zero, cround
 from accounts.models import Account
 from markets.tbgyahoo import yahoo_url
 from markets.models import Ticker
@@ -260,3 +262,49 @@ class PnLIfClosedView(LoginRequiredMixin, TemplateView):
         context['title'] = 'Worth - Losers'
         context['d'] = f'PnL if closed today.'
         return context
+
+
+def expense_formatter(a, b, c):
+    return a, b, cround(c)
+
+
+class ExpensesView(LoginRequiredMixin, TemplateView):
+    template_name = 'analytics/table.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        year = self.request.GET.get('year')
+        if year is None:
+            messages.info(self.request, 'You can set the year.  ex: ?year=2022')
+            year = date.today().year
+        else:
+            year = int(year)
+
+        result, formats = expenses(year)
+
+        context['headings1'], context['data1'], context['formats'] = (
+            df_to_jqtable(df=result, formatter=expense_formatter))
+
+        context["formats"] = formats
+        context['title'] = f'Expenses ({year})'
+        context["csvurl"] = reverse('analytics:expensescsv',
+                                    args=[year])
+        return context
+
+
+def expenses_csv_view(request, param=None):
+    if param is None:
+        year = date.today().year
+    else:
+        year = int(param)
+
+    result, formats = expenses(year)
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="expenses.csv"'
+
+    result = result.round(decimals=2)
+    result.to_csv(path_or_buf=response, index=False)
+
+    return response

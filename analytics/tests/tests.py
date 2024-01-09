@@ -24,7 +24,7 @@ class PnLTests(TestCase):
                 p = 0
             return p
 
-        coh = df[df.Account == 'ALL COH'].iloc[0][-1]
+        coh = df[df.Account == 'ALL COH'].iloc[0][4]
         cash = df[df.Ticker == 'CASH'].iloc[0][4]
         msft = get_pnl('MSFT')
         amzn = get_pnl('AMZN')
@@ -39,7 +39,7 @@ class PnLTests(TestCase):
 
         cash = data['CASH']
         self.assertAlmostEqual(974435.0, cash)
-        self.assertEqual('974,435', data['COH'])
+        self.assertEqual(974435.0, data['COH'])
         self.assertAlmostEqual(-50.0, data['MSFT'])
         self.assertAlmostEqual(7370, data['AMZN'])
 
