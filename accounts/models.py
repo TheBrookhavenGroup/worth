@@ -178,7 +178,6 @@ class Expense(models.Model):
     cash_transaction = models.ForeignKey(
         CashRecord, on_delete=models.CASCADE, blank=True, null=True)
 
-
     def __str__(self):
         return f"{self.account} {self.d} {self.description} {self.amt}"
 
