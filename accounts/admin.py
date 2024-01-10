@@ -181,7 +181,7 @@ class ExpenseAdmin(admin.ModelAdmin):
     date_hierarchy = 'd'
     list_display = ('d', 'vendor', 'description', 'amt', 'paid',
                     'cash_transaction_link')
-    list_filter = ('vendor', 'account')
+    list_filter = ('vendor',)
     search_fields = ('vendor__name', 'description')
     ordering = ('-d',)
     actions = [duplicate_expense_record, sum_amt]
