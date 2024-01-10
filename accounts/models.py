@@ -45,45 +45,6 @@ class Vendor(models.Model):
         return f"{self.name}"
 
 
-def get_tbg_account():
-    return Account.objects.get(name='TBG')
-
-
-class Expense(models.Model):
-    account = models.ForeignKey(Account, on_delete=models.CASCADE,
-                                default=get_tbg_account)
-    vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE)
-    d = models.DateField()
-    description = models.CharField(max_length=180)
-    paid = models.DateField(blank=True, null=True)
-    amt = models.FloatField()
-
-    def __str__(self):
-        return f"{self.account} {self.d} {self.description} {self.amt}"
-
-    @classmethod
-    def qs_to_df(cls, qs):
-        fields = ('vendor__name', 'description', 'amt')
-
-        qs = qs.values_list(*fields)
-        columns = ['vendor', 'description', 'amt']
-        if len(qs):
-            df = pd.DataFrame.from_records(list(qs), coerce_float=True)
-            df.columns = columns
-        else:
-            df = pd.DataFrame.from_records(list(qs), coerce_float=True,
-                                           columns=columns)
-
-        return df
-
-
-def get_expenses_df(year=None):
-    qs = Expense.objects.filter()
-    if year is not None:
-        qs = qs.filter(d__year=year)
-    return Expense.qs_to_df(qs)
-
-
 class CashRecord(models.Model):
 
     AB = 'AB'
@@ -197,3 +158,48 @@ def copy_cash_df(d=None, a=None, pivot=False, active_f=True):
     df = get_cash_df(d=d, a=a, pivot=pivot, active_f=active_f)
     df = df.copy(deep=True)
     return df
+
+
+def get_tbg_account():
+    return Account.objects.get(name='TBG')
+
+
+class Expense(models.Model):
+    account = models.ForeignKey(Account, on_delete=models.CASCADE,
+                                default=get_tbg_account)
+    vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE)
+    d = models.DateField()
+    description = models.CharField(max_length=180)
+    paid = models.DateField(
+        blank=True, null=True,
+        help_text="May have date different from cash transaction. "
+                  "This determine which tax year it is used in.")
+    amt = models.FloatField()
+    cash_transaction = models.ForeignKey(
+        CashRecord, on_delete=models.CASCADE, blank=True, null=True)
+
+
+    def __str__(self):
+        return f"{self.account} {self.d} {self.description} {self.amt}"
+
+    @classmethod
+    def qs_to_df(cls, qs):
+        fields = ('vendor__name', 'description', 'amt')
+
+        qs = qs.values_list(*fields)
+        columns = ['vendor', 'description', 'amt']
+        if len(qs):
+            df = pd.DataFrame.from_records(list(qs), coerce_float=True)
+            df.columns = columns
+        else:
+            df = pd.DataFrame.from_records(list(qs), coerce_float=True,
+                                           columns=columns)
+
+        return df
+
+
+def get_expenses_df(year=None):
+    qs = Expense.objects.filter()
+    if year is not None:
+        qs = qs.filter(d__year=year)
+    return Expense.qs_to_df(qs)

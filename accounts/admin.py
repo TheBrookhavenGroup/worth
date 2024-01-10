@@ -1,6 +1,9 @@
 from django.contrib import admin
 from django.contrib.admin import SimpleListFilter
 from django.contrib import messages
+from django.forms import ModelForm, ModelChoiceField
+from django.urls import reverse
+from django.utils.html import format_html
 from .models import Account, Receivable, CashRecord, Expense, Vendor
 from tbgutils.dt import our_now
 
@@ -165,11 +168,33 @@ def duplicate_expense_record(modeladmin, request, qs):
         new_rec.save()
 
 
+def expense_form_factory(d, a):
+    class CashForm(ModelForm):
+        cash_transaction = ModelChoiceField(
+            queryset=CashRecord.objects.filter(account=a, d__gte=d))
+    return CashForm
+
+
 @admin.register(Expense)
 class ExpenseAdmin(admin.ModelAdmin):
     date_hierarchy = 'd'
-    list_display = ('vendor', 'd', 'description', 'amt', 'paid')
+    list_display = ('d', 'vendor', 'description', 'amt', 'paid',
+                    'cash_transaction_link')
     list_filter = ('vendor', 'account')
     search_fields = ('vendor__name', 'description')
-    ordering = ('vendor', '-d')
+    ordering = ('-d',)
     actions = [duplicate_expense_record, sum_amt]
+
+    def get_form(self, request, obj=None, **kwargs):
+        if obj is not None and obj.d is not None:
+            kwargs['form'] = expense_form_factory(obj.d, obj.account)
+        return super(ExpenseAdmin, self).get_form(request, obj, **kwargs)
+
+    def cash_transaction_link(self, obj):
+        if obj.cash_transaction is not None:
+            link = reverse("admin:accounts_cashrecord_change",
+                           args=[obj.cash_transaction.id])
+            return format_html('<a href="{}">cash</a>', link)
+        else:
+            return "Unassigned"
+    cash_transaction_link.short_description = 'Cash Transaction'
