@@ -170,7 +170,7 @@ def book_expense(modeladmin, request, qs):
 
         if rec.cash_transaction is None:
             new_rec = CashRecord(d=rec.paid, description=description,
-                                 account=a, category="GN", amt=rec.amt)
+                                 account=a, category="GN", amt=-rec.amt)
             new_rec.save()
 
             rec.cash_transaction = new_rec
