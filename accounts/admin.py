@@ -173,7 +173,7 @@ def expense_form_factory(d, a):
         cash_transaction = ModelChoiceField(
             queryset=CashRecord.objects.filter(
                 account=a, d__gte=d).order_by('-d'),
-        required=False)
+            required=False)
     return CashForm
 
 

@@ -200,5 +200,5 @@ class Expense(models.Model):
 def get_expenses_df(year=None):
     qs = Expense.objects.filter()
     if year is not None:
-        qs = qs.filter(d__year=year)
+        qs = qs.filter(paid__year=year)
     return Expense.qs_to_df(qs)
