@@ -150,22 +150,34 @@ class VendorAdmin(admin.ModelAdmin):
 def duplicate_expense(modeladmin, request, qs):
     d = our_now().date()
     for rec in qs:
-        new_rec = Expense(vendor=rec.vendor,
-                          client=rec.client,
-                          invoice=invoice,
-                          amt=rec.amt)
-        new_rec.save()
-
-
-def duplicate_expense_record(modeladmin, request, qs):
-    d = our_now().date()
-    for rec in qs:
         new_rec = Expense(d=d,
                           description=rec.description,
                           account=rec.account,
                           vendor=rec.vendor,
                           amt=rec.amt)
         new_rec.save()
+
+
+def book_expense(modeladmin, request, qs):
+    d = our_now().date()
+    a = Account.objects.get(name='TBG')
+    for rec in qs:
+        description = f"{rec.vendor} - {rec.description}"
+        if rec.paid is None:
+            messages.add_message(request, messages.INFO,
+                                 f"Cannot book unpaid expense: {description}")
+            continue
+
+        if rec.cash_transaction is None:
+            new_rec = CashRecord(d=rec.paid, description=description,
+                                 account=a, category="GN", amt=rec.amt)
+            new_rec.save()
+
+            rec.cash_transaction = new_rec
+            rec.save()
+        else:
+            messages.add_message(request, messages.INFO,
+                                 f"Already booked: {description}")
 
 
 def expense_form_factory(d, a):
@@ -185,7 +197,7 @@ class ExpenseAdmin(admin.ModelAdmin):
     list_filter = ('vendor',)
     search_fields = ('vendor__name', 'description')
     ordering = ('-d',)
-    actions = [duplicate_expense_record, sum_amt]
+    actions = [duplicate_expense, book_expense, sum_amt]
 
     def get_form(self, request, obj=None, **kwargs):
         if obj is not None and obj.d is not None:
