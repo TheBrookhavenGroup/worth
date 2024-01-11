@@ -171,7 +171,9 @@ def duplicate_expense_record(modeladmin, request, qs):
 def expense_form_factory(d, a):
     class CashForm(ModelForm):
         cash_transaction = ModelChoiceField(
-            queryset=CashRecord.objects.filter(account=a, d__gte=d))
+            queryset=CashRecord.objects.filter(
+                account=a, d__gte=d).order_by('-d'),
+            required=False)
     return CashForm
 
 
@@ -180,7 +182,7 @@ class ExpenseAdmin(admin.ModelAdmin):
     date_hierarchy = 'd'
     list_display = ('d', 'vendor', 'description', 'amt', 'paid',
                     'cash_transaction_link')
-    list_filter = ('vendor', 'account')
+    list_filter = ('vendor',)
     search_fields = ('vendor__name', 'description')
     ordering = ('-d',)
     actions = [duplicate_expense_record, sum_amt]
@@ -194,7 +196,8 @@ class ExpenseAdmin(admin.ModelAdmin):
         if obj.cash_transaction is not None:
             link = reverse("admin:accounts_cashrecord_change",
                            args=[obj.cash_transaction.id])
-            return format_html('<a href="{}">cash</a>', link)
+            return format_html('<a href="{}">{}</a>', link,
+                               obj.cash_transaction.d)
         else:
             return "Unassigned"
     cash_transaction_link.short_description = 'Cash Transaction'
