@@ -18,12 +18,18 @@
     </tbody>
 </table>
 
-<script>
-const FORMATS = eval({{ formats | safe }})
-console.log(FORMATS)
-$.extend( true, $.fn.dataTable.defaults, FORMATS)
+{#<script>#}
+{#FORMATS = eval({{ formats | safe }})#}
+{#console.log(FORMATS)#}
+{#$.extend( true, $.fn.dataTable.defaults, FORMATS)#}
+{##}
+{#$(document).ready(function () {#}
+{#    $('#{{ table_id }}').DataTable();#}
+{#});#}
+{#</script>#}
 
-$(document).ready(function () {
-    $('#{{ table_id }}').DataTable();
+<script type="text/javascript" defer="defer">
+$(document).ready(function() {
+    $("table[id={{ table_id }}]").DataTable( eval({{ formats | safe }}));
 });
 </script>

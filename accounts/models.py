@@ -35,6 +35,28 @@ class Receivable(models.Model):
     invoice = models.CharField(max_length=80, blank=True)
     amt = models.FloatField()
 
+    @classmethod
+    def qs_to_df(cls, qs):
+        fields = ('client', 'amt')
+
+        qs = qs.values_list(*fields)
+        columns = ['client', 'amt']
+        if len(qs):
+            df = pd.DataFrame.from_records(list(qs), coerce_float=True)
+            df.columns = columns
+        else:
+            df = pd.DataFrame.from_records(list(qs), coerce_float=True,
+                                           columns=columns)
+
+        return df
+
+
+def get_income_df(year=None):
+    qs = Receivable.objects.filter()
+    if year is not None:
+        qs = qs.filter(received__year=year)
+    return Receivable.qs_to_df(qs)
+
 
 class Vendor(models.Model):
     name = models.CharField(max_length=100, unique=True)
