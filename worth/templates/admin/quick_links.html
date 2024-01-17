@@ -17,25 +17,23 @@
                         <th></th>
                     </tr>
                     <tr>
-                        <th>Statements</th>
-                        <th><a href="{% url 'analytics:getibtrades' %}">Get IB Trades</a></th>
-                        <th><a href="{% url 'accounts:get_ib_statements' %}">Get IB Statements</a></th>
-                        <th><a href="{% url 'accounts:receivables' %}">Receivables</a></th>
+                        <th><a href="{% url 'analytics:getibtrades' %}">Get IB Trades</a>
+                            <p style="text-indent: -10px">
+                                <a href="{% url 'accounts:get_ib_statements' %}">Get IB Statements</a>
+                            </p></th>
+                        <th><a href="{% url 'accounts:receivables' %}">Receivables</a>
+                        <p style="text-indent: -10px">
+                        </p>
+                        <a href="{% url 'analytics:incomeexpense' %}">Income/Expense</a>
+                        </th>
+                        <th><a href="{% url 'analytics:realized' %}">Taxable This Year</a></th>
+                        <th><a href="{% url 'analytics:pnlifclosed' %}">PnL If Closed</a></th>
                     </tr>
                     <tr>
                         <th><a href="{% url 'analytics:pnl' %}">PnL</a></th>
                         <th><a href="{% url 'analytics:pnl' %}?days=lbd">PPM LBD</a></th>
                         <th><a href="{% url 'analytics:pnl' %}?d=1">PPM Last Month</a></th>
                         <th><a href="{% url 'analytics:pnl' %}?d=2">PPM 2 Months Ago</a></th>
-                        <th><a href="{% url 'admin:index' %}analytics/ppmresult/">PPM History</a></th>
-                    </tr>
-                    <tr>
-                        <th></th>
-                        <th><a href="{% url 'analytics:realized' %}">Taxable This Year</a></th>
-                        <th><a href="{% url 'analytics:pnlifclosed' %}">PnL If Closed</a></th>
-                        <th><a href="{% url 'analytics:incomeexpense' %}">Income/Expense</a></th>
-                        <th></th>
-                        <th></th>
                     </tr>
                 </table>
             <td></td>
