@@ -10,7 +10,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from analytics.cash import cash_sums, total_cash
 from analytics.pnl import pnl_summary, pnl_if_closed, ticker_pnl
-from analytics.utils import total_realized_gains, expenses
+from analytics.utils import total_realized_gains, income, expenses
 from analytics.models import PPMResult
 from analytics.forms import PnLForm, CheckingForm
 from trades.ib_flex import get_trades
@@ -264,14 +264,17 @@ class PnLIfClosedView(LoginRequiredMixin, TemplateView):
         return context
 
 
-def expense_formatter(a, b, c):
-    return a, b, cround(c)
-
-
-class ExpensesView(LoginRequiredMixin, TemplateView):
-    template_name = 'analytics/table.html'
+class IncomeExpenseView(LoginRequiredMixin, TemplateView):
+    template_name = 'analytics/income_expense.html'
 
     def get_context_data(self, **kwargs):
+
+        def formatter(a, b, c=None):
+            if c is None:
+                return a, cround(b)
+            else:
+                return a, b, cround(c)
+
         context = super().get_context_data(**kwargs)
 
         year = self.request.GET.get('year')
@@ -281,16 +284,38 @@ class ExpensesView(LoginRequiredMixin, TemplateView):
         else:
             year = int(year)
 
-        result, formats = expenses(year)
+        expense_df, expense_fmt = expenses(year)
+        income_df, income_fmt = income(year)
 
-        context['headings1'], context['data1'], context['formats'] = (
-            df_to_jqtable(df=result, formatter=expense_formatter))
+        context['e_h'], context['expense'], _ = (
+            df_to_jqtable(df=expense_df, formatter=formatter))
+        context["e_f"] = expense_fmt
 
-        context["formats"] = formats
-        context['title'] = f'Expenses ({year})'
-        context["csvurl"] = reverse('analytics:expensescsv',
-                                    args=[year])
+        context['i_h'], context['income'], _ = (
+            df_to_jqtable(df=income_df, formatter=formatter))
+        context["i_f"] = income_fmt
+
+        context['title'] = f'Income/Expense ({year})'
+        context["incomecsvurl"] = reverse('analytics:incomecsv', args=[year])
+        context["expensecsvurl"] = reverse('analytics:expensescsv', args=[year])
         return context
+
+
+def income_csv_view(request, param=None):
+    if param is None:
+        year = date.today().year
+    else:
+        year = int(param)
+
+    result, formats = income(year)
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="income.csv"'
+
+    result = result.round(decimals=2)
+    result.to_csv(path_or_buf=response, index=False)
+
+    return response
 
 
 def expenses_csv_view(request, param=None):

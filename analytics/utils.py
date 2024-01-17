@@ -6,7 +6,7 @@ from tbgutils.dt import lbd_prior_month
 from tbgutils.str import cround, is_not_near_zero
 from trades.models import get_non_qualified_equity_trades_df, NOT_FUTURES_EXCHANGES
 from trades.utils import pnl_asof
-from accounts.models import get_expenses_df
+from accounts.models import get_expenses_df, get_income_df
 
 
 def roi(initial, delta):
@@ -51,6 +51,33 @@ def total_realized_gains(year):
     realized = pd.concat([realized, total])
 
     return realized, format_realized_rec
+
+
+def format_income_rec(vendor, description, amount):
+    amount = cround(amount, 2)
+    return vendor, description, amount
+
+
+def income(year):
+    income_df = get_income_df(year)
+
+    income_df = income_df.pivot_table(index=['client'], values='amt',
+                                      aggfunc='sum')
+    income_df = income_df.reset_index().set_index(['client'])
+    income_df = income_df.sort_index()
+    income_df = income_df.reset_index()
+
+    # Add row with total of amount
+    total = pd.DataFrame({'client': ['Total'], 'amt': [income_df.amt.sum()]})
+    income_df = pd.concat([income_df, total])
+
+    formats = json.dumps(
+        {'columnDefs': [{"targets": [0], 'className': "dt-body-left"},
+                        {"targets": [1], 'className': "dt-body-right"}],
+         'ordering': False,
+         'pageLength': 100})
+
+    return income_df, formats
 
 
 def format_expense_rec(vendor, description, amount):
