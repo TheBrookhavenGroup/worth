@@ -36,6 +36,7 @@ else:
     GPG_HOME = None
     GPG_PASS = None
     GPG_EMAIL = 'you@example.com'
+    PPM_FACTOR = 1
 
 
 # Build paths inside the worth like this: BASE_DIR / 'subdir'.
