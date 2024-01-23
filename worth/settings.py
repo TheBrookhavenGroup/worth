@@ -33,6 +33,9 @@ else:
     POSTGRES_USER = os.environ['POSTGRES_USER']
     POSTGRES_PASSWORD = os.environ['POSTGRES_PASSWORD']
     POSTGRES_DB = os.environ['POSTGRES_DB']
+    GPG_HOME = None
+    GPG_PASS = None
+    GPG_EMAIL = 'you@example.com'
 
 
 # Build paths inside the worth like this: BASE_DIR / 'subdir'.
