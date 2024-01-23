@@ -4,10 +4,7 @@ from django.conf import settings
 import gnupg
 
 
-gpgemail = os.environ.get('GPG_EMAIL', 'you@example.com')
-gpghomedir = os.environ.get('GPG_HOME')
-gpgpass = os.environ.get('GPG_PASS')
-gpg = gnupg.GPG(gnupghome=gpghomedir)
+gpg = gnupg.GPG(gnupghome=settings.GPG_HOME)
 
 
 def gpg_encrypt(fn):
@@ -15,9 +12,15 @@ def gpg_encrypt(fn):
     # gpg --encrypt --sign --armor -r <email> --homedir ~/.gnupg foo.txt
 
     fn_out = fn + '.asc'
+    gpgemail = settings.GPG_EMAIL
+    gpgpass = settings.GPG_PASS
 
     with open(fn, 'rb') as f:
-        status = gpg.encrypt_file(f, recipients=[gpgemail], armor=True, output=fn_out, passphrase=gpgpass)
+        status = gpg.encrypt_file(f,
+                                  recipients=[gpgemail],
+                                  armor=True,
+                                  output=fn_out,
+                                  passphrase=gpgpass)
 
     return status
 
@@ -29,6 +32,7 @@ def gpg_decrypt(fn, fn_out=None):
     if fn_out is None:
         fn_out = fn.strip('.pgp')
 
+    gpgpass = settings.GPG_PASS
     with open(fn, 'rb') as f:
         status = gpg.decrypt_file(f, output=fn_out, passphrase=gpgpass)
 

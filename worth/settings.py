@@ -1,27 +1,46 @@
 import os
-from os import environ as env
 from pathlib import Path
+import configparser
 from tbgutils import dt as mc_dt
 
+config_file = '/Users/ms/.worth'
+if os.path.exists(config_file):
+    config = configparser.ConfigParser(interpolation=None)
+    config.read('/Users/ms/.worth')
+    IB_FTP_USER = config['IB']['IB_FTP_USER']
+    IB_FTP_PW = config['IB']['IB_FTP_PW']
+    IB_FTP_SERVER = config['IB']['IB_FTP_SERVER']
+    IB_FLEX_TOKEN = config['IB']['IB_FLEX_TOKEN']
+    IB_DEFAULT_ACCOUNT = config['IB']['IB_DEFAULT_ACCOUNT']
 
-IB_FTP_USER = env.get('IB_FTP_USER')
-IB_FTP_PW = env.get('IB_FTP_PW')
-IB_FTP_SERVER = env.get('IB_FTP_SERVER')
-IB_FLEX_TOKEN = env.get('IB_FLEX_TOKEN')
-IB_DEFAULT_ACCOUNT = env.get('IB_DEFAULT_ACCOUNT', 'MarcIB')
+    PPM_FACTOR = float(config['GENERAL']['PPM_FACTOR'])
+    USE_PRICE_FEED = config['GENERAL']['USE_PRICE_FEED'].lower() == 'true'
 
-PPM_FACTOR = eval(env.get('PPM_FACTOR', 'False'))
-USE_PRICE_FEED = eval(env.get('USE_PRICE_FEED', 'True'))
+    GPG_EMAIL = config['GPG']['GPG_EMAIL']
+    GPG_HOME = config['GPG']['GPG_HOME']
+    GPG_PASS = config['GPG']['GPG_PASS']
+
+    SECRET_KEY = config['DJANGO']['SECRET_KEY']
+
+    POSTGRES_USER = config['POSTGRES']['USER']
+    POSTGRES_PASSWORD = config['POSTGRES']['PASS']
+    POSTGRES_DB = config['POSTGRES']['DB']
+
+    # SECURITY WARNING: don't run with debug turned on in production!
+    DEBUG = config['DJANGO']['DEBUG'].lower() == 'true'
+else:
+    # This should only be used in github action ci_testing.yml.
+    POSTGRES_USER = os.environ['POSTGRES_USER']
+    POSTGRES_PASSWORD = os.environ['POSTGRES_PASSWORD']
+    POSTGRES_DB = 'worth_test'
+    GPG_HOME = None
+    GPG_PASS = None
+    GPG_EMAIL = 'you@example.com'
+    PPM_FACTOR = 1
+
 
 # Build paths inside the worth like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
-SECRET_KEY = \
-    'django-insecure-dt@hl9)ewrj!wdwrja6$#%&yx(g-*yp*ke*kcpdf8+x&*or1^='
-SECRET_KEY = env.get("DJANGO_SECRET_KEY", SECRET_KEY)
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
 
 ALLOWED_HOSTS = ['127.0.0.1']
 
@@ -72,14 +91,15 @@ CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
 WSGI_APPLICATION = 'worth.wsgi.application'
 
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'worth',
         'HOST': '127.0.0.1',
         'PORT': 5432,
-        'USER': 'postgres',
-        'PASSWORD': 'postgres',
+        'USER': POSTGRES_USER,
+        'PASSWORD': POSTGRES_PASSWORD,
     }
 }
 
