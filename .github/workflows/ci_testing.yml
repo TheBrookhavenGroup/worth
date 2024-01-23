@@ -38,6 +38,10 @@ jobs:
         pycodestyle --config=./setup.cfg .
 
     - name: Run tests
+      env:
+        POSTGRES_USER: postgres
+        POSTGRES_PASSWORD: postgres
+        POSTGRES_DB: worth
       run:
         pip freeze
         python manage.py migrate && python manage.py test --exclude-tag=inhibit_test
