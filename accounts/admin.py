@@ -1,11 +1,13 @@
 from django.contrib import admin
 from django.contrib.admin import SimpleListFilter
+from django.contrib.admin.views.main import ChangeList
 from django.contrib import messages
 from django.forms import ModelForm, ModelChoiceField
 from django.urls import reverse
 from django.utils.html import format_html
 from .models import Account, Receivable, CashRecord, Expense, Vendor
 from tbgutils.dt import our_now
+from analytics.cash import cash_sums
 
 
 class ActiveAccountFilter(SimpleListFilter):
@@ -129,6 +131,18 @@ def sum_amt(modeladmin, request, qs):
     messages.add_message(request, messages.INFO, f"Total: {total}")
 
 
+class CashRecordChangeList(ChangeList):
+    def get_results(self, request):
+        super().get_results(request)
+        if 'active' in request.GET:
+            account_id = request.GET['active']
+        else:
+            account_id = None
+        total, total_cleared = cash_sums(account_id=account_id)
+        messages.add_message(request, messages.INFO,
+                             f"Total: {total:.2f}, Cleared: {total_cleared:.2f}")
+
+
 @admin.register(CashRecord)
 class CashRecordAdmin(admin.ModelAdmin):
     date_hierarchy = 'd'
@@ -139,6 +153,9 @@ class CashRecordAdmin(admin.ModelAdmin):
     ordering = ('account', '-d')
     actions = [duplicate_record, set_cleared_flag, toggle_ignored_flag,
                sum_amt]
+
+    def get_changelist(self, request, **kwargs):
+        return CashRecordChangeList
 
 
 @admin.register(Vendor)
