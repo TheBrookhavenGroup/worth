@@ -140,7 +140,7 @@ class CashRecordChangeList(ChangeList):
             account_id = None
         total, total_cleared = cash_sums(account_id=account_id)
         messages.add_message(request, messages.INFO,
-                             f"Total: {total:.2f}, Cleared: {total_cleared:.2f}")
+                             f"Total: {total:,.2f} Cleared: {total_cleared:,.2f}")
 
 
 @admin.register(CashRecord)
