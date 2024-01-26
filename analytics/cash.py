@@ -1,16 +1,16 @@
+from django.db.models import Sum
 from accounts.models import CashRecord
 from trades.utils import pnl_asof
 
 
-def cash_sums(account_name):
-    qs = CashRecord.objects.filter(account__name=account_name).filter(ignored=False).order_by('d').all()
-    total = 0
-    total_cleared = 0
-    for rec in qs:
-        a = rec.amt
-        total += a
-        if rec.cleared_f:
-            total_cleared += a
+def cash_sums(account_name=None, account_id=None):
+    qs = CashRecord.objects.filter(ignored=False)
+    if account_name:
+        qs = qs.filter(account__name=account_name)
+    elif account_id:
+        qs = qs.filter(account__id=account_id)
+    total = qs.aggregate(Sum('amt'))['amt__sum']
+    total_cleared = qs.filter(cleared_f=True).aggregate(Sum('amt'))['amt__sum']
     return total, total_cleared
 
 
