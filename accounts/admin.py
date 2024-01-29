@@ -164,6 +164,20 @@ class VendorAdmin(admin.ModelAdmin):
     ordering = ('name', )
 
 
+class ExpenseUnassignedFilter(SimpleListFilter):
+    title = "Unassigned"
+    parameter_name = 'unassigned'
+
+    def lookups(self, request, model_admin):
+        return [('yes', 'Unassigned')]
+
+    def queryset(self, request, queryset):
+        if 'yes' == self.value():
+            return queryset.filter(cash_transaction__isnull=True)
+
+        return queryset
+
+
 def duplicate_expense(modeladmin, request, qs):
     d = our_now().date()
     for rec in qs:
@@ -201,7 +215,7 @@ def expense_form_factory(d, a):
     class CashForm(ModelForm):
         cash_transaction = ModelChoiceField(
             queryset=CashRecord.objects.filter(
-                account=a, d__gte=d).order_by('-d'),
+                account=a, d__gte=d, amt__lte=0).order_by('-d'),
             required=False)
     return CashForm
 
@@ -211,7 +225,7 @@ class ExpenseAdmin(admin.ModelAdmin):
     date_hierarchy = 'd'
     list_display = ('d', 'vendor', 'description', 'amt', 'paid',
                     'cash_transaction_link')
-    list_filter = ('vendor',)
+    list_filter = (ExpenseUnassignedFilter, 'vendor',)
     search_fields = ('vendor__name', 'description')
     ordering = ('-d',)
     actions = [duplicate_expense, book_expense, sum_amt]
