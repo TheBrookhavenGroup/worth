@@ -145,6 +145,7 @@ class CashRecordChangeList(ChangeList):
 
 @admin.register(CashRecord)
 class CashRecordAdmin(admin.ModelAdmin):
+    change_list_template = 'accounts/cashrecord_change_list.html'
     date_hierarchy = 'd'
     list_display = ('account', 'd', 'description', 'amt',
                     'cleared_f', 'ignored')

@@ -12,10 +12,3 @@ def cash_sums(account_name=None, account_id=None):
     total = qs.aggregate(Sum('amt'))['amt__sum']
     total_cleared = qs.filter(cleared_f=True).aggregate(Sum('amt'))['amt__sum']
     return total, total_cleared
-
-
-def total_cash():
-    total = 0.0
-    _, cash = pnl_asof()
-    total = cash.q.sum()
-    return total

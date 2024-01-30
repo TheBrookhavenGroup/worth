@@ -5,7 +5,7 @@ from django.urls import path, include
 from django.views.generic.base import RedirectView
 from django.conf.urls.static import static
 
-title = "ALL Administration"
+title = "Worth"
 admin.site.site_header = title
 admin.site.site_title = title
 

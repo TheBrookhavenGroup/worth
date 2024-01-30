@@ -2,7 +2,7 @@
 
 {% load humanize %}
 
-{% block title %}Total Cash{% endblock title %}
+{% block title %}{{ title }}{% endblock title %}
 
 {% block page_style %}
     <style>
@@ -18,9 +18,11 @@
 {% endblock page_style %}
 
 {% block content %}
-
-    <p>
-        Total Cash: {{ total_cash|floatformat:2|intcomma }} <br>
-    </p>
+    {% include "admin/quick_links.html" with show_changelinks=True %}
+    <form method="post">
+    {% csrf_token %}
+        {{ form.as_p }}
+        <input type="submit" value="Submit">
+    </form>
 
 {% endblock content %}
