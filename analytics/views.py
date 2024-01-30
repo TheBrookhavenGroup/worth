@@ -8,7 +8,7 @@ from django.views.generic import TemplateView, FormView
 from django.urls import reverse
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
-from analytics.cash import cash_sums, total_cash
+from analytics.cash import cash_sums
 from analytics.pnl import pnl_summary, pnl_if_closed, ticker_pnl
 from analytics.utils import total_realized_gains, income, expenses
 from analytics.models import PPMResult
@@ -32,37 +32,6 @@ class MyFormView(FormView):
         context = super().get_context_data(**kwargs)
         context['title'] = self.title
         return context
-
-
-class CheckingView(LoginRequiredMixin, MyFormView):
-    template_name = 'analytics/checking.html'
-    form_class = CheckingForm
-    success_url = '.'
-    account = None
-    title = 'Checking'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        getter = self.request.GET.get
-
-        if self.account:
-            account_name = self.account
-        else:
-            account_name = getter('account', default='BofA')
-
-        account_id = Account.objects.get(name=account_name).id
-
-        context['account'] = account_name
-        context['acount_id'] = account_id
-        balance, statement_balance = cash_sums(account_name)
-        context['balance'] = balance
-        context['statement_balance'] = statement_balance
-        return context
-
-    def form_valid(self, form):
-        data = form.cleaned_data
-        self.account = data['account']
-        return self.render_to_response(self.get_context_data(form=form))
 
 
 class PnLView(LoginRequiredMixin, MyFormView):
@@ -127,16 +96,6 @@ class PnLView(LoginRequiredMixin, MyFormView):
         self.account = data['account']
         self.days = data['days']
         return self.render_to_response(self.get_context_data(form=form))
-
-
-class TotalCashView(LoginRequiredMixin, TemplateView):
-    template_name = 'analytics/total_cash.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        getter = self.request.GET.get
-        context['total_cash'] = total_cash()
-        return context
 
 
 class GetIBTradesView(LoginRequiredMixin, TemplateView):
