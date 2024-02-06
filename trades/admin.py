@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.contrib.admin import SimpleListFilter
 from django.db.models import Q
+from django.contrib import messages
 from tbgutils.dt import our_now, day_start, prior_business_day
 from markets.models import NOT_FUTURES_EXCHANGES
 from accounts.models import Account
@@ -127,6 +128,14 @@ def duplicate_record(modeladmin, request, qs):
         new_rec.save()
 
 
+def sum_commissions(modeladmin, request, qs):
+    total = 0
+    for rec in qs:
+        total += rec.commission
+
+    messages.add_message(request, messages.INFO, f"Sum commissions: {total}")
+
+
 @admin.register(Trade)
 class TradeAdmin(admin.ModelAdmin):
     def time_date(self, obj):
@@ -140,4 +149,4 @@ class TradeAdmin(admin.ModelAdmin):
                    TradesAccountFilter, IsActiveAccountFilter, SplitsFilter, 'reinvest')
     search_fields = ('account__name', 'dt', 'note', 'ticker__ticker')
     ordering = ('account', '-dt')
-    actions = [duplicate_record]
+    actions = [duplicate_record, sum_commissions]
