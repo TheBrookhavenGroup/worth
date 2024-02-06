@@ -13,4 +13,4 @@ plotly==5.11.0
 django-crispy-forms==1.14.0
 tbgutils
 moneycounter
-
+django-easy-audit
