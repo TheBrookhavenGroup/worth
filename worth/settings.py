@@ -3,6 +3,7 @@ from pathlib import Path
 import configparser
 from tbgutils import dt as mc_dt
 
+
 config_file = '/Users/ms/.worth'
 if os.path.exists(config_file):
     config = configparser.ConfigParser(interpolation=None)
@@ -53,6 +54,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.humanize',
     'crispy_forms',
+    'easyaudit',
     'accounts',
     'markets',
     'trades',
@@ -67,7 +69,9 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'easyaudit.middleware.easyaudit.EasyAuditMiddleware',
 ]
+
 
 ROOT_URLCONF = 'worth.urls'
 
@@ -88,6 +92,24 @@ TEMPLATES = [
 ]
 
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
+
+DJANGO_EASY_AUDIT_WATCH_REQUEST_EVENTS = False
+DJANGO_EASY_AUDIT_WATCH_AUTH_EVENTS = False
+DJANGO_EASY_AUDIT_UNREGISTERED_CLASSES_EXTRA = [
+    'auth.User',
+    'auth.Group',
+    'auth.Permission',
+    'sessions.Session',
+    'accounts.Account',
+    'accounts.Receivable',
+    'accounts.Vendor',
+    'markets.Market',
+    'markets.Ticker',
+    'markets.DailyPrice',
+    'markets.DailyPrice',
+    'markets.TBGDailyBar',
+    'analytics.PPMResult',
+]
 
 WSGI_APPLICATION = 'worth.wsgi.application'
 
