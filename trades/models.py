@@ -14,9 +14,13 @@ class Trade(models.Model):
     account = models.ForeignKey(Account, on_delete=models.CASCADE)
     ticker = models.ForeignKey(Ticker, on_delete=models.CASCADE)
     reinvest = models.BooleanField(default=False, blank=False, null=False)
-    q = models.DecimalField(max_digits=20, decimal_places=10, default=0, blank=False, null=False)
-    p = models.FloatField(blank=False, null=False)
-    commission = models.FloatField(default=0.0, validators=[MinValueValidator(0.0)])
+    q = models.DecimalField(max_digits=20, decimal_places=10, default=0,
+                            blank=False, null=False)
+    p = models.DecimalField(max_digits=20, decimal_places=10, default=0,
+                            blank=False, null=False)
+    commission = models.DecimalField(max_digits=20, decimal_places=10,
+                                     default=0, blank=False, null=False,
+                                     validators=[MinValueValidator(0.0)])
     note = models.CharField(max_length=180, blank=True, null=True)
     trade_id = models.IntegerField(blank=True, null=True)
 
