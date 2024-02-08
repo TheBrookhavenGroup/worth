@@ -2,7 +2,6 @@ from datetime import date
 from django.contrib import messages
 from django.shortcuts import render
 from django.db import transaction, IntegrityError
-from django.utils.datastructures import MultiValueDictKeyError
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView, FormView
 from accounts.statement_utils import ib_statements
