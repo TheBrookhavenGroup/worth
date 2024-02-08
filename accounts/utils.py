@@ -19,10 +19,11 @@ def get_account_url(a):
 
     if type(a) is Account:
         chart_url = f'<a href="/value_chart?accnt={a.name}" target="_blank">{img}</a>'
+        diff_url = f'<a href="/difference?accnt={a.name}" target="_blank">Diff</a>'
         if a.url is None:
             a = f'{a.name}{chart_url}'
         else:
-            a = f'<a href={a.url} target="_blank">{a.name}</a>{chart_url}'
+            a = f'<a href={a.url} target="_blank">{a.name}</a>{chart_url} {diff_url}'
 
     return mark_safe(a)
 

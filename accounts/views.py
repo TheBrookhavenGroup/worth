@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 from django.contrib import messages
 from django.shortcuts import render
 from django.db import transaction, IntegrityError
@@ -38,7 +38,7 @@ class AccountsView(LoginRequiredMixin, FormView):
             Account.objects.all().update(reconciled_f=False)
             Account.objects.filter(id__in=ids).update(reconciled_f=True)
 
-        return render(request, self.template_name, {'form': form})
+        return render(request, self.template_name, context)
 
 
 class ReceivablesView(LoginRequiredMixin, TemplateView):
@@ -103,23 +103,38 @@ class DifferenceView(LoginRequiredMixin, FormView):
         context = super().get_context_data(**kwargs)
         context['title'] = 'Cash Balance Difference Calculator'
 
-        x = self.parse_preserved(self.kwargs['preserved_filters'])
-        context.update(x)
+        try:
+            x = self.parse_preserved(self.kwargs['preserved_filters'])
+            context.update(x)
+            account_id = x['account_id']
+            d = x['d']
+        except KeyError:
+            d = date.today()
+            d = date(d.year, d.month, 1)
+            d -= timedelta(days=1)
+            name = self.request.GET['accnt']
+            a = Account.objects.get(name=name)
+            account_id = a.id
+            context['account_id'] = account_id
+            context['account'] = name
+            context['d'] = d
 
-        _, total_cleared = cash_sums(x['account_id'], x['d'])
+        _, total_cleared = cash_sums(account_id, d)
         context['total_cleared'] = total_cleared
 
         return context
 
+    def get(self, request, *args, **kwargs):
+        context = self.get_context_data(**kwargs)
+        return render(request, self.template_name, context)
+
     def post(self, request, *args, **kwargs):
         form = self.form_class(request.POST)
-        context = super().get_context_data(**kwargs)
+        context = self.get_context_data(**kwargs)
         if form.is_valid():
             amt = form.cleaned_data['amt']
-            x = self.parse_preserved(kwargs['preserved_filters'])
-            context.update(x)
 
-            _, total_cleared = cash_sums(x['account_id'], x['d'])
+            _, total_cleared = cash_sums(context['account_id'], context['d'])
             context['total_cleared'] = total_cleared
 
             delta = float(amt) - total_cleared
