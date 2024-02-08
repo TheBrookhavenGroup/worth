@@ -148,7 +148,7 @@ class CashRecord(models.Model):
 
 
 @lru_cache(maxsize=10)
-def get_cash_df(a=None, d=None, pivot=False, active_f=True):
+def get_cash_df(a=None, d=None, pivot=False, active_f=True, cleared=False):
     qs = CashRecord.objects.filter(ignored=False)
 
     if active_f:
@@ -158,6 +158,8 @@ def get_cash_df(a=None, d=None, pivot=False, active_f=True):
         qs = qs.filter(d__lte=d)
     if a is not None:
         qs = qs.filter(account__name=a)
+    if cleared:
+        qs = qs.filter(cleared_f=True)
 
     qs = (qs.values('account__name').
           order_by('account__name').
@@ -176,8 +178,8 @@ def get_cash_df(a=None, d=None, pivot=False, active_f=True):
     return df
 
 
-def copy_cash_df(d=None, a=None, pivot=False, active_f=True):
-    df = get_cash_df(d=d, a=a, pivot=pivot, active_f=active_f)
+def copy_cash_df(d=None, a=None, pivot=False, active_f=True, cleared=False):
+    df = get_cash_df(d=d, a=a, pivot=pivot, active_f=active_f, cleared=cleared)
     df = df.copy(deep=True)
     return df
 

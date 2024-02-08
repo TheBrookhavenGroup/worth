@@ -27,3 +27,8 @@ class CashTransferForm(Form):
     to_account = ModelChoiceField(
         queryset=Account.objects.filter(active_f=True).all())
     amt = DecimalField(max_digits=10, decimal_places=2, min_value=0.01)
+
+
+class DifferenceForm(Form):
+    amt = DecimalField(label='Statement cash blance',
+                       max_digits=10, decimal_places=2, min_value=0.01)

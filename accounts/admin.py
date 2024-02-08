@@ -1,3 +1,4 @@
+from datetime import date
 from django.contrib import admin
 from django.contrib.admin import SimpleListFilter
 from django.contrib.admin.views.main import ChangeList
@@ -134,13 +135,22 @@ def sum_amt(modeladmin, request, qs):
 class CashRecordChangeList(ChangeList):
     def get_results(self, request):
         super().get_results(request)
+
+        msg = ("Totals are shown here for when a specific date and account "
+               "are selected.")
         if 'active' in request.GET:
             account_id = request.GET['active']
-        else:
-            account_id = None
-        total, total_cleared = cash_sums(account_id=account_id)
-        messages.add_message(request, messages.INFO,
-                             f"Total: {total:,.2f} Cleared: {total_cleared:,.2f}")
+
+            if 'd__day' in request.GET:
+                y = request.GET['d__year']
+                m = request.GET['d__month']
+                d = request.GET['d__day']
+                d = date(int(y), int(m), int(d))
+
+                total, total_cleared = cash_sums(account_id, d)
+                msg = f"Total: {total:,.2f} Cleared: {total_cleared:,.2f}"
+
+        messages.add_message(request, messages.INFO, msg)
 
 
 @admin.register(CashRecord)

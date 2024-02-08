@@ -3,6 +3,11 @@
 {% block object-tools-items %}
 <li>
     <a href="/cash_transfer" class="btn btn-high btn-success">Transfer</a>
+    {% if 'active' in preserved_filters %}
+        {% if 'd__day' in preserved_filters %}
+            <a href="/difference/{{ preserved_filters }}" class="btn btn-high btn-success">Difference</a>
+        {% endif %}
+    {% endif %}
 </li>
 {{ block.super }}
 {% endblock %}
