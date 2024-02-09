@@ -1,4 +1,8 @@
-{% extends "admin/base_site.html" %}
+{% extends "admin/base.html" %}
+
+{% block branding %}
+<h1 id="site-name"><a href="{% url 'admin:index' %}">Worth</a></h1>
+{% endblock %}
 
 {% load humanize %}
 
