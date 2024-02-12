@@ -38,12 +38,14 @@ def add_markets():
         ['MSFT', 'Microsoft', 'ARCA', 'STOCK', 1, 0, 1, 1, 4],
         ['CRM', 'Salesforce', 'ARCA', 'STOCK', 1, 0, 1, 1, 4],
         ['NG', 'Natural Gas Futures', 'CME', 'NYM', 10000, 2.36, 1, 1, 3],
-        ['CL', 'Light Sweet Crude Oil Futures', 'CME', 'NYM', 1000, 2.36, 1, 1, 2],
+        ['CL', 'Light Sweet Crude Oil Futures', 'CME', 'NYM', 1000, 2.36, 1, 1,
+         2],
         ['ES', 'E-Mini S&P 500 Futures', 'CME', 'CME', 50, 2.01, 1, 1, 2],
         ['KC', 'Coffee', 'NYBOT', 'NYB', 37500, 2.46, 1, 0.01, 4]
     ]
     for s, n, ie, ye, cs, c, ipf, ypf, pprec in data:
-        Market(symbol=s, name=n, ib_exchange=ie, yahoo_exchange=ye, cs=cs, commission=c,
+        Market(symbol=s, name=n, ib_exchange=ie, yahoo_exchange=ye, cs=cs,
+               commission=c,
                ib_price_factor=ipf, yahoo_price_factor=ypf, pprec=pprec).save()
 
     data = [
@@ -77,7 +79,8 @@ def get_account(a):
     if Account.objects.filter(name=a).exists():
         account = Account.objects.get(name=a)
     else:
-        account = Account(name=a, owner='MSRK', broker='', broker_account=a, description='')
+        account = Account(name=a, owner='MSRK', broker='', broker_account=a,
+                          description='')
         account.save()
     return account
 
@@ -85,7 +88,9 @@ def get_account(a):
 def cash_balance(account):
     balance = 0
 
-    qs = Trade.objects.filter(account__name=account).values_list('reinvest', 'q', 'p', 'commission')
+    qs = Trade.objects.filter(account__name=account).values_list('reinvest',
+                                                                 'q', 'p',
+                                                                 'commission')
     for reinvest, q, p, c in qs:
         if not reinvest:
             print('inside cash_balance: ', account, balance, q, p, c)
@@ -105,8 +110,10 @@ def fix_none_accounts(none_accounts):
     for a in none_accounts.keys():
         balance = cash_balance(a)
         a = get_account(a)
-        description = 'Stub to close account because there never was this cash account.'
-        CashRecord(account=a, d=none_accounts[a.name].date(), description=description,
+        description = ('Stub to close account because there never was this '
+                       'cash account.')
+        CashRecord(account=a, d=none_accounts[a.name].date(),
+                   description=description,
                    category=CashRecord.DE, amt=-balance).save()
 
 
@@ -145,7 +152,8 @@ def add_trades():
                 c = float(c)
 
             if t.lower() == 'cash':
-                CashRecord(account=a, d=dt.date(), description=note, amt=q).save()
+                CashRecord(account=a, d=dt.date(), description=note,
+                           amt=q).save()
                 continue
 
             if ca.lower() == 'none' and not r_f:
@@ -158,7 +166,8 @@ def add_trades():
                            category=CashRecord.DE, amt=x).save()
 
             t = add_ticker(t)
-            trade = Trade(dt=dt, account=a, ticker=t, reinvest=r_f, q=q, p=p, commission=c, note=note)
+            trade = Trade(dt=dt, account=a, ticker=t, reinvest=r_f, q=q, p=p,
+                          commission=c, note=note)
             trade.save()
 
     fix_none_accounts(none_accounts)

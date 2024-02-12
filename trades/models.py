@@ -28,7 +28,8 @@ class Trade(models.Model):
         ordering = ['dt']
 
     def __str__(self):
-        return f"{self.account} {self.dt} {self.ticker.ticker} {self.q} @ {self.p} c={self.commission} id={self.trade_id}"
+        return (f"{self.account} {self.dt} {self.ticker.ticker} {self.q} @ "
+                f"{self.p} c={self.commission} id={self.trade_id}")
 
     def save(self, *args, **kwargs):
         get_trades_df.cache_clear()
@@ -59,24 +60,29 @@ class Trade(models.Model):
         return qs
 
     @classmethod
-    def futures_trades(cls, account=None, ticker=None, only_non_qualified=False):
+    def futures_trades(cls, account=None, ticker=None,
+                       only_non_qualified=False):
         if type(account) == str:
             account = Account.objects.get(name=account)
         qs = cls.more_filtering(account, ticker, only_non_qualified)
-        return qs.filter(~Q(ticker__market__ib_exchange__in=(NOT_FUTURES_EXCHANGES))).order_by('dt')
+        return qs.filter(~Q(ticker__market__ib_exchange__in=(
+            NOT_FUTURES_EXCHANGES))).order_by('dt')
 
     @classmethod
     def equity_trades(cls, account=None, ticker=None, only_non_qualified=False):
         if type(account) == str:
             account = Account.objects.get(name=account)
         qs = cls.more_filtering(account, ticker, only_non_qualified)
-        return qs.filter(ticker__market__ib_exchange__in=(NOT_FUTURES_EXCHANGES)).order_by('dt')
+        return qs.filter(
+            ticker__market__ib_exchange__in=(NOT_FUTURES_EXCHANGES)).order_by(
+            'dt')
 
     @classmethod
     def any_trades(cls, account=None, ticker=None, only_non_qualified=False):
         if type(account) == str:
             account = Account.objects.get(name=account)
-        qs = cls.more_filtering(account, ticker, only_non_qualified).order_by('dt')
+        qs = cls.more_filtering(account, ticker, only_non_qualified).order_by(
+            'dt')
         return qs
 
     @classmethod
@@ -91,7 +97,8 @@ class Trade(models.Model):
             df = pd.DataFrame.from_records(list(qs), coerce_float=True)
             df.columns = columns
         else:
-            df = pd.DataFrame.from_records(list(qs), coerce_float=True, columns=columns)
+            df = pd.DataFrame.from_records(list(qs), coerce_float=True,
+                                           columns=columns)
 
         factor = settings.PPM_FACTOR
         if factor is not False:
@@ -122,8 +129,10 @@ def get_trades_df(a=None, t=None, only_non_qualified=False, active_f=True):
     return df
 
 
-def copy_trades_df(d=None, t=None, a=None, only_non_qualified=False, active_f=True):
-    df = get_trades_df(a=a, t=t, only_non_qualified=only_non_qualified, active_f=active_f)
+def copy_trades_df(d=None, t=None, a=None, only_non_qualified=False,
+                   active_f=True):
+    df = get_trades_df(a=a, t=t, only_non_qualified=only_non_qualified,
+                       active_f=active_f)
     df = df.copy(deep=True)
     if (not df.empty) and (d is not None):
         dt = day_start_next_day(d)

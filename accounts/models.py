@@ -12,12 +12,13 @@ class Account(models.Model):
     broker_account = models.CharField(max_length=50, unique=True, blank=False)
     description = models.CharField(max_length=200, blank=True)
     active_f = models.BooleanField(default=True)
-    qualified_f = models.BooleanField(default=False, help_text='Tax status - set flag if account is qualified.')
+    qualified_f = models.BooleanField(default=False,
+            help_text='Tax status - set flag if account is qualified.')
     url = models.URLField(blank=True, null=True)
     reconciled_f = models.BooleanField(default=False)
 
     class Meta:
-        ordering = ('-active_f', 'name', )
+        ordering = ('-active_f', 'name',)
 
     def __str__(self):
         return f"{self.name}"
@@ -68,7 +69,6 @@ class Vendor(models.Model):
 
 
 class CashRecord(models.Model):
-
     AB = 'AB'
     AV = 'AV'
     BF = 'BF'

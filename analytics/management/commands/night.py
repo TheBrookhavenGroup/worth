@@ -5,7 +5,8 @@ from trades.ib_flex import get_trades
 
 # This is a zsh function to run this command.
 # worth_night() {
-#     echo "source $HOME/.zshrc; pyenv shell worth; python $HOME/Documents/dev/worth/manage.py night" | zsh
+#     echo "source $HOME/.zshrc; pyenv shell worth; python
+#     $HOME/Documents/dev/worth/manage.py night" | zsh
 # }
 
 

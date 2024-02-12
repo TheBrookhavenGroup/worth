@@ -4,16 +4,21 @@ from django.dispatch import receiver
 from django.db.models.signals import pre_save
 
 NOT_FUTURES_EXCHANGES = ['CASH', 'STOCK', 'BOND', 'ARCA', 'SMART']
-EXCHANGES = [(i, i) for i in NOT_FUTURES_EXCHANGES + ['CME', 'NYM', 'NYMEX', 'NYBOT', 'NYB', 'CFE', 'ECBOT']]
+EXCHANGES = [(i, i) for i in
+             NOT_FUTURES_EXCHANGES + ['CME', 'NYM', 'NYMEX', 'NYBOT', 'NYB',
+                                      'CFE', 'ECBOT']]
 MAX_EXCHANGES_LEN = max([len(i[0]) for i in EXCHANGES]) + 1
 
 
 class Market(models.Model):
-    symbol = models.CharField(max_length=20, unique=True, blank=False, null=False)
+    symbol = models.CharField(max_length=20, unique=True, blank=False,
+                              null=False)
     name = models.CharField(max_length=50)
-    ib_exchange = models.CharField(max_length=MAX_EXCHANGES_LEN, choices=EXCHANGES,
+    ib_exchange = models.CharField(max_length=MAX_EXCHANGES_LEN,
+                                   choices=EXCHANGES,
                                    blank=False, default='STOCK')
-    yahoo_exchange = models.CharField(max_length=MAX_EXCHANGES_LEN, choices=EXCHANGES,
+    yahoo_exchange = models.CharField(max_length=MAX_EXCHANGES_LEN,
+                                      choices=EXCHANGES,
                                       blank=False, default='STOCK')
     cs = models.FloatField(default=1.0, blank=False)
     commission = models.FloatField(default=0.0)
@@ -26,8 +31,11 @@ class Market(models.Model):
         return f"{self.symbol}"
 
     def description(self):
-        return f'{self.symbol}|{self.name}|{self.ib_exchange}|{self.yahoo_exchange}|{self.cs}|' \
-               f'{self.commission}|{self.ib_price_factor}|{self.yahoo_price_factor}'
+        return '|'.join([str(i) for i in [self.symbol, self.name,
+                                          self.ib_exchange, self.yahoo_exchange,
+                                          self.cs, self.commission,
+                                          self.ib_price_factor,
+                                          self.yahoo_price_factor]])
 
     @property
     def is_futures(self):
@@ -44,15 +52,18 @@ def upcase_symbol(sender, instance, **kwargs):
 
 
 class Ticker(models.Model):
-    ticker = models.CharField(max_length=20, unique=True, blank=False, null=False)
+    ticker = models.CharField(max_length=20, unique=True, blank=False,
+                              null=False)
     name = models.CharField(max_length=50, blank=True, null=True,
-                            help_text='Optional override to Market description.')
+                            help_text='Optional override to Market '
+                                      'description.')
     market = models.ForeignKey(Market, on_delete=models.CASCADE)
     fixed_price = models.FloatField(null=True, blank=True,
-                                    help_text="If set then this is the price that will always be used.")
+                                    help_text="If set then this is the price "
+                                              "that will always be used.")
 
     class Meta:
-        ordering = ('ticker', )
+        ordering = ('ticker',)
 
     def __str__(self):
         return f"{self.ticker}"
@@ -98,7 +109,8 @@ class Ticker(models.Model):
         return ticker
 
     def __lt__(self, other):
-        return (self.symbol, self.year, self.month) < (other.symbol, other.year, other.month)
+        return (self.symbol, self.year, self.month) < (
+            other.symbol, other.year, other.month)
 
     @staticmethod
     def key_sorting(obj):
@@ -140,7 +152,8 @@ class TBGDailyBar(models.Model):
         unique_together = [["ticker", "d"]]
 
     def __str__(self):
-        return f"{self.d}|{self.o}|{self.h}|{self.l}|{self.c}|{self.v}|{self.oi}"
+        return f"{self.d}|{self.o}|{self.h}|" \
+               f"{self.l}|{self.c}|{self.v}|{self.oi}"
 
 
 @ttl_cache(maxsize=10000, ttl=10)

@@ -52,9 +52,11 @@ class ExchangeTypeFilter(SimpleListFilter):
     def queryset(self, request, queryset):
         v = self.value()
         if 'futures' == v:
-            return queryset.filter(~Q(ticker__market__ib_exchange__in=NOT_FUTURES_EXCHANGES))
+            return queryset.filter(
+                ~Q(ticker__market__ib_exchange__in=NOT_FUTURES_EXCHANGES))
         elif 'equities' == v:
-            return queryset.filter(ticker__market__ib_exchange__in=NOT_FUTURES_EXCHANGES)
+            return queryset.filter(
+                ticker__market__ib_exchange__in=NOT_FUTURES_EXCHANGES)
         return queryset
 
 
@@ -123,8 +125,10 @@ class SplitsFilter(SimpleListFilter):
 def duplicate_record(modeladmin, request, qs):
     t = our_now()
     for rec in qs:
-        new_rec = Trade(dt=t, account=rec.account, ticker=rec.ticker, reinvest=rec.reinvest,
-                        q=rec.q, p=rec.p, commission=rec.commission, note=rec.note)
+        new_rec = Trade(dt=t, account=rec.account, ticker=rec.ticker,
+                        reinvest=rec.reinvest,
+                        q=rec.q, p=rec.p, commission=rec.commission,
+                        note=rec.note)
         new_rec.save()
 
 
@@ -140,13 +144,18 @@ def sum_commissions(modeladmin, request, qs):
 class TradeAdmin(admin.ModelAdmin):
     def time_date(self, obj):
         return obj.dt.date()
+
     time_date.short_description = 'Date'
 
     date_hierarchy = 'dt'
 
-    list_display = ('dt', 'account', 'ticker', 'q', 'p', 'commission', 'reinvest', 'trade_id', 'note')
-    list_filter = (GetTradesFilter, NoCommissionFilter, BuySellFilter, ExchangeTypeFilter,
-                   TradesAccountFilter, IsActiveAccountFilter, SplitsFilter, 'reinvest')
+    list_display = (
+        'dt', 'account', 'ticker', 'q', 'p', 'commission', 'reinvest',
+        'trade_id',
+        'note')
+    list_filter = (
+        GetTradesFilter, NoCommissionFilter, BuySellFilter, ExchangeTypeFilter,
+        TradesAccountFilter, IsActiveAccountFilter, SplitsFilter, 'reinvest')
     search_fields = ('account__name', 'dt', 'note', 'ticker__ticker')
     ordering = ('account', '-dt')
     actions = [duplicate_record, sum_commissions]

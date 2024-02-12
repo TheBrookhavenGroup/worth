@@ -6,18 +6,18 @@ from accounts.models import Account
 from trades.models import Trade
 from markets.utils import ib_symbol2ticker
 
-
 daily = '905409'
 lbd = '905414'
 last30days = '905412'
 
 
 def get_trades(report_id=daily):
-    formats = json.dumps({'columnDefs': [{"targets": [0], 'className': "dt-nowrap"},
-                                         {"targets": [1], 'className': "dt-body-left"},
-                                         {'targets': [2, 3, 4], 'className': 'dt-body-right'}],
-                          # 'ordering': False
-                          })
+    formats = json.dumps(
+        {'columnDefs': [{"targets": [0], 'className': "dt-nowrap"},
+                        {"targets": [1], 'className': "dt-body-left"},
+                        {'targets': [2, 3, 4], 'className': 'dt-body-right'}],
+         # 'ordering': False
+         })
 
     headings = ['Date-Time', 'Ticker', 'Q', 'P', 'Commission']
     data = []
@@ -39,7 +39,8 @@ def get_trades(report_id=daily):
         t = dt2dt(i.dateTime)
         ticker = ib_symbol2ticker(i.symbol)
 
-        # do not need to scale i.price by tickers.ib_price_factor, flex already converted it to dollars.
+        # do not need to scale i.price by tickers.ib_price_factor,
+        # flex already converted it to dollars.
         p = i.price
         q = i.quantity
         try:
@@ -50,9 +51,11 @@ def get_trades(report_id=daily):
             trade.p = p
             trade.commission = -i.commission
         except Trade.DoesNotExist:
-            trade = Trade(dt=t, account=account, ticker=ticker, q=q, p=p, commission=i.commission, trade_id=i.tradeID)
+            trade = Trade(dt=t, account=account, ticker=ticker, q=q, p=p,
+                          commission=i.commission, trade_id=i.tradeID)
         trade.save()
 
-        data.append([set_tz(trade.dt).strftime("%Y%m%d %H:%M:%S"), trade.ticker, trade.q, trade.p, trade.commission])
+        data.append([set_tz(trade.dt).strftime("%Y%m%d %H:%M:%S"), trade.ticker,
+                     trade.q, trade.p, trade.commission])
 
     return headings, data, formats
