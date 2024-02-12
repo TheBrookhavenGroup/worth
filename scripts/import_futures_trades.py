@@ -1,11 +1,9 @@
-
 from cachetools.func import ttl_cache
 from django.db import transaction
 from tbgutils.dt import dt2dt
 from accounts.models import Account, CashRecord
 from markets.models import Market, Ticker
 from trades.models import Trade
-
 
 account = Account.objects.get(name='FUTURES')
 
@@ -16,8 +14,8 @@ def get_market(s):
         m = Market.objects.get(symbol=s)
     except Market.DoesNotExist:
         print(f'Making market for {s}')
-        m = Market.objects.get_or_create(symbol=s, name=s,
-                                         ib_exchange='CME', yahoo_exchange='CME')
+        m = Market.objects.get_or_create(symbol=s, name=s, ib_exchange='CME',
+                                         yahoo_exchange='CME')
         m = m[0]
     return m
 
@@ -25,14 +23,16 @@ def get_market(s):
 @transaction.atomic
 def add_trades():
     fn = '/Users/ms/Documents/dev/ALL/futures_trades.csv'
-    # "id", "cash_accnt", "d", "t", "reinv_f", "q", "p", "c", "c_f", "note", "account", "ticker"
+    # "id", "cash_accnt", "d", "t", "reinv_f", "q", "p", "c", "c_f", "note",
+    # "account", "ticker"
     with open(fn) as fh:
         lines = fh.readlines()
 
     for line in lines:
         line = line.replace('"', '')
         line = line.replace("'", '')
-        id, cash_account, d, t, reinv_f, q, p, c, c_f, note, a, ticker = line.split(',')
+        id, cash_account, d, t, reinv_f, q, p, c, c_f, note, a, \
+            ticker = line.split(',')
         dt = f"{d} {t}"
 
         dt = dt2dt(dt)
@@ -53,7 +53,8 @@ def add_trades():
             ticker = Ticker(ticker=t, market=market)
             ticker.save()
 
-        trade = Trade(dt=dt, account=account, ticker=ticker, q=q, p=p, commission=c, note=note)
+        trade = Trade(dt=dt, account=account, ticker=ticker, q=q, p=p,
+                      commission=c, note=note)
         trade.save()
 
 

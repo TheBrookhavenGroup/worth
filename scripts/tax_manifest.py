@@ -36,7 +36,8 @@ files = [j for i in doc_order for j in fns if i.lower() in j.lower()]
 extras = set(fns) - set(files)
 files.extend(extras)
 
-cmd = f"gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sOutputFile={out_filename} {' '.join(files)}"
+cmd = (f"gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sOutputFile={out_filename} "
+       f"{' '.join(files)}")
 print(cmd)
 os.system(cmd)
 

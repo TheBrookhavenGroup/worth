@@ -71,7 +71,8 @@ def get_historical_bar(ticker, d):
     return None
 
 
-fixed_prices = {'AAPL': 305.0, 'MSFT': 305.0, 'AMZN': 115.0, 'ESZ2021': 4300.0, 'MBXIX': 33.0}
+fixed_prices = {'AAPL': 305.0, 'MSFT': 305.0, 'AMZN': 115.0, 'ESZ2021': 4300.0,
+                'MBXIX': 33.0}
 
 
 @ttl_cache(maxsize=1000, ttl=10)
@@ -95,18 +96,24 @@ def get_price(ticker, d=None):
                 bar = get_historical_bar(ticker, d)
                 if bar is None:
                     if TBGDailyBar.objects.filter(ticker=ticker, d=d).exists():
-                        print(f"Bar exists in TBGDaily, saving to DailyPrice: {d} {ticker}")
+                        print(
+                            f"Bar exists in TBGDaily, saving to DailyPrice: "
+                            f"{d} {ticker}")
                         tb = TBGDailyBar.objects.get(ticker=ticker, d=d)
                         p = tb.c
                         DailyPrice.objects.create(ticker=ticker, d=d, c=p)
                     else:
                         print(f"Cannot find price in TBGDaily: {d} {ticker}")
-                        print(f"Try https://www.barchart.com/futures/quotes/{ticker}/interactive-chart")
+                        print(
+                            f"Try https://www.barchart.com/futures/quotes/"
+                            f"{ticker}/interactive-chart")
                         p = 0.0
                 else:
                     d_bar, o, h, l, c, v, oi = bar
                     if d_bar != d:
-                        print(f"Using price found on {d_bar} for {d} for {ticker}")
+                        print(
+                            f"Using price found on {d_bar} for {d} for "
+                            f"{ticker}")
                     DailyPrice.objects.create(ticker=ticker, d=d, c=c)
                     p = c
     else:

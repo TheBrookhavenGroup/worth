@@ -3,7 +3,6 @@ from pathlib import Path
 import configparser
 from tbgutils import dt as mc_dt
 
-
 config_file = '/Users/ms/.worth'
 if os.path.exists(config_file):
     config = configparser.ConfigParser(interpolation=None)
@@ -39,7 +38,6 @@ else:
     GPG_EMAIL = 'you@example.com'
     PPM_FACTOR = 1
 
-
 # Build paths inside the worth like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -71,7 +69,6 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'easyaudit.middleware.easyaudit.EasyAuditMiddleware',
 ]
-
 
 ROOT_URLCONF = 'worth.urls'
 
@@ -113,7 +110,6 @@ DJANGO_EASY_AUDIT_UNREGISTERED_CLASSES_EXTRA = [
 
 WSGI_APPLICATION = 'worth.wsgi.application'
 
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -125,22 +121,24 @@ DATABASES = {
     }
 }
 
-
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        'NAME': 'django.contrib.auth.password_validation'
+                '.UserAttributeSimilarityValidator',
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'NAME': 'django.contrib.auth.password_validation'
+                '.MinimumLengthValidator',
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        'NAME': 'django.contrib.auth.password_validation'
+                '.CommonPasswordValidator',
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        'NAME': 'django.contrib.auth.password_validation'
+                '.NumericPasswordValidator',
     },
 ]
-
 
 # Internationalization
 LANGUAGE_CODE = 'en-us'

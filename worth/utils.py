@@ -1,8 +1,8 @@
 import json
 
-
 nicer_headings = {'a': 'Account', 't': 'Ticker', 'q': 'Quantity', 'wap': 'WAP',
-                  'cs': 'CS', 'price': 'Price', 'pnl': 'PnL', 'position': 'Position'}
+                  'cs': 'CS', 'price': 'Price', 'pnl': 'PnL',
+                  'position': 'Position'}
 
 
 def nice_headings(h):

@@ -19,7 +19,8 @@ def reindexed_wap(df):
     t = df.loc[0, 't']
     cs = df.loc[0, 'cs']
     position = df.q.sum()
-    result = pd.DataFrame({'a': [a], 't': [t], 'position': [position], 'wap': [wap], 'cs': cs})
+    result = pd.DataFrame(
+        {'a': [a], 't': [t], 'position': [position], 'wap': [wap], 'cs': cs})
     return result
 
 
@@ -97,10 +98,13 @@ def pnl_asof(d=None, a=None, only_non_qualified=False, active_f=True,
     Return YTD data for active positions.
     """
 
-    df = copy_trades_df(d=d, a=a, only_non_qualified=only_non_qualified, active_f=active_f)
+    df = copy_trades_df(d=d, a=a, only_non_qualified=only_non_qualified,
+                        active_f=active_f)
 
     if df.empty:
-        pnl = pd.DataFrame(columns=['a', 't', 'qp', 'qpr', 'q', 'cs', 'c', 'e', 'price', 'pnl', 'value'])
+        pnl = pd.DataFrame(
+            columns=['a', 't', 'qp', 'qpr', 'q', 'cs', 'c', 'e', 'price', 'pnl',
+                     'value'])
     else:
         df['qp'] = -df.q * df.p
 
@@ -108,7 +112,8 @@ def pnl_asof(d=None, a=None, only_non_qualified=False, active_f=True,
         df['qpr'] = reinvested_recs.qp - reinvested_recs.c
 
         pnl = pd.pivot_table(df, index=["a", "t"],
-                             aggfunc={'qp': np.sum, 'qpr': np.sum, 'q': np.sum, 'cs': np.max, 'c': np.sum, 'e': 'first'}
+                             aggfunc={'qp': np.sum, 'qpr': np.sum, 'q': np.sum,
+                                      'cs': np.max, 'c': np.sum, 'e': 'first'}
                              ).reset_index(['a', 't'])
         if d == our_now().date():
             tickers = [t for t, f in zip(pnl.t, pnl.q == 0) if not f]
@@ -123,14 +128,16 @@ def pnl_asof(d=None, a=None, only_non_qualified=False, active_f=True,
     pnl['cash_flow'] = pnl.qp - pnl.c - pnl.qpr
 
     # The full pnl for futures should be added to cash
-    # The cs * sum(q*p) for everything else, not the pnl, should be added to cash
+    # The cs * sum(q*p) for everything else, not the pnl, should be added to
+    # cash
     # Pivot on these to get cash contributions for each account
 
     futures_cash = pnl[~pnl.e.isin(NOT_FUTURES_EXCHANGES)]
     futures_cash = futures_cash.groupby('a')['pnl'].sum().reset_index()
 
     non_futures_cash = pnl[pnl.e.isin(NOT_FUTURES_EXCHANGES)]
-    non_futures_cash = non_futures_cash.groupby('a')['cash_flow'].sum().reset_index()
+    non_futures_cash = non_futures_cash.groupby('a')[
+        'cash_flow'].sum().reset_index()
 
     if futures_cash.empty:
         cash_adj = non_futures_cash
@@ -160,7 +167,9 @@ def pnl_asof(d=None, a=None, only_non_qualified=False, active_f=True,
 def trades_with_position(df):
     # Get only trades that are in position.
 
-    pos = pd.pivot_table(df, index=["a", "t"], aggfunc={'q': np.sum, 'cs': 'first'}).reset_index(['a', 't'])
+    pos = pd.pivot_table(df, index=["a", "t"],
+                         aggfunc={'q': np.sum, 'cs': 'first'}).reset_index(
+        ['a', 't'])
     pos = pos[pos.q != 0]
     df = pd.merge(df, pos, how='inner', on=['a', 't'])
     df.drop(['q_y', 'cs_y'], axis=1, inplace=True)

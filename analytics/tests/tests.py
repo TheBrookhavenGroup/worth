@@ -30,7 +30,8 @@ class PnLTests(TestCase):
         amzn = get_pnl('AMZN')
         aapl = get_pnl('AAPL')
 
-        return {'TOTAL': total, 'COH': coh, 'CASH': cash, 'MSFT': msft, 'AAPL': aapl, 'AMZN': amzn}, df
+        return {'TOTAL': total, 'COH': coh, 'CASH': cash, 'MSFT': msft,
+                'AAPL': aapl, 'AMZN': amzn}, df
 
     def test_today(self):
         data, _ = self.results()
@@ -82,7 +83,8 @@ class PnLSplitTests(TestCase):
         df, total, total_today, _ = pnl(a='MSFidelity')
 
         # Split
-        # These are the trades used for testing with zero for price on split shares added.
+        # These are the trades used for testing with zero for price on split
+        # shares added.
         x = [(50, 305), (150, 0), (-100, 200)]
         self.check_pnl(self.aapl_ticker, df, x)
 
@@ -98,13 +100,14 @@ class PnLIfClosedTests(TestCase):
         make_trades()
 
     def test_if_closed(self):
-        expected = pd.DataFrame({'a': ['MSFidelity', 'MSFidelity', 'MSFidelity'],
-                                 't': ['MSFT', 'MBXIX', 'AMZN'],
-                                 'position': [10.0, 1001.4, 95.0],
-                                 'wap': [310.00, 29.01431, 94.36842],
-                                 'cs': [1.0, 1.0, 1.0],
-                                 'price': [305.0, 33.0, 115.0],
-                                 'pnl': [-50.0, 3991.274, 1960.0]})
+        expected = pd.DataFrame(
+            {'a': ['MSFidelity', 'MSFidelity', 'MSFidelity'],
+             't': ['MSFT', 'MBXIX', 'AMZN'],
+             'position': [10.0, 1001.4, 95.0],
+             'wap': [310.00, 29.01431, 94.36842],
+             'cs': [1.0, 1.0, 1.0],
+             'price': [305.0, 33.0, 115.0],
+             'pnl': [-50.0, 3991.274, 1960.0]})
 
         df, format_rec = pnl_if_closed()
 
