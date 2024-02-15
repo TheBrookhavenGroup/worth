@@ -206,9 +206,8 @@ def book_expense(modeladmin, request, qs):
     for rec in qs:
         description = f"{rec.vendor} - {rec.description}"
         if rec.paid is None:
-            messages.add_message(request, messages.INFO,
-                                 f"Cannot book unpaid expense: {description}")
-            continue
+            rec.paid = d
+            rec.save()
 
         if rec.cash_transaction is None:
             new_rec = CashRecord(d=rec.paid, description=description,
