@@ -14,6 +14,7 @@ config = config['TAX']
 
 y = config['y']
 
+
 def get_tax_dir(y):
     home = os.path.expanduser('~')
     return os.path.join(home, config['path'], str(y))
