@@ -92,13 +92,22 @@ class ReceivableNotReceivedFilter(SimpleListFilter):
         return queryset
 
 
+def sum_amt(modeladmin, request, qs):
+    total = 0
+    for rec in qs:
+        total += rec.amt
+
+    messages.add_message(request, messages.INFO, f"Total: {total}")
+
+
 @admin.register(Receivable)
 class ReceivableAdmin(admin.ModelAdmin):
     date_hierarchy = 'invoiced'
     list_display = ('invoice', 'invoiced', 'received', 'client', 'amt')
     ordering = ('-invoiced', )
-    actions = [duplicate_receivable, recievable2cash]
+    actions = [duplicate_receivable, recievable2cash, sum_amt]
     list_filter = [ReceivableNotReceivedFilter]
+    search_fields = ('client', )
 
 
 def set_cleared_flag(modeladmin, request, qs):
@@ -122,14 +131,6 @@ def toggle_ignored_flag(modeladmin, request, qs):
     for rec in qs:
         rec.ignored = not rec.ignored
         rec.save()
-
-
-def sum_amt(modeladmin, request, qs):
-    total = 0
-    for rec in qs:
-        total += rec.amt
-
-    messages.add_message(request, messages.INFO, f"Total: {total}")
 
 
 class CashRecordChangeList(ChangeList):
