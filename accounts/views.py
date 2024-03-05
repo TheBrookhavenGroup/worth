@@ -1,10 +1,10 @@
 from datetime import date, timedelta
-from django.contrib import admin
 from django.contrib import messages
 from django.shortcuts import render
 from django.db import transaction, IntegrityError
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView, FormView
+from tbgutils.dt import eom
 from accounts.statement_utils import ib_statements
 from .utils import get_receivables
 from .forms import AccountForm, CashTransferForm, DifferenceForm
@@ -94,10 +94,18 @@ class DifferenceView(LoginRequiredMixin, FormView):
     def parse_preserved(preserved_filters):
         x = preserved_filters.removeprefix('_changelist_filters=')
         x = dict([i.split('=') for i in x.split('&')])
-        y, m, d = int(x['d__year']), int(x['d__month']), int(x['d__day'])
-        d = date(y, m, d)
+        y = int(x['d__year'])
+        m = int(x.get('d__month', 12))
+        try:
+            d = int(x['d_day'])
+            d = date(y, m, d)
+        except KeyError:
+            d = date(y, m, 1)
+            d = eom(d)
+
         a = x['active']
         name = Account.objects.get(id=int(a))
+
         return {'account_id': a, 'account': name, 'd': d}
 
     def get_context_data(self, **kwargs):

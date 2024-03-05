@@ -150,6 +150,8 @@ class CashRecordChangeList(ChangeList):
 
                 total, total_cleared = cash_sums(account_id, d)
                 msg = f"Total: {total:,.2f} Cleared: {total_cleared:,.2f}"
+            elif 'd__year' in request.GET:
+                msg = "Use the Difference button to see total."
 
         messages.add_message(request, messages.INFO, msg)
 
