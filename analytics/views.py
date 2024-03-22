@@ -174,7 +174,7 @@ class ValueChartView(LoginRequiredMixin, TemplateView):
                                   active_f=False)[-1] / 1.e6 for d in x_axis]
             name = f"{self.title} for {account}"
 
-        x_axis = [f'{d:%Y-%m}' for d in x_axis]
+        x_axis = [f'{d:%Y-%m-%d}' for d in x_axis]
 
         fig = go.Figure(data=go.Scatter(x=x_axis, y=y_axis,
                         mode='lines', name=name,
