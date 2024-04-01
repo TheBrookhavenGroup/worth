@@ -128,7 +128,8 @@ class DifferenceView(LoginRequiredMixin, FormView):
             context['account'] = name
             context['d'] = d
 
-        _, total_cleared = cash_sums(account_id, d)
+        total, total_cleared = cash_sums(account_id, d)
+        context['total'] = total
         context['total_cleared'] = total_cleared
 
         return context
