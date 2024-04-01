@@ -23,7 +23,9 @@
 
 {% block content %}
     {% include "admin/quick_links.html" with show_changelinks=True %}
-    Cash total for {{ account }} as of {{ d }} is {{ total_cleared|floatformat:3|intcomma }}
+    Cash total for {{ account }} as of {{ d }} is
+    {{ total|floatformat:3|intcomma }} cleared is
+    {{ total_cleared|floatformat:3|intcomma }}.
     {% if delta %}
         <p>{{  delta_msg }} {{ delta|floatformat:3|intcomma }}.</p>
     {% endif %}
