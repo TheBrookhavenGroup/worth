@@ -42,7 +42,10 @@ def weighted_average_price(ticker):
     wap = wap_df(df)
     pos = wap.position.sum()
     qp = wap.wap * wap.position
-    wap = qp.sum() / pos
+    if is_near_zero(pos):
+        wap = 0
+    else:
+        wap = qp.sum() / pos
 
     return pos, wap
 
