@@ -36,7 +36,7 @@ def ticker_admin_url(request, ticker):
 @ttl_cache(maxsize=1000, ttl=10)
 def get_yahoo_history(ticker):
     print(f"Getting yahoo history for {ticker}.")
-    if type(ticker) == str:
+    if isinstance(ticker, str):
         ticker = Ticker.objects.get(ticker=ticker)
     return yahooHistory(ticker)
 
@@ -82,7 +82,7 @@ def get_price(ticker, d=None):
     if not settings.USE_PRICE_FEED:
         return fixed_prices.get(ticker.yahoo_ticker, 1.0)
 
-    if type(ticker) == str:
+    if isinstance(ticker, str):
         ticker = Ticker.objects.get(ticker=ticker)
 
     if ticker.fixed_price is None:

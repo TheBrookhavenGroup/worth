@@ -62,7 +62,7 @@ class Trade(models.Model):
     @classmethod
     def futures_trades(cls, account=None, ticker=None,
                        only_non_qualified=False):
-        if type(account) == str:
+        if isinstance(account, str):
             account = Account.objects.get(name=account)
         qs = cls.more_filtering(account, ticker, only_non_qualified)
         return qs.filter(~Q(ticker__market__ib_exchange__in=(
@@ -70,7 +70,7 @@ class Trade(models.Model):
 
     @classmethod
     def equity_trades(cls, account=None, ticker=None, only_non_qualified=False):
-        if type(account) == str:
+        if isinstance(account, str):
             account = Account.objects.get(name=account)
         qs = cls.more_filtering(account, ticker, only_non_qualified)
         return qs.filter(
@@ -79,7 +79,7 @@ class Trade(models.Model):
 
     @classmethod
     def any_trades(cls, account=None, ticker=None, only_non_qualified=False):
-        if type(account) == str:
+        if isinstance(account, str):
             account = Account.objects.get(name=account)
         qs = cls.more_filtering(account, ticker, only_non_qualified).order_by(
             'dt')
