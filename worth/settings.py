@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.humanize',
     'crispy_forms',
+    'crispy_bootstrap4',
     'easyaudit',
     'accounts',
     'markets',
