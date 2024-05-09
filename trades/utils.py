@@ -35,7 +35,7 @@ def wap_df(df):
 
 
 def weighted_average_price(ticker):
-    if type(ticker) == str:
+    if isinstance(ticker, str):
         ticker = get_ticker(ticker)
 
     df = copy_trades_df(t=ticker, active_f=True)
