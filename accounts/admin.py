@@ -94,10 +94,18 @@ class ReceivableNotReceivedFilter(SimpleListFilter):
 
 def sum_amt(modeladmin, request, qs):
     total = 0
+    spent = 0
+    taxes = 0
     for rec in qs:
-        total += rec.amt
-
-    messages.add_message(request, messages.INFO, f"Total: {total}")
+        a = rec.amt
+        total += a
+        if a < 0 and rec.category != 'TR' and not rec.ignored:
+            spent += a
+            print(f"Spent {rec.d} {rec.category} {rec.description} {rec.amt}")
+            if rec.category == 'TA':
+                taxes += a
+    msg = f"Total: {total} Spent: {spent - taxes} Taxes: {taxes}"
+    messages.add_message(request, messages.INFO, msg)
 
 
 @admin.register(Receivable)
@@ -137,7 +145,7 @@ class CashRecordChangeList(ChangeList):
     def get_results(self, request):
         super().get_results(request)
 
-        msg = ("Totals are shown here for when a specific date and account "
+        msg = ("Totals are shown here when a specific date and account "
                "are selected.")
         if 'active' in request.GET:
             account_id = request.GET['active']
@@ -160,7 +168,7 @@ class CashRecordChangeList(ChangeList):
 class CashRecordAdmin(admin.ModelAdmin):
     change_list_template = 'accounts/cashrecord_change_list.html'
     date_hierarchy = 'd'
-    list_display = ('account', 'd', 'description', 'amt',
+    list_display = ('account', 'd', 'category', 'description', 'amt',
                     'cleared_f', 'ignored')
     list_filter = ('cleared_f', ActiveTradeAccountFilter, 'ignored')
     search_fields = ('account__name', 'description')

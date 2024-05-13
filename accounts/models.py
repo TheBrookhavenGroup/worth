@@ -90,7 +90,7 @@ class CashRecord(models.Model):
     SA = 'SA'
     SB = 'SB'
     TA = 'TA'
-    TX = 'TX'
+    TR = 'TR'
     UT = 'UT'
     VA = 'VA'
     WA = 'WA'
@@ -111,13 +111,14 @@ class CashRecord(models.Model):
         (ED, 'Education/Lessons/Tutoring'),
         (FC, 'Food & Clothing'),
         (GN, 'General'),
-        (HO, 'House - Mortgage/Rent/Maintenance/Renovation'),
+        (HO, 'House'),
         (HS, 'Health Savings Account'),
         (IN, 'Insurance'),
         (MD, 'Medical'),
-        (OL, 'business officers loan to Brookhaven'),
+        (OL, 'TBG Officers Loan'),
         (PR, 'Professional'),
         (SA, 'Savings'),
+        (TR, 'Transfer'),
         (SB, 'Sailboat'),
         (TA, 'Taxes and Accounting'),
         (UT, 'Utilities'),

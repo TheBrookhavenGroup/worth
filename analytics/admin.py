@@ -8,4 +8,4 @@ class PPMResultAdmin(admin.ModelAdmin):
     ordering = ('-d', )
 
     def total(self, obj):
-        return f"{obj.value/1.e6:.3f}M"
+        return f"{obj.value / 1.e6:.3f}M"

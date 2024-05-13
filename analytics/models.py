@@ -7,4 +7,4 @@ class PPMResult(models.Model):
     value = models.FloatField()
 
     def __str__(self):
-        return f"{self.d} {self.value/1.e6:.3f}M"
+        return f"{self.d} {self.value / 1.e6:.3f}M"
