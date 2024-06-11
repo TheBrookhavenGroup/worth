@@ -159,3 +159,6 @@ class TradeAdmin(admin.ModelAdmin):
     search_fields = ('account__name', 'dt', 'note', 'ticker__ticker')
     ordering = ('account', '-dt')
     actions = [duplicate_record, sum_commissions]
+
+    class Media:
+        js = ('/static/admin.js',)
