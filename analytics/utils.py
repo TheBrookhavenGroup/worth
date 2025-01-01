@@ -70,7 +70,8 @@ def income(year):
         income_df = income_df.reset_index()
 
         # Add row with total of amount
-        total = pd.DataFrame({'client': ['Total'], 'amt': [income_df.amt.sum()]})
+        total = pd.DataFrame({'client': ['Total'],
+                              'amt': [income_df.amt.sum()]})
         income_df = pd.concat([income_df, total])
     else:
         income_df = pd.DataFrame(columns=['client', 'amt'])
@@ -95,7 +96,8 @@ def expenses(year):
     if len(expenses_df):
         expenses_df = expenses_df.pivot_table(index=['description', 'vendor'],
                                               values='amt', aggfunc='sum')
-        expenses_df = expenses_df.reset_index().set_index(['vendor', 'description'])
+        expenses_df = expenses_df.reset_index().set_index(['vendor',
+                                                           'description'])
         expenses_df = expenses_df.sort_index()
         expenses_df = expenses_df.reset_index()
 
