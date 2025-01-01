@@ -62,15 +62,19 @@ def format_income_rec(vendor, description, amount):
 def income(year):
     income_df = get_income_df(year)
 
-    income_df = income_df.pivot_table(index=['client'], values='amt',
-                                      aggfunc='sum')
-    income_df = income_df.reset_index().set_index(['client'])
-    income_df = income_df.sort_index()
-    income_df = income_df.reset_index()
+    if len(income_df):
+        income_df = income_df.pivot_table(index=['client'], values='amt',
+                                          aggfunc='sum')
+        income_df = income_df.reset_index().set_index(['client'])
+        income_df = income_df.sort_index()
+        income_df = income_df.reset_index()
 
-    # Add row with total of amount
-    total = pd.DataFrame({'client': ['Total'], 'amt': [income_df.amt.sum()]})
-    income_df = pd.concat([income_df, total])
+        # Add row with total of amount
+        total = pd.DataFrame({'client': ['Total'],
+                              'amt': [income_df.amt.sum()]})
+        income_df = pd.concat([income_df, total])
+    else:
+        income_df = pd.DataFrame(columns=['client', 'amt'])
 
     formats = json.dumps(
         {'columnDefs': [{"targets": [0], 'className': "dt-body-left"},
@@ -89,16 +93,20 @@ def format_expense_rec(vendor, description, amount):
 def expenses(year):
     expenses_df = get_expenses_df(year)
 
-    expenses_df = expenses_df.pivot_table(index=['description', 'vendor'],
-                                          values='amt', aggfunc='sum')
-    expenses_df = expenses_df.reset_index().set_index(['vendor', 'description'])
-    expenses_df = expenses_df.sort_index()
-    expenses_df = expenses_df.reset_index()
+    if len(expenses_df):
+        expenses_df = expenses_df.pivot_table(index=['description', 'vendor'],
+                                              values='amt', aggfunc='sum')
+        expenses_df = expenses_df.reset_index().set_index(['vendor',
+                                                           'description'])
+        expenses_df = expenses_df.sort_index()
+        expenses_df = expenses_df.reset_index()
 
-    # Add row with total of amount
-    total = pd.DataFrame({'vendor': ['Total'], 'description': [''],
-                          'amt': [expenses_df.amt.sum()]})
-    expenses_df = pd.concat([expenses_df, total])
+        # Add row with total of amount
+        total = pd.DataFrame({'vendor': ['Total'], 'description': [''],
+                              'amt': [expenses_df.amt.sum()]})
+        expenses_df = pd.concat([expenses_df, total])
+    else:
+        expenses_df = pd.DataFrame(columns=['description', 'vendor', 'amt'])
 
     formats = json.dumps(
         {'columnDefs': [{"targets": [0, 1], 'className': "dt-body-left"},

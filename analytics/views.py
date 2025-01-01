@@ -234,6 +234,8 @@ class IncomeExpenseView(LoginRequiredMixin, TemplateView):
             else:
                 return a, b, cround(c)
 
+        messages.get_messages(self.request).used = True
+
         context = super().get_context_data(**kwargs)
 
         year = self.request.GET.get('year')
