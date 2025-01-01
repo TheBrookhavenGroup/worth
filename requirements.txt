@@ -1,4 +1,6 @@
 #asgiref==3.5.2
+numpy==1.26.4
+pandas
 scipy
 yfinance
 django
