@@ -17,5 +17,5 @@ class GPGTests(TestCase):
         self.assertTrue(status.ok)
 
         fn_out = self.fn + '.decrypted'
-        status = gpg_decrypt(self.fn + '.asc', fn_out=fn_out)
+        fn, status = gpg_decrypt(self.fn + '.asc', fn_out=fn_out)
         self.assertTrue(status.ok)
