@@ -5,9 +5,6 @@ from django.utils.safestring import mark_safe
 import yfinance as yf
 
 
-# from yahooquery import Ticker as yqTicker
-
-
 def yahoo_get(url):
     with requests.session():
         header = {'Connection': 'keep-alive',
@@ -68,86 +65,25 @@ def yahooHistory(ticker):
     return data
 
 
-# def yahooQuotes(tickers):
-#     yahoo2ticker = {t.yahoo_ticker: t for t in tickers}
-#     tickers = [t.yahoo_ticker for t in tickers]
-#     tickers = ','.join(tickers)
-#     url = f'https://query2.finance.yahoo.com/v6/finance/quote?region=US
-#     &lang=en&symbols={tickers}'
-#     data = yahoo_get(url)
-#     data = json.loads(data)
-#
-#     result = {}
-#     for quote in data['quoteResponse']['result']:
-#         symbol = quote['symbol']
-#         ticker = yahoo2ticker[symbol]
-#         multiplier = ticker.market.yahoo_price_factor
-#
-#         try:
-#             market_price = quote['regularMarketPrice']
-#         except KeyError:
-#             pass
-#
-#         try:
-#             prev_close = quote['regularMarketPreviousClose']
-#         except KeyError:
-#             if ticker.market == 'Cash':
-#                 prev_close = ticker.fixed_price
-#
-#         result[symbol] = market_price * multiplier, prev_close * multiplier
-#
-#     return result
-
-
 def yahooQuotes(tickers):
     yahoo2ticker = {t.yahoo_ticker: t for t in tickers}
     tickers = [t.yahoo_ticker for t in tickers]
-    flag = len(tickers) != 1
     tickers_str = ' '.join(tickers)
-    df = yf.download(tickers=tickers_str, period="2d", interval="1d",
-                     prepost=False, repair=True)
-    if flag:
-        df = df.stack(level=1).rename_axis(['Date', 'Ticker']).reset_index(
-            level=1)
+    df = yf.download(tickers=tickers_str, period="5d", interval="1d",
+                     prepost=False)
+    df = df.stack(level=1).rename_axis(['Date', 'Ticker']).reset_index(level=1)
 
     result = {}
     for ti in tickers:
         ticker = yahoo2ticker[ti]
-        if flag:
-            ti_df = df[df.Ticker == ti]
-        else:
-            ti_df = df
+        ti_df = df[df.Ticker == ti]
+
         if not ti_df.empty:
             rec = ti_df.iloc[-1]
-            c = rec.Close
-
-            prev_c = ti_df.iloc[-1].Close
-
             multiplier = ticker.market.yahoo_price_factor
-            price = c * multiplier, prev_c * multiplier
-            result[ti] = price
+            result[ti] = rec.Close * multiplier
 
     return result
-
-
-# def yahooQuotes(tickers):
-#     yahoo2ticker = {t.yahoo_ticker: t for t in tickers}
-#     tickers = list(yahoo2ticker.keys())
-#     tickers_str = ' '.join(tickers)
-#     data = yqTicker(tickers_str)
-#     result = {}
-#     for ti in tickers:
-#         ticker = yahoo2ticker[ti]
-#         try:
-#             quote = data[ti]
-#             multiplier = ticker.market.yahoo_price_factor
-#             price = quote['regularMarketPrice'] * multiplier,
-#             quote['regularMarketPreviousClose'] * multiplier
-#             result[ti] = price
-#         except KeyError:
-#             pass
-#
-#     return result
 
 
 def yahooQuote(ticker):
