@@ -36,7 +36,7 @@ def gpg_decrypt(fn, fn_out=None):
     with open(fn, 'rb') as f:
         status = gpg.decrypt_file(f, output=fn_out, passphrase=gpgpass)
 
-    return fn_out
+    return fn_out, status
 
 
 def ib_statements(decrypt=False):
@@ -57,6 +57,6 @@ def ib_statements(decrypt=False):
         with open(fn, 'wb') as fh:
             ftp.retrbinary('RETR ' + f, fh.write)
     if decrypt:
-        file_names = [gpg_decrypt(fn) for fn in file_names]
+        file_names = [gpg_decrypt(fn)[0] for fn in file_names]
 
     return file_names
