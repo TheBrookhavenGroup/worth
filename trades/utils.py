@@ -76,7 +76,7 @@ def get_current_price_mapper(tickers):
             quotes = yahooQuotes(tickers)
         else:
             quotes = {}
-        prices = {yahoo2worth_tickers[k]: v[0] for k, v in quotes.items()}
+        prices = {yahoo2worth_tickers[k]: v for k, v in quotes.items()}
 
     prices.update(cash_prices)
 
