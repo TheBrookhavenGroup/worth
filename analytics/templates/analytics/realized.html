@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block local_javascript_imports %}
+    {% include 'jquery_table.html' %}
+{% endblock %}
+
+{% load humanize %}
+
+{% block title %}{{ title }}{% endblock title %}
+
+{% block content %}
+    <div class="container">
+        <p>
+        <a href="/admin">Admin</a>
+        {% with exclude_quick_links_caption=True %}
+            {% include "admin/quick_links.html" with show_changelinks=True %}
+        {% endwith %}
+        </p>
+
+        <div style="width: 850px">
+
+
+            <h2>Realized Gains</h2>
+            {% if realizedcsvurl %}
+                <a href="{{ realizedcsvurl }}">CSV</a>
+            {% endif %}
+            {% include 'table.html' with table_id="TABLE_realized" data=realized headings=h formats=f %}
+        </div>
+    </div>
+{% endblock content %}

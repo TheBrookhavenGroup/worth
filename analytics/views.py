@@ -187,7 +187,7 @@ class ValueChartView(LoginRequiredMixin, TemplateView):
 
 
 class RealizedGainView(LoginRequiredMixin, TemplateView):
-    template_name = 'analytics/table.html'
+    template_name = 'analytics/realized.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -201,10 +201,30 @@ class RealizedGainView(LoginRequiredMixin, TemplateView):
 
         realized, formatter = total_realized_gains(year)
 
-        context['headings1'], context['data1'], context['formats'] = (
+        context['h'], context['realized'], _ = (
             df_to_jqtable(df=realized, formatter=formatter))
-        context['title'] = f'Realized Gains ({year})'
+        context["f"] = formatter
+        context["realizedcsvurl"] = reverse('analytics:realizedcsv',
+                                            args=[year])
+
         return context
+
+
+def realized_csv_view(request, param=None):
+    if param is None:
+        year = date.today().year
+    else:
+        year = int(param)
+
+    result, formats = total_realized_gains(year)
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="realized.csv"'
+
+    result = result.round(decimals=2)
+    result.to_csv(path_or_buf=response, index=False)
+
+    return response
 
 
 class PnLIfClosedView(LoginRequiredMixin, TemplateView):
