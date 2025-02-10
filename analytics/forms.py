@@ -10,8 +10,9 @@ def list_accounts_without_trades(active_f=True):
 
 
 class PnLForm(forms.Form):
-    account = forms.ModelChoiceField(queryset=Account.objects.all(),
-                                     required=False)
+    account = forms.ModelChoiceField(
+        queryset=Account.objects.filter(active_f=True).all(),
+        required=False)
     days = forms.IntegerField(min_value=0, required=False,
                               help_text="How many days back?")
 
