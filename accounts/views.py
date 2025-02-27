@@ -77,7 +77,7 @@ class CashTransferView(LoginRequiredMixin, FormView):
                     CashRecord.objects.create(d=d, account=from_accnt, amt=-amt,
                                 description=f"Transfer to {to_accnt}")
                     CashRecord.objects.create(d=d, account=to_accnt, amt=amt,
-                                description=f"Transfer from {to_accnt}")
+                                description=f"Transfer from {from_accnt}")
                 messages.add_message(request, messages.INFO, s)
             except IntegrityError:
                 messages.add_message(request, messages.ERROR, f"FAILED: {s}")
