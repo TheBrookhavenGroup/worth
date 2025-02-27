@@ -3,6 +3,7 @@
 import os
 from glob import glob
 import configparser
+from pypdf import PdfWriter
 
 '''
   a2ps --columns=1 2017TBG.txt -o - | ps2pdf - 2017TBG.pdf
@@ -47,10 +48,14 @@ files = sorted(set(files), key=lambda x: files.index(x))
 extras = fns - set(files)
 print(f"Files not included: {extras}")
 
-cmd = (f"gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sOutputFile={out_filename} "
-       f"{' '.join(files)}")
-print(cmd)
-os.system(cmd)
+print(f"Files included: {files}")
+
+# Merge files
+writer = PdfWriter()
+for f in files:
+    writer.append(f)
+writer.write(out_filename)
+writer.close()
 
 for f in tex_files:
     os.remove(f + '.pdf')
