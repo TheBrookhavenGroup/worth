@@ -70,7 +70,7 @@ def yahooQuotes(tickers):
     tickers = [t.yahoo_ticker for t in tickers]
     tickers_str = ' '.join(tickers)
     df = yf.download(tickers=tickers_str, period="5d", interval="1d",
-                     prepost=False)
+                     prepost=False, auto_adjust=False)
     df = df.stack(level=1).rename_axis(['Date', 'Ticker']).reset_index(level=1)
 
     result = {}
