@@ -17,4 +17,4 @@ redis_dumps
 secrets.ini
 BackfillData/
 aws.xml
-
+.venv
