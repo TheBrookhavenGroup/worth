@@ -62,22 +62,21 @@ def duplicate_receivable(modeladmin, request, qs):
         new_rec.save()
 
 
-def recievable2cash(modeladmin, request, qs):
+def receivable2cash(modeladmin, request, qs):
     d = our_now().date()
     a = Account.objects.get(name='TBG')
     for rec in qs:
-        if rec.received is None:
-            description = f"{rec.client} - {rec.invoice}"
-            new_rec = CashRecord(d=d, description=description, account=a,
-                                 category="DE", amt=rec.amt)
-            new_rec.save()
+        description = f"{rec.client} - {rec.invoice}"
+        new_rec = CashRecord(d=rec.received, description=description, account=a,
+                             category="DE", amt=rec.amt)
+        new_rec.save()
 
-            rec.received = d
-            rec.save()
+        rec.received = d
+        rec.save()
 
 
 class ReceivableNotReceivedFilter(SimpleListFilter):
-    title = "Recieved"
+    title = "Received"
     parameter_name = 'received'
 
     def lookups(self, request, model_admin):
@@ -113,7 +112,7 @@ class ReceivableAdmin(admin.ModelAdmin):
     date_hierarchy = 'invoiced'
     list_display = ('invoice', 'invoiced', 'received', 'client', 'amt')
     ordering = ('-invoiced', )
-    actions = [duplicate_receivable, recievable2cash, sum_amt]
+    actions = [duplicate_receivable, receivable2cash, sum_amt]
     list_filter = [ReceivableNotReceivedFilter]
     search_fields = ('client', )
 
