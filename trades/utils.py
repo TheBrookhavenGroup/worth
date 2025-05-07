@@ -1,3 +1,5 @@
+from json import JSONDecodeError
+
 import pandas as pd
 import numpy as np
 from django.conf import settings
@@ -59,7 +61,10 @@ def price_mapper(t, d):
         pass
 
     ti = get_ticker(t)
-    price = get_price(ti, d)
+    try:
+        price = get_price(ti, d)
+    except JSONDecodeError:
+        raise Exception(f"Failed to get price for {ti.yahoo_ticker} {d}")
     return price
 
 
