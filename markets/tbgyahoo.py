@@ -26,7 +26,7 @@ def yahooHistory(ticker):
     Get historical yahoo prices for the given ticker symbol using yfinance.
     ticker can be KCH22.NYB or ^GSPC or MSFT
 
-    Returns a list of tuples with (date, open, high, low, close, volume, open_interest)
+    Returns tuples with (date, open, high, low, close, volume, open_interest)
     """
     yahoo_ticker = ticker.yahoo_ticker
     try:
