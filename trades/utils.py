@@ -63,7 +63,9 @@ def price_mapper(t, d):
     ti = get_ticker(t)
     try:
         price = get_price(ti, d)
-    except JSONDecodeError:
+    except JSONDecodeError as e:
+        print(e)
+        price = 0
         raise Exception(f"Failed to get price for {ti.yahoo_ticker} {d}")
     return price
 
