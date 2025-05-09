@@ -40,7 +40,7 @@
 
         {% if price %}
             <tr>
-                <td>Price</td><td>{{ price|floatformat:2|intcomma }}</td>
+                <td>Price</td><td>{{ price|floatformat:2|intcomma }} <a href="{% url 'analytics:ticker_chart' ticker %}">[View Price Chart]</a></td>
             </tr>
             <tr>
                 <td>Total PnL</td><td>{{ total_pnl|floatformat:2|intcomma }}</td>

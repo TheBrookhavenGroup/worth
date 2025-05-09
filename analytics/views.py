@@ -23,6 +23,7 @@ from markets.models import Ticker
 from worth.utils import df_to_jqtable, nice_headings
 
 from markets.utils import get_price, ticker_admin_url
+from markets.models import DailyPrice
 
 
 class MyFormView(FormView):
@@ -114,7 +115,9 @@ class TickerView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        ticker = Ticker.objects.get(ticker=context['ticker'])
+        ticker_symbol = context['ticker']
+        ticker = Ticker.objects.get(ticker=ticker_symbol)
+        context['ticker'] = ticker_symbol  # Ensure ticker is in context for template
         context['tickeradmin'] = ticker_admin_url(self.request, ticker)
         context['title'] = yahoo_url(ticker)
         context['description'] = ticker.description
@@ -310,7 +313,53 @@ def expenses_csv_view(request, param=None):
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename="expenses.csv"'
 
-    result = result.round(decimals=2)
     result.to_csv(path_or_buf=response, index=False)
 
     return response
+
+
+class TickerChartView(LoginRequiredMixin, TemplateView):
+    template_name = 'analytics/ticker_chart.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        ticker_symbol = context['ticker']
+        ticker = Ticker.objects.get(ticker=ticker_symbol)
+
+        # Get historical prices from database
+        historical_prices = DailyPrice.objects.filter(ticker=ticker).order_by('d')
+
+        # Get current price if not in database
+        today = date.today()
+        current_price_in_db = historical_prices.filter(d=today).exists()
+
+        dates = [p.d for p in historical_prices]
+        prices = [p.c for p in historical_prices]
+
+        # Add current price if not already in database
+        if not current_price_in_db:
+            current_price = get_price(ticker)
+            dates.append(today)
+            prices.append(current_price)
+
+        # Create the plot
+        fig = go.Figure(data=go.Scatter(
+            x=dates, 
+            y=prices,
+            mode='lines+markers', 
+            name=f'{ticker_symbol} Price',
+            opacity=0.8, 
+            marker_color='blue'
+        ))
+
+        fig.update_layout({
+            'title_text': f'Price History for {ticker_symbol}', 
+            'yaxis_title': 'Price ($)',
+            'xaxis_title': 'Date'
+        })
+
+        context['plot_div'] = plot({'data': fig}, output_type='div')
+        context['ticker'] = ticker_symbol
+        context['title'] = f'Price Chart for {ticker_symbol}'
+
+        return context
