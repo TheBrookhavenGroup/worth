@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% load humanize %}
+
+{% block page_style %}
+    <style>
+        body {background-color: lightyellow;}
+        .center {
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        p {text-align: center;}
+        font Verdana, Arial, Helvetica, sans-serif;
+    </style>
+{% endblock page_style %}
+
+{% block content %}
+    <a href="/admin">Admin</a>
+    {% include "admin/quick_links.html" with show_changelinks=True %}
+
+    {% block title %}{{ title }}{% endblock title %}
+    <p>
+        {{ plot_div | safe }}
+    <p>
+    <a href="{% url 'analytics:ticker_view' ticker %}">Back to Ticker</a>
+    </p>
+{% endblock content %}

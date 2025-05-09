@@ -3,7 +3,8 @@ from .views import (PnLView, GetIBTradesView,
                     TickerView, ValueChartView, RealizedGainView,
                     realized_csv_view,
                     PnLIfClosedView, IncomeExpenseView,
-                    income_csv_view, expenses_csv_view)
+                    income_csv_view, expenses_csv_view,
+                    TickerChartView)
 
 
 app_name = 'analytics'
@@ -12,6 +13,7 @@ urlpatterns = [
     path('getibtrades/', GetIBTradesView.as_view(), name='getibtrades'),
     path('pnl/', PnLView.as_view(), name='pnl'),
     path('ticker/<ticker>/', TickerView.as_view(), name='ticker_view'),
+    path('ticker/<ticker>/chart/', TickerChartView.as_view(), name='ticker_chart'),
     path('value_chart/', ValueChartView.as_view(), name='value_chart'),
     path('realized/', RealizedGainView.as_view(), name='realized'),
     path('realized/csv/<int:param>', realized_csv_view, name='realizedcsv'),
