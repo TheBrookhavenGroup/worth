@@ -18,6 +18,7 @@ def get_prices(tickers, d):
         interval='1d',
         group_by='ticker',
         auto_adjust=True,
+        prepost=True  # Include pre-market and after-hours data
     )
 
     print(f"data={data}")

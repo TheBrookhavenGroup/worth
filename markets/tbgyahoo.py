@@ -36,7 +36,7 @@ def yahooHistory(ticker):
             period="max",  # Get all available data
             interval="1d",
             auto_adjust=False,
-            prepost=False
+            prepost=True  # Include pre-market and after-hours data
         )
 
         if df.empty:
@@ -102,6 +102,7 @@ def get_prices(tickers, d=None):
         interval='1d',
         group_by='ticker',
         auto_adjust=True,
+        prepost=True  # Include pre-market and after-hours data
     )
 
     result = {}
@@ -131,10 +132,13 @@ def yahooQuotes(tickers, d=None):
     result = {}
     for t in tickers:
         yt = t.yahoo_ticker
-        p = prices[yt]
-        if p:
-            multiplier = t.market.yahoo_price_factor
-            result[yt] = p * multiplier
+        if yt in prices:
+            p = prices[yt]
+            if p:
+                multiplier = t.market.yahoo_price_factor
+                result[yt] = p * multiplier
+        else:
+            print(f"No price found for {yt}")
 
     return result
 
