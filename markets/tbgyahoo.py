@@ -6,6 +6,18 @@ from tbgutils.dt import next_business_day
 import pandas as pd
 
 
+def price_now(ticker):
+    # ticker is a yahoo ticker
+    ticker_obj = yf.Ticker(ticker)
+    price = ticker_obj.info.get('regularMarketPrice')
+    return price
+
+
+def prices_now(tickers):
+    # tickers is a list of yahoo tickers
+    return {t: price_now(t) for t in tickers}
+
+
 def yahoo_get(url):
     with requests.session():
         header = {'Connection': 'keep-alive',
@@ -92,6 +104,10 @@ def get_prices(tickers, d=None):
     """
     if d is None:
         d = date.today()
+
+    if d == date.today():
+        return prices_now(tickers)
+
     end_date = next_business_day(d)
 
     # Download the historical data
