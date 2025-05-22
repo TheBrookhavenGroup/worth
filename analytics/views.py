@@ -117,7 +117,7 @@ class TickerView(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         ticker_symbol = context['ticker']
         ticker = Ticker.objects.get(ticker=ticker_symbol)
-        context['ticker'] = ticker_symbol  # Ensure ticker is in context for template
+        context['ticker'] = ticker_symbol
         context['tickeradmin'] = ticker_admin_url(self.request, ticker)
         context['title'] = yahoo_url(ticker)
         context['description'] = ticker.description
@@ -327,7 +327,8 @@ class TickerChartView(LoginRequiredMixin, TemplateView):
         ticker = Ticker.objects.get(ticker=ticker_symbol)
 
         # Get historical prices from database
-        historical_prices = DailyPrice.objects.filter(ticker=ticker).order_by('d')
+        historical_prices = DailyPrice.objects.filter(
+            ticker=ticker).order_by('d')
 
         # Get current price if not in database
         today = date.today()
@@ -344,16 +345,16 @@ class TickerChartView(LoginRequiredMixin, TemplateView):
 
         # Create the plot
         fig = go.Figure(data=go.Scatter(
-            x=dates, 
+            x=dates,
             y=prices,
-            mode='lines+markers', 
+            mode='lines+markers',
             name=f'{ticker_symbol} Price',
-            opacity=0.8, 
+            opacity=0.8,
             marker_color='blue'
         ))
 
         fig.update_layout({
-            'title_text': f'Price History for {ticker_symbol}', 
+            'title_text': f'Price History for {ticker_symbol}',
             'yaxis_title': 'Price ($)',
             'xaxis_title': 'Date'
         })
