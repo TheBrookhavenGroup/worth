@@ -7,6 +7,7 @@ from markets.models import NOT_FUTURES_EXCHANGES
 from accounts.models import Account
 from trades.models import Trade
 from trades.ib_flex import get_trades, lbd
+from trades.utils import trades_pnl
 
 
 class GetTradesFilter(SimpleListFilter):
@@ -140,6 +141,13 @@ def sum_commissions(modeladmin, request, qs):
     messages.add_message(request, messages.INFO, f"Sum commissions: {total}")
 
 
+def pnl_selected(modeladmin, request, qs):
+    df = Trade.qs_to_df(qs)
+    pnl = trades_pnl(df)
+    pnl = pnl.pnl.sum()
+    messages.add_message(request, messages.INFO, f"PnL = {pnl}")
+
+
 @admin.register(Trade)
 class TradeAdmin(admin.ModelAdmin):
     def time_date(self, obj):
@@ -158,7 +166,7 @@ class TradeAdmin(admin.ModelAdmin):
         TradesAccountFilter, IsActiveAccountFilter, SplitsFilter, 'reinvest')
     search_fields = ('account__name', 'dt', 'note', 'ticker__ticker')
     ordering = ('account', '-dt')
-    actions = [duplicate_record, sum_commissions]
+    actions = [duplicate_record, sum_commissions, pnl_selected]
 
     class Media:
         js = ('/static/admin.js',)
