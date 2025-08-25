@@ -100,16 +100,10 @@ def get_current_price_mapper(tickers):
     return mapper
 
 
-def pnl_asof(d=None, a=None, only_non_qualified=False, active_f=True,
-             cleared=False):
-    """
-    Calculate PnL from all trades - need that for cash flow.
-    Calculate Cash balances.
-    Return YTD data for active positions.
-    """
+def trades_pnl(df, d=None):
 
-    df = copy_trades_df(d=d, a=a, only_non_qualified=only_non_qualified,
-                        active_f=active_f)
+    if d is None:
+        d = our_now().date()
 
     if df.empty:
         pnl = pd.DataFrame(
@@ -133,6 +127,22 @@ def pnl_asof(d=None, a=None, only_non_qualified=False, active_f=True,
             pnl['price'] = pnl.apply(lambda x: price_mapper(x, d), axis=1)
         pnl['pnl'] = pnl.cs * (pnl.qp + pnl.q * pnl.price) - pnl.c
         pnl['value'] = pnl.cs * pnl.q * pnl.price
+
+    return pnl
+
+
+def pnl_asof(d=None, a=None, only_non_qualified=False, active_f=True,
+             cleared=False):
+    """
+    Calculate PnL from all trades - need that for cash flow.
+    Calculate Cash balances.
+    Return YTD data for active positions.
+    """
+
+    df = copy_trades_df(d=d, a=a, only_non_qualified=only_non_qualified,
+                        active_f=active_f)
+
+    pnl = trades_pnl(df, d=d)
 
     # Need to add cash flow to cash records for each account.
     pnl['cash_flow'] = pnl.qp - pnl.c - pnl.qpr
