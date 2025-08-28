@@ -6,6 +6,7 @@ from .models import PPMResult
 class PPMResultAdmin(admin.ModelAdmin):
     list_display = ('d', 'total')
     ordering = ('-d', )
+    date_hierarchy = 'd'
 
     def total(self, obj):
         return f"{obj.value / 1.e6:.3f}M"
