@@ -174,7 +174,7 @@ class ValueChartView(LoginRequiredMixin, TemplateView):
             name = self.title
         else:
             y_axis = [pnl_summary(d, a=account,
-                                  active_f=False)[-1] / 1.e6 for d in x_axis]
+                                  active_f=False)[-2] / 1.e6 for d in x_axis]
             name = f"{self.title} for {account}"
 
         x_axis = [f'{d:%Y-%m-%d}' for d in x_axis]
