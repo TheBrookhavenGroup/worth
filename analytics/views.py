@@ -8,16 +8,14 @@ from django.views.generic import TemplateView, FormView
 from django.urls import reverse
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
-from analytics.cash import cash_sums
-from analytics.pnl import pnl_summary, pnl_if_closed, ticker_pnl
+from analytics.pnl import pnl_summary, pnl_if_closed, ticker_pnl, performance
 from analytics.utils import total_realized_gains, income, expenses
 from analytics.models import PPMResult
-from analytics.forms import PnLForm, CheckingForm
+from analytics.forms import PnLForm
 from trades.ib_flex import get_trades
 from trades.utils import weighted_average_price
 from tbgutils.dt import lbd_prior_month, our_now, prior_business_day
 from tbgutils.str import is_near_zero, cround
-from accounts.models import Account
 from markets.tbgyahoo import yahoo_url
 from markets.models import Ticker
 from worth.utils import df_to_jqtable, nice_headings
@@ -363,4 +361,15 @@ class TickerChartView(LoginRequiredMixin, TemplateView):
         context['ticker'] = ticker_symbol
         context['title'] = f'Price Chart for {ticker_symbol}'
 
+        return context
+
+
+class PerformanceView(LoginRequiredMixin, TemplateView):
+    template_name = 'analytics/table.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['headings1'], context['data1'], context['formats'] = \
+            performance()
+        context['title'] = 'Performance'
         return context

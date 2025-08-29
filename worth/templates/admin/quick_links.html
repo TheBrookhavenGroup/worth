@@ -19,15 +19,18 @@
                     <tr>
                         <th><a href="{% url 'analytics:getibtrades' %}">Get IB Trades</a>
                             <p style="text-indent: -10px">
-                                <a href="{% url 'accounts:get_ib_statements' %}">Get IB Statements</a>
-                            </p></th>
+                            <a href="{% url 'accounts:get_ib_statements' %}">Get IB Statements</a>
+                        </p></th>
                         <th><a href="{% url 'accounts:receivables' %}">Receivables</a>
                         <p style="text-indent: -10px">
                         </p>
                         <a href="{% url 'analytics:incomeexpense' %}">Income/Expense</a>
                         </th>
                         <th><a href="{% url 'analytics:realized' %}">Taxable This Year</a></th>
-                        <th><a href="{% url 'analytics:pnlifclosed' %}">PnL If Closed</a></th>
+                        <th><a href="{% url 'analytics:pnlifclosed' %}">PnL If Closed</a>
+                            <p style="text-indent: -10px">
+                            <a href="{% url 'analytics:performance' %}">Performance Table</a>
+                        </p></th>
                     </tr>
                     <tr>
                         <th><a href="{% url 'analytics:pnl' %}">PnL</a></th>

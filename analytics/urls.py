@@ -4,7 +4,7 @@ from .views import (PnLView, GetIBTradesView,
                     realized_csv_view,
                     PnLIfClosedView, IncomeExpenseView,
                     income_csv_view, expenses_csv_view,
-                    TickerChartView)
+                    TickerChartView, PerformanceView)
 
 
 app_name = 'analytics'
@@ -22,4 +22,5 @@ urlpatterns = [
     path('incomeexpense/', IncomeExpenseView.as_view(), name='incomeexpense'),
     path('income/csv/<int:param>', income_csv_view, name='incomecsv'),
     path('expenses/csv/<int:param>', expenses_csv_view, name='expensescsv'),
+    path('performance/', PerformanceView.as_view(), name='performance'),
 ]
