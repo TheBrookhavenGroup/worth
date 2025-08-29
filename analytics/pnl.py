@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 from datetime import date
 from collections import OrderedDict
+import json
 from tbgutils.str import cround, is_near_zero
 from worth.utils import df_to_jqtable
 from tbgutils.dt import our_now, lbd_prior_month, prior_business_day
@@ -244,3 +245,42 @@ def ticker_pnl(t):
     pnl = g1.apply(pnl_one)
     pnl = pnl.sum()
     return pnl
+
+
+def performance():
+    formats = json.dumps({'columnDefs': [
+        {"targets": [0], 'className': "dt-nowrap"},
+        {'targets': [1, 2, 3], 'className': 'dt-body-right'}],
+        'pageLength': 100})
+
+    headings = ['Year', 'Value ($)', 'Gain ($)', 'YTD ROI (%)']
+
+    d = date.today()
+    n_months = 120
+
+    dtes = [d, prior_business_day(d)] + \
+           [d := lbd_prior_month(d) for i in range(int(n_months))]
+    dtes.reverse()
+    d_exists = PPMResult.objects.filter(d__in=dtes).values_list('d', flat=True)
+    for d in set(dtes) - set(d_exists):
+        pnl_summary(d, active_f=False)
+    values = PPMResult.objects.filter(d__in=dtes).order_by('d').\
+        values_list('value', flat=True)
+
+    values = list(values)
+    data = list(zip(dtes, values))
+
+    # roll-up data by year
+    years = sorted(list(set([d.year for d in dtes])))
+    values = [[i for d, i in data if d.year == y][-1] for y in years]
+
+    current_value = values[-1]
+    total_gain = values[-1] - values[0]
+
+    data = [[y, cround(i, 2), cround(i - j, 0), cround(i / j - 1, symbol='%')]
+            for y, i, j in zip(years[1:], values[1:], values[:-1])]
+
+    totals = ['Total', cround(current_value, 2), cround(total_gain, 2), '']
+    data.append(totals)
+
+    return headings, data, formats

@@ -119,6 +119,10 @@ def trades_pnl(df, d=None):
                              aggfunc={'qp': np.sum, 'qpr': np.sum, 'q': np.sum,
                                       'cs': np.max, 'c': np.sum, 'e': 'first'}
                              ).reset_index(['a', 't'])
+
+        pnl['q'] = pnl['q'].apply(
+            lambda x: 0 if is_near_zero(x, epsilon=1e-8) else x)
+
         if d == our_now().date():
             tickers = [t for t, f in zip(pnl.t, pnl.q == 0) if not f]
             mapper = get_current_price_mapper(tickers)
