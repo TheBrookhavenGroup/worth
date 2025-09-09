@@ -269,6 +269,10 @@ class IncomeExpenseView(LoginRequiredMixin, TemplateView):
         expense_df, expense_fmt = expenses(year)
         income_df, income_fmt = income(year)
 
+        total_expenses = expense_df['amt'].iloc[-1]
+        total_income = income_df['amt'].iloc[-1]
+        net_profit = total_income - total_expenses
+
         context['e_h'], context['expense'], _ = (
             df_to_jqtable(df=expense_df, formatter=formatter))
         context["e_f"] = expense_fmt
@@ -276,6 +280,11 @@ class IncomeExpenseView(LoginRequiredMixin, TemplateView):
         context['i_h'], context['income'], _ = (
             df_to_jqtable(df=income_df, formatter=formatter))
         context["i_f"] = income_fmt
+
+        # Expose totals to the template
+        context['total_income'] = net_profit + total_expenses
+        context['total_expenses'] = total_expenses
+        context['net_profit'] = net_profit
 
         context['title'] = f'Income/Expense ({year})'
         context["incomecsvurl"] = reverse('analytics:incomecsv', args=[year])

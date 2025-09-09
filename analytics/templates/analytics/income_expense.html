@@ -31,6 +31,11 @@
                 <a href="{{ expensecsvurl }}">Expenses CSV</a>
             {% endif %}
             {% include 'table.html' with table_id="TABLE_expense" data=expense headings=e_h formats=e_f%}
+
+            <h2>Summary</h2>
+            <p>Total Income: {{ total_income|floatformat:2|intcomma }}</p>
+            <p>Total Expenses: {{ total_expenses|floatformat:2|intcomma }}</p>
+            <p><strong>Net Profit: {{ net_profit|floatformat:2|intcomma }}</strong></p>
         </div>
     </div>
 {% endblock content %}
