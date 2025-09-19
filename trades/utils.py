@@ -213,6 +213,7 @@ def open_position_pnl(df):
     tickers = [t for t in df.t]
     mapper = get_current_price_mapper(tickers)
     df['price'] = df.t.apply(lambda x: mapper(x))
+    df['value'] = df.cs * df.price * df.position
     df['pnl'] = df.cs * df.position * (df.price - df.wap)
     df.sort_values(by=["pnl"], ignore_index=True, inplace=True)
 
