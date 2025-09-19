@@ -107,11 +107,15 @@ class PnLIfClosedTests(TestCase):
              'wap': [310.00, 29.01431, 94.36842],
              'cs': [1.0, 1.0, 1.0],
              'price': [305.0, 33.0, 115.0],
+             'value': [3050.0, 33046.2, 10925.0],
              'pnl': [-50.0, 3991.274, 1960.0]})
 
         df, format_rec = pnl_if_closed()
 
         df.sort_values(by=['t'], inplace=True, ignore_index=True)
         expected.sort_values(by=['t'], inplace=True, ignore_index=True)
+
+        print(df)
+        print(expected)
 
         pd.testing.assert_frame_equal(df, expected)
