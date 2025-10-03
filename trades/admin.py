@@ -169,4 +169,4 @@ class TradeAdmin(admin.ModelAdmin):
     actions = [duplicate_record, sum_commissions, pnl_selected]
 
     class Media:
-        js = ('/static/admin.js',)
+        js = ('js/admin.js',)

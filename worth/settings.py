@@ -149,7 +149,8 @@ USE_TZ = True
 mc_dt.time_zone = TIME_ZONE
 
 STATIC_URL = 'static/'
-STATIC_ROOT = 'static/'
+STATICFILES_DIRS = ('static',)
+
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
