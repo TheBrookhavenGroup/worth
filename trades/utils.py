@@ -115,10 +115,18 @@ def trades_pnl(df, d=None):
         reinvested_recs = df[df.r == True]
         df['qpr'] = reinvested_recs.qp - reinvested_recs.c
 
-        pnl = pd.pivot_table(df, index=["a", "t"],
-                             aggfunc={'qp': np.sum, 'qpr': np.sum, 'q': np.sum,
-                                      'cs': np.max, 'c': np.sum, 'e': 'first'}
-                             ).reset_index(['a', 't'])
+        pnl = pd.pivot_table(
+            df,
+            index=["a", "t"],
+            aggfunc={
+                'qp': 'sum',
+                'qpr': 'sum',
+                'q': 'sum',
+                'cs': 'max',
+                'c': 'sum',
+                'e': 'first'
+            }
+        ).reset_index(['a', 't'])
 
         pnl['q'] = pnl['q'].apply(
             lambda x: 0 if is_near_zero(x, epsilon=1e-8) else x)
@@ -191,9 +199,11 @@ def pnl_asof(d=None, a=None, only_non_qualified=False, active_f=True,
 def trades_with_position(df):
     # Get only trades that are in position.
 
-    pos = pd.pivot_table(df, index=["a", "t"],
-                         aggfunc={'q': np.sum, 'cs': 'first'}).reset_index(
-        ['a', 't'])
+    pos = pd.pivot_table(
+        df,
+        index=["a", "t"],
+        aggfunc={'q': 'sum', 'cs': 'first'}
+    ).reset_index(['a', 't'])
     pos = pos[pos.q != 0]
     df = pd.merge(df, pos, how='inner', on=['a', 't'])
     df.drop(['q_y', 'cs_y'], axis=1, inplace=True)
