@@ -15,5 +15,5 @@ bootstrap4
 crispy-bootstrap4
 django-crispy-forms
 tbgutils
-../moneycounter
+moneycounter
 django-easy-audit
