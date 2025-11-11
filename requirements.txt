@@ -1,5 +1,3 @@
-#asgiref==3.5.2
-numpy==1.26.4
 pandas
 scipy
 yfinance
@@ -17,5 +15,5 @@ bootstrap4
 crispy-bootstrap4
 django-crispy-forms
 tbgutils
-moneycounter
+../moneycounter
 django-easy-audit
