@@ -1,7 +1,6 @@
 from json import JSONDecodeError
 
 import pandas as pd
-import numpy as np
 from django.conf import settings
 from tbgutils.dt import our_now
 from moneycounter import wap_calc
@@ -16,7 +15,7 @@ from markets.tbgyahoo import yahooQuotes
 def reindexed_wap(df):
     df.sort_values(by=['dt'])
     df.reset_index(inplace=True)
-    wap = wap_calc(df)
+    wap = wap_calc(df, fifo=settings.FIFO)
     a = df.loc[0, 'a']
     t = df.loc[0, 't']
     cs = df.loc[0, 'cs']
