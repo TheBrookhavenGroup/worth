@@ -26,6 +26,8 @@ if os.path.exists(config_file):
     POSTGRES_PASSWORD = config['POSTGRES']['PASS']
     POSTGRES_DB = config['POSTGRES']['DB']
 
+    FIFO = config['ANALYTICS']['FIFO'] == 'True'
+
     # SECURITY WARNING: don't run with debug turned on in production!
     DEBUG = config['DJANGO']['DEBUG'].lower() == 'true'
 else:
