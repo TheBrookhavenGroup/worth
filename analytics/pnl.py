@@ -225,15 +225,6 @@ def pnl_if_closed(a=None):
     return df, format_if_closed
 
 
-def pnl_one(df):
-    if df.empty:
-        return 0
-
-    t = df.iloc[0].t
-    price = get_price(t)
-    return pnl_calc(df, price)
-
-
 def ticker_pnl(t):
     """
     What is the total pnl earned for the given ticker?
@@ -242,9 +233,10 @@ def ticker_pnl(t):
     """
 
     df = copy_trades_df(t=t)
-    g1 = df.groupby(['a', 't'], group_keys=False)
-    pnl = g1.apply(pnl_one)
-    pnl = pnl.sum()
+    g1 = df.groupby(['a', 't'])[['cs', 'q', 'p']]
+    ticker, g = [(t, g) for (_, t), g in g1][0]
+    price = get_price(ticker)
+    pnl = pnl_calc(g, price)
     return pnl
 
 
