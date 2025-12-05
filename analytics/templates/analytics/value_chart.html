@@ -5,13 +5,13 @@
 {% block page_style %}
     <style>
         body {background-color: lightyellow;}
+        body {font-family: Verdana, Arial, Helvetica, sans-serif;}
         .center {
             display: block;
             margin-left: auto;
             margin-right: auto;
         }
         p {text-align: center;}
-        font Verdana, Arial, Helvetica, sans-serif;
     </style>
 {% endblock page_style %}
 
@@ -20,10 +20,23 @@
     {% include "admin/quick_links.html" with show_changelinks=True %}
 
     {% block title %}{{ title }}{% endblock title %}
+    <div style="text-align:center;margin: 10px 0;">
+        <form method="get" action="{% url 'analytics:value_chart' %}" onsubmit="if(!this.a.value){this.a.disabled=true;}">
+            <label for="a">Account:</label>
+            <select id="a" name="a">
+                <option value="" {% if not selected_account %}selected{% endif %}>All Accounts</option>
+                {% for acct in accounts %}
+                    <option value="{{ acct.name }}" {% if selected_account == acct.name %}selected{% endif %}>{{ acct.name }}</option>
+                {% endfor %}
+            </select>
+
+            <label for="n_months" style="margin-left:10px;">Months back:</label>
+            <input type="number" id="n_months" name="n_months" min="1" value="{{ selected_n_months }}" />
+
+            <button type="submit" style="margin-left:10px;">Update</button>
+        </form>
+    </div>
     <p>
         {{ plot_div | safe }}
-    <p>
-    Try using `n_months=20` as an argument here.<br>
-    Try using `a=TDA` as argument here.
     </p>
 {% endblock content %}

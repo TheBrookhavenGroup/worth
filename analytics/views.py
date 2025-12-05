@@ -22,6 +22,7 @@ from worth.utils import df_to_jqtable, nice_headings
 
 from markets.utils import get_price, ticker_admin_url
 from markets.models import DailyPrice
+from accounts.models import Account
 
 
 class MyFormView(FormView):
@@ -161,7 +162,8 @@ class ValueChartView(LoginRequiredMixin, TemplateView):
         x_axis.reverse()
 
         account = getter('a')
-        if account is None:
+        # Treat missing or empty 'a' as All Accounts
+        if not account:
             d_exists = PPMResult.objects.filter(d__in=x_axis). \
                 values_list('d', flat=True)
             for d in set(x_axis) - set(d_exists):
@@ -183,6 +185,12 @@ class ValueChartView(LoginRequiredMixin, TemplateView):
         fig.update_layout({'title_text': name, 'yaxis_title': 'Millions($)'})
 
         context['plot_div'] = plot({'data': fig}, output_type='div')
+
+        # UI context
+        context['title'] = self.title
+        context['accounts'] = Account.objects.filter(active_f=True).order_by('name')
+        context['selected_account'] = account or ''
+        context['selected_n_months'] = int(n_months)
 
         return context
 
