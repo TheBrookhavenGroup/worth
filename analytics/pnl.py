@@ -85,7 +85,8 @@ def pnl(d=None, a=None, active_f=True):
     df = pd.merge(df, pnl_total, on=['a', 't'], how='outer')
     df = pd.merge(df, pnl_eom, on=['a', 't'], how='outer',
                   suffixes=('', '_month'))
-    df = df.fillna(value=0)
+    numeric_cols = df.select_dtypes(include='number').columns
+    df[numeric_cols] = df[numeric_cols].fillna(value=0)
 
     result = pd.DataFrame(OrderedDict((('Account', df.a),
                                        ('Ticker', df.t),
@@ -108,7 +109,8 @@ def pnl(d=None, a=None, active_f=True):
     cash = pd.merge(cash, cash_eod, how='outer', on='a', suffixes=('', '_eod'))
     cash = pd.merge(cash, cash_eom, how='outer', on='a', suffixes=('', '_eom'))
     cash = pd.merge(cash, cash_eoy, how='outer', on='a', suffixes=('', '_eoy'))
-    cash.fillna(0, inplace=True)
+    numeric_cols = df.select_dtypes(include='number').columns
+    df[numeric_cols] = df[numeric_cols].fillna(value=0)
 
     try:
         cash_balance = cash.q
