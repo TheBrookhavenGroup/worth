@@ -188,7 +188,8 @@ class ValueChartView(LoginRequiredMixin, TemplateView):
 
         # UI context
         context['title'] = self.title
-        context['accounts'] = Account.objects.filter(active_f=True).order_by('name')
+        context['accounts'] = (
+            Account.objects.filter(active_f=True).order_by('name'))
         context['selected_account'] = account or ''
         context['selected_n_months'] = int(n_months)
 
