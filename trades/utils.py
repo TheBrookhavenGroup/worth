@@ -231,5 +231,3 @@ def open_position_pnl(df):
     df.sort_values(by=["pnl"], ignore_index=True, inplace=True)
 
     return df
-
-

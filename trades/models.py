@@ -4,7 +4,8 @@ from django.db import models
 from django.db.models import Q
 from django.core.validators import MinValueValidator
 from django.conf import settings
-from tbgutils.dt import day_start_next_day
+from tbgutils.dt import day_start_next_day, next_business_day
+from datetime import time, datetime, date as date_cls
 from markets.models import Ticker, NOT_FUTURES_EXCHANGES
 from accounts.models import Account
 
@@ -138,6 +139,69 @@ def copy_trades_df(d=None, t=None, a=None, only_non_qualified=False,
         dt = day_start_next_day(d)
         mask = df['dt'] < dt
         df = df.loc[mask]
+    return df
+
+
+def bucketed_trades(d=None, t=None, a=None, only_non_qualified=False,
+                    active_f=True):
+    """
+    Return trades dataframe bucketed by trading day per market close.
+
+    Arguments are the same as `copy_trades_df`.
+    - Gets a dataframe via `copy_trades_df`.
+    - Adds a `d` column (date) for each trade such that if the trade's
+      timestamp (in America/New_York) is later than the Market.t_close
+      for its ticker, the date is moved to the next business day.
+    """
+    df = copy_trades_df(d=d, t=t, a=a, only_non_qualified=only_non_qualified,
+                        active_f=active_f)
+
+    if df.empty:
+        return df
+
+    # Normalize timestamps to America/New_York for trading-day bucketing
+    # If values are tz-aware, convert to Eastern. If naive, assume they are
+    # stored in local America/New_York wall time and localize accordingly.
+    if not pd.api.types.is_datetime64_any_dtype(df['dt']):
+        df['dt'] = pd.to_datetime(df['dt'], errors='coerce')
+    if pd.api.types.is_datetime64tz_dtype(df['dt']):
+        df['_dt_eastern'] = df['dt'].dt.tz_convert('America/New_York')
+    else:
+        # Naive timestamps -> localize as America/New_York (do NOT treat as UTC)
+        df['_dt_eastern'] = pd.to_datetime(df['dt'], errors='coerce').dt.tz_localize('America/New_York')
+
+    # Map tickers to their market close times
+    tickers = sorted(set(df['t'].dropna().tolist()))
+    if tickers:
+        tclose_qs = (
+            Ticker.objects
+            .filter(ticker__in=tickers)
+            .values_list('ticker', 'market__t_close')
+        )
+        tclose_map = {tkr: tc for tkr, tc in tclose_qs}
+    else:
+        tclose_map = {}
+
+    def _trading_day_row(row):
+        ts = row['_dt_eastern']
+        tkr = row['t']
+        d0 = ts.date()
+        # If weekend, always move to next business day
+        if ts.weekday() >= 5:
+            return next_business_day(d0)
+        t_close = tclose_map.get(tkr)
+        cutoff_time = t_close if t_close is not None else time(18, 0)
+        cutoff_local = pd.Timestamp(datetime.combine(d0, cutoff_time), tz='America/New_York')
+        return d0 if ts <= cutoff_local else next_business_day(d0)
+
+    df['d'] = df.apply(_trading_day_row, axis=1)
+    # Ensure 'd' is a pure date column (not datetime/timestamp)
+    df['d'] = df['d'].apply(lambda x: x if isinstance(x, date_cls) else getattr(x, 'date', lambda: x)())
+
+    # Drop helper column used for computation
+    if '_dt_eastern' in df.columns:
+        df.drop(columns=['_dt_eastern'], inplace=True)
+
     return df
 
 
