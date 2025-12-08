@@ -43,6 +43,20 @@
 
                 <span style="margin-left: 16px;"></span>
 
+                <!-- Quick ranges -->
+                <div class="btn-group btn-group-sm" role="group" aria-label="Quick ranges">
+                    {% with base_q='?a='|add:selected_account %}
+                        <a class="btn btn-outline-secondary {% if selected_range == 'current month' or selected_range == 'current_month' or selected_range == 'cm' %}active{% endif %}"
+                           href="{{ request.path }}{{ base_q }}&range=current_month">Current Month</a>
+                        <a class="btn btn-outline-secondary {% if selected_range == 'last month' or selected_range == 'last_month' or selected_range == 'lm' %}active{% endif %}"
+                           href="{{ request.path }}{{ base_q }}&range=last_month">Last Month</a>
+                        <a class="btn btn-outline-secondary {% if selected_range == 'current year' or selected_range == 'current_year' or selected_range == 'cy' %}active{% endif %}"
+                           href="{{ request.path }}{{ base_q }}&range=current_year">Current Year</a>
+                    {% endwith %}
+                </div>
+
+                <span style="margin-left: 16px;"></span>
+
                 <label for="start">Start:&nbsp;</label>
                 <input id="start" type="date" name="start" value="{{ selected_start }}" />
 

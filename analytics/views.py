@@ -229,6 +229,7 @@ class DailyPnLView(LoginRequiredMixin, TemplateView):
 
         getter = self.request.GET.get
         account = getter('a') or None
+        quick_range = (getter('range') or '').strip().lower()
         # Parse dates from GET; default to last 30 days
         def parse_date(s):
             try:
@@ -239,13 +240,38 @@ class DailyPnLView(LoginRequiredMixin, TemplateView):
         end = parse_date(getter('end'))
         start = parse_date(getter('start'))
 
+        # Apply convenience ranges if requested; otherwise use provided dates or defaults
+        today = date.today()
+        if quick_range:
+            if quick_range in ("current month", "current_month", "cm"):
+                start = today.replace(day=1)
+                end = today
+            elif quick_range in ("last month", "last_month", "lm"):
+                first_of_this_month = today.replace(day=1)
+                last_month_end = first_of_this_month - timedelta(days=1)
+                start = last_month_end.replace(day=1)
+                end = last_month_end
+            elif quick_range in ("current year", "current_year", "cy"):
+                start = date(today.year, 1, 1)
+                end = today
+
+        # Fallback defaults when nothing specified
         if end is None:
-            end = date.today()
+            end = today
         if start is None:
             start = end - timedelta(days=30)
 
-        # Build dataframe and present only date, account, and pnl (drop open/close values)
-        df = daily_pnl(a=account, start=start, end=end)
+        # Build dataframe of daily PnL (ignore positions here)
+        df, _pos = daily_pnl(a=account, start=start, end=end)
+
+        # If viewing all accounts, roll up PnL by day across accounts
+        if not account:
+            if not df.empty:
+                grouped = (
+                    df.groupby('d', as_index=False)['pnl'].sum()
+                )
+                grouped['a'] = '(All Accounts)'
+                df = grouped[['d', 'a', 'pnl']]
 
         # Build base URL for Daily Trades and render the date as a real <a> link
         daily_trades_url = reverse('analytics:daily_trades')
@@ -272,6 +298,7 @@ class DailyPnLView(LoginRequiredMixin, TemplateView):
         context['selected_account'] = account or ''
         context['selected_start'] = f"{start:%Y-%m-%d}"
         context['selected_end'] = f"{end:%Y-%m-%d}"
+        context['selected_range'] = quick_range
         context['daily_trades_url'] = daily_trades_url
 
         return context
@@ -329,7 +356,7 @@ class DailyTradesView(LoginRequiredMixin, TemplateView):
 
         # Compute Daily PnL for the selected day (and optional account)
         try:
-            d_pnl_df = daily_pnl(a=account, start=d, end=d)
+            d_pnl_df, pos_df = daily_pnl(a=account, start=d, end=d)
             if d_pnl_df.empty:
                 day_pnl_val = 0.0
             else:
@@ -411,58 +438,51 @@ class DailyTradesView(LoginRequiredMixin, TemplateView):
             context['h'], context['data'], context['formats'] = df_to_jqtable(df=show, formatter=formatter)
             context['headings'] = nice_headings(context['h'])
 
-            # --- Prices (prev close and close) for tickers traded this day ---
-            tickers = sorted(set(dff['t'].dropna().tolist()))
-            if tickers:
-                prev_d = prior_business_day(d)
-                # Fetch price rows for both dates
-                price_qs = (
-                    DailyPrice.objects
-                    .filter(ticker__ticker__in=tickers, d__in=[prev_d, d])
-                    .values_list('ticker__ticker', 'd', 'c')
-                )
-                prices = pd.DataFrame.from_records(list(price_qs), columns=['t', 'd', 'close']) if price_qs else pd.DataFrame(columns=['t','d','close'])
-
-                # Handle cash tickers (no bars) using fixed_price or 1.0
-                tkr_meta = Ticker.objects.filter(ticker__in=tickers).values_list('ticker', 'market__symbol', 'fixed_price')
-                if tkr_meta:
-                    meta_df = pd.DataFrame.from_records(list(tkr_meta), columns=['t','symbol','fixed_price'])
-                    cash_tickers = meta_df[meta_df['symbol'].str.lower() == 'cash']['t'].tolist() if not meta_df.empty else []
-                    if cash_tickers:
-                        rows = []
-                        for row in meta_df.itertuples(index=False):
-                            if row.symbol and row.symbol.lower() == 'cash':
-                                fp = 1.0 if pd.isna(row.fixed_price) else float(row.fixed_price)
-                                rows.append([row.t, prev_d, fp])
-                                rows.append([row.t, d, fp])
-                        cash_df = pd.DataFrame(rows, columns=['t','d','close'])
-                        prices = cash_df if prices.empty else pd.concat([prices, cash_df], ignore_index=True)
-
-                if not prices.empty:
-                    # Pivot to prev_close and close columns per ticker
-                    prev_df = prices[prices['d'] == prev_d][['t','close']].rename(columns={'close':'prev_close'})
-                    cur_df = prices[prices['d'] == d][['t','close']].rename(columns={'close':'close'})
-                    px = pd.merge(prev_df, cur_df, on='t', how='outer').sort_values('t')
+            # --- Prices table using pos_df from daily_pnl ---
+            try:
+                if pos_df is not None and not pos_df.empty:
+                    pos_day = pos_df[pos_df['d'] == d]
+                    if account:
+                        pos_day = pos_day[pos_day['a'] == account]
+                    # Limit to tickers traded that day for a tighter view
+                    tickers_today = sorted(set(dff['t'].dropna().tolist()))
+                    if tickers_today:
+                        pos_day = pos_day[pos_day['ticker'].isin(tickers_today)]
+                    px = (
+                        pos_day[['ticker', 'prev_close', 'close']]
+                        .drop_duplicates(subset=['ticker'])
+                        .sort_values('ticker')
+                        .rename(columns={'ticker': 't'})
+                    )
 
                     def px_formatter(t, prev_close, close):
                         prev_fmt = '' if pd.isna(prev_close) else cround(float(prev_close))
                         cur_fmt = '' if pd.isna(close) else cround(float(close))
                         return t, prev_fmt, cur_fmt
 
-                    context['prices_h'], context['prices_data'], context['prices_formats'] = (
-                        df_to_jqtable(df=px[['t','prev_close','close']], formatter=px_formatter)
-                    )
-                    context['prices_headings'] = nice_headings(context['prices_h'])
+                    if not px.empty:
+                        context['prices_h'], context['prices_data'], context['prices_formats'] = (
+                            df_to_jqtable(df=px[['t','prev_close','close']], formatter=px_formatter)
+                        )
+                        context['prices_headings'] = nice_headings(context['prices_h'])
+                    else:
+                        context['prices_headings'] = nice_headings(['ticker', 'prev_close', 'close'])
+                        context['prices_h'] = ['ticker', 'prev_close', 'close']
+                        context['prices_data'] = []
+                        context['prices_formats'] = '{}'
                 else:
                     context['prices_headings'] = nice_headings(['ticker', 'prev_close', 'close'])
                     context['prices_h'] = ['ticker', 'prev_close', 'close']
                     context['prices_data'] = []
                     context['prices_formats'] = '{}'
-            else:
+            except Exception:
+                # Fallback to empty prices table on any error
                 context['prices_headings'] = nice_headings(['ticker', 'prev_close', 'close'])
                 context['prices_h'] = ['ticker', 'prev_close', 'close']
                 context['prices_data'] = []
                 context['prices_formats'] = '{}'
+
+            # (legacy prices building removed; now sourced from pos_df above)
 
             # --- Opening positions at start of the selected day ---
             # Compute cumulative position for all prior trading days for tickers traded that day

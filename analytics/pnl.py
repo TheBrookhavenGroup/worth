@@ -358,7 +358,9 @@ def daily_pnl(a=None, start=None, end=None):
     Build a daily PnL dataframe per account and include ALL business days in
     the requested range, even if there were no trades that day.
 
-    Returns DataFrame with columns ['d','a','pnl'].
+    Returns (pnl_df, pos_df)
+    - pnl_df: DataFrame with columns ['d','a','pnl']
+    - pos_df: DataFrame with columns ['d','a','ticker','opening_pos','closing_pos','close','d_prev','prev_close']
     """
     # All trades (bucketed to trading day) for the specified account
     trades_all = bucketed_trades(a=a)
@@ -370,7 +372,9 @@ def daily_pnl(a=None, start=None, end=None):
             end = trades_all['d'].max()
         else:
             # No trades at all and no range specified -> nothing to do
-            return pd.DataFrame(columns=["d", "a", "pnl"])  # empty
+            empty_pnl = pd.DataFrame(columns=["d", "a", "pnl"])  # empty
+            empty_pos = pd.DataFrame(columns=["d", "a", "ticker", "opening_pos", "closing_pos", "close", "d_prev", "prev_close"])  # noqa: E501
+            return empty_pnl, empty_pos
     elif start is None:
         start = end
     elif end is None:
@@ -379,19 +383,24 @@ def daily_pnl(a=None, start=None, end=None):
     # Business-day calendar for the full period
     dates_full = pd.bdate_range(start=start, end=end).date.tolist()
     if not dates_full:
-        return pd.DataFrame(columns=["d", "a", "pnl"])  # no business days
+        empty_pnl = pd.DataFrame(columns=["d", "a", "pnl"])  # no business days
+        empty_pos = pd.DataFrame(columns=["d", "a", "ticker", "opening_pos", "closing_pos", "close", "d_prev", "prev_close"])  # noqa: E501
+        return empty_pnl, empty_pos
 
     # If there are no trades but an account was specified, still emit zero rows
     if trades_all is None or len(trades_all) == 0:
         accounts = [a] if a else []
         if not accounts:
-            return pd.DataFrame(columns=["d", "a", "pnl"])  # cannot infer accounts
+            empty_pnl = pd.DataFrame(columns=["d", "a", "pnl"])  # cannot infer accounts
+            empty_pos = pd.DataFrame(columns=["d", "a", "ticker", "opening_pos", "closing_pos", "close", "d_prev", "prev_close"])  # noqa: E501
+            return empty_pnl, empty_pos
         base = (
             pd.MultiIndex.from_product([dates_full, accounts], names=["d", "a"])  # noqa: E501
             .to_frame(index=False)
         )
         base["pnl"] = 0.0
-        return base[["d", "a", "pnl"]]
+        empty_pos = pd.DataFrame(columns=["d", "a", "ticker", "opening_pos", "closing_pos", "close", "d_prev", "prev_close"])  # noqa: E501
+        return base[["d", "a", "pnl"]], empty_pos
 
     # Limit trades to those up to end (we still need history before start for offsets)
     trades_all = trades_all[trades_all["d"] <= end].copy()
@@ -399,7 +408,9 @@ def daily_pnl(a=None, start=None, end=None):
     # Determine accounts to report
     accounts = [a] if a else sorted(trades_all["a"].dropna().unique().tolist())
     if not accounts:
-        return pd.DataFrame(columns=["d", "a", "pnl"])  # empty
+        empty_pnl = pd.DataFrame(columns=["d", "a", "pnl"])  # empty
+        empty_pos = pd.DataFrame(columns=["d", "a", "ticker", "opening_pos", "closing_pos", "close", "d_prev", "prev_close"])  # noqa: E501
+        return empty_pnl, empty_pos
 
     # Net traded quantity per (d,a,t)
     dq = (
@@ -455,6 +466,47 @@ def daily_pnl(a=None, start=None, end=None):
 
     # Attach prices: today's close and prior business day close
     pos_df = add_close_to_pos(pos_df)
+    # If the final range includes today and there is an open position today,
+    # override today's "close" with a live price via markets.utils.get_price.
+    # This affects only the synthetic closing trades for today and leaves
+    # historical days unchanged.
+    try:
+        if len(pos_df):
+            today_d = our_now().date()
+            if today_d in set(dates_full):
+                mask_today_open = (
+                    (pos_df["d"] == today_d)
+                    & (pos_df["closing_pos"].fillna(0) != 0)
+                )
+                if mask_today_open.any():
+                    tickers_today = sorted(
+                        set(pos_df.loc[mask_today_open, "ticker"].tolist())
+                    )
+                    if tickers_today:
+                        t_objs = (
+                            Ticker.objects
+                            .filter(ticker__in=tickers_today)
+                        )
+                        t_map = {t.ticker: t for t in t_objs}
+                        price_map = {}
+                        for tk, obj in t_map.items():
+                            try:
+                                p = get_price(obj)
+                                # Use only positive, non-null prices
+                                if p is not None and float(p) > 0:
+                                    price_map[tk] = float(p)
+                            except Exception:
+                                # On any failure, skip and keep existing close
+                                pass
+                        if price_map:
+                            mapped = pos_df.loc[mask_today_open, "ticker"].map(price_map)
+                            # Only override where we have a mapped price
+                            pos_df.loc[mask_today_open, "close"] = (
+                                mapped.combine_first(pos_df.loc[mask_today_open, "close"])
+                            )
+    except Exception:
+        # If anything goes wrong, continue with database closes only
+        pass
     if len(pos_df):
         d_prev_map = {d0: prior_business_day(d0) for d0 in dates_full}
         prev_dates = sorted(set(d_prev_map.values()))
@@ -549,4 +601,5 @@ def daily_pnl(a=None, start=None, end=None):
     pnl_full = base.merge(pnl_df, on=["d", "a"], how="left").fillna({"pnl": 0.0})
     pnl_full.sort_values(["d", "a"], inplace=True)
     pnl_full.reset_index(drop=True, inplace=True)
-    return pnl_full[["d", "a", "pnl"]]
+    # Return both PnL and the enriched positions dataframe
+    return pnl_full[["d", "a", "pnl"]], pos_df
