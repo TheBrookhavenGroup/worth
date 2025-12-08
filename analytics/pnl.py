@@ -1,7 +1,7 @@
 
 import numpy as np
 import pandas as pd
-from datetime import date
+from datetime import date, datetime, time
 from collections import OrderedDict
 import json
 from tbgutils.str import cround, is_near_zero
@@ -307,11 +307,10 @@ def daily_pnl(a=None, start=None, end=None):
     if df_all.empty:
         return pd.DataFrame(columns=["d", "a", "open_value", "close_value", "pnl"])  # empty frame
 
-    # Convert timestamp to US/Eastern and bucket to TRADING DAY using 6pm ET session cut
-    # Rule: trading day =
-    #   - next_business_day(date) if time >= 18:00 ET
-    #   - next_business_day(date) if date is weekend (Sat/Sun)
-    #   - else the same calendar date
+    # Convert timestamp to US/Eastern and bucket to TRADING DAY using per-market t_close
+    # Rule: trading day for a given market is from prior day t_close (exclusive)
+    #       to current day t_close (inclusive). If trade time is after t_close, it
+    #       belongs to the next business day. Weekends roll forward to next business day.
     df_all = df_all.copy()
     dt_series = pd.to_datetime(df_all["dt"], utc=True, errors="coerce")
     # If any values were NaT due to errors, try without forcing UTC and then localize
@@ -322,19 +321,41 @@ def daily_pnl(a=None, start=None, end=None):
         dt_series = dt_alt.fillna(dt_series)
     df_all["_dt_eastern"] = dt_series.dt.tz_convert('America/New_York')
 
-    def _trading_day(ts):
-        if pd.isna(ts):
+    # Resolve per-ticker market close times
+    tickers = sorted(set(df_all['t'].dropna().tolist()))
+    if tickers:
+        tclose_qs = (
+            Ticker.objects
+            .filter(ticker__in=tickers)
+            .values_list('ticker', 'market__t_close')
+        )
+        tclose_map = {t: tc for t, tc in tclose_qs}
+    else:
+        tclose_map = {}
+
+    def _trading_day_row(row):
+        ts = row.get('_dt_eastern')
+        t = row.get('t')
+        if pd.isna(ts) or t is None:
             return None
         d0 = ts.date()
         # Weekend -> next business day
         if ts.weekday() >= 5:
             return next_business_day(d0)
-        # Evening session (>= 18:00 ET) belongs to next business day
-        if ts.hour >= 18:
-            return next_business_day(d0)
-        return d0
+        t_close = tclose_map.get(t)
+        # Fallback to 18:00 if not found
+        if t_close is None:
+            cutoff_time = time(18, 0)
+        else:
+            cutoff_time = t_close
+        cutoff_dt = ts.tz_convert('America/New_York').tzinfo  # ensure tz present
+        # Build cutoff as local datetime
+        cutoff_local = pd.Timestamp(datetime.combine(d0, cutoff_time), tz='America/New_York')
+        if ts <= cutoff_local:
+            return d0
+        return next_business_day(d0)
 
-    df_all["d"] = df_all["_dt_eastern"].apply(_trading_day)
+    df_all["d"] = df_all.apply(_trading_day_row, axis=1)
 
     # Establish date range (inclusive)
     if end is None and start is None:
@@ -474,6 +495,14 @@ def daily_pnl(a=None, start=None, end=None):
     close_syn.rename(columns={"close_pos": "q", "close_d": "p"}, inplace=True)
     close_syn["q"] = -close_syn["q"]
     close_syn["c"] = 0.0
+
+    # Filter out rows that have no exposure and no activity: start_pos == 0 and q == 0 and close_pos == 0
+    # This prevents generating synthetic lines for dormant (a,t) on idle days.
+    if not pos_m.empty:
+        mask_active = (pos_m["start_pos"].abs() > 0) | (pos_m["q"].abs() > 0) | (pos_m["close_pos"].abs() > 0)
+        pos_m = pos_m.loc[mask_active].copy()
+        open_syn = open_syn.loc[mask_active].copy()
+        close_syn = close_syn.loc[mask_active].copy()
 
     # Actual trades for the day (already filtered by date range)
     # Include 'dt' to preserve within-day order for position tracking

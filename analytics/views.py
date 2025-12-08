@@ -1,4 +1,4 @@
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, time
 
 from plotly.offline import plot
 import plotly.graph_objs as go
@@ -15,7 +15,7 @@ from analytics.models import PPMResult
 from analytics.forms import PnLForm
 from trades.ib_flex import get_trades
 from trades.utils import weighted_average_price
-from tbgutils.dt import lbd_prior_month, our_now, prior_business_day, day_start_next_day
+from tbgutils.dt import lbd_prior_month, our_now, prior_business_day, day_start_next_day, next_business_day
 from tbgutils.str import is_near_zero, cround
 from markets.tbgyahoo import yahoo_url
 from markets.models import Ticker
@@ -247,9 +247,16 @@ class DailyPnLView(LoginRequiredMixin, TemplateView):
         # Build dataframe and present only date, account, and pnl (drop open/close values)
         df = daily_pnl(a=account, start=start, end=end)
 
-        # Formatter for table rows (date string; turned into link via JS)
+        # Build base URL for Daily Trades and render the date as a real <a> link
+        daily_trades_url = reverse('analytics:daily_trades')
+
         def formatter(d, a, pnl):
-            return f"{d:%Y-%m-%d}", a, cround(pnl)
+            d_str = f"{d:%Y-%m-%d}"
+            href = f"{daily_trades_url}?d={d_str}"
+            if account:
+                href += f"&a={account}"
+            link_html = f"<a href=\"{href}\" target=\"_blank\">{d_str}</a>"
+            return link_html, a, cround(pnl)
 
         # Only include the desired columns in the table view
         context['h'], context['data'], context['formats'] = (
@@ -265,7 +272,7 @@ class DailyPnLView(LoginRequiredMixin, TemplateView):
         context['selected_account'] = account or ''
         context['selected_start'] = f"{start:%Y-%m-%d}"
         context['selected_end'] = f"{end:%Y-%m-%d}"
-        context['daily_trades_url'] = reverse('analytics:daily_trades')
+        context['daily_trades_url'] = daily_trades_url
 
         return context
 
@@ -353,28 +360,43 @@ class DailyTradesView(LoginRequiredMixin, TemplateView):
             context['openpos_data'] = []
             context['openpos_formats'] = '{}'
         else:
-            start_dt = datetime.combine(d, datetime.min.time())
-            end_dt = day_start_next_day(d)
-            # Ensure timezone compatibility between DataFrame datetimes and bounds
-            # df['dt'] is often tz-aware (UTC); compare using UTC-aware bounds
+            # Compute per-market trading day using market t_close in America/New_York
             if not pd.api.types.is_datetime64_any_dtype(df['dt']):
                 df['dt'] = pd.to_datetime(df['dt'], utc=True)
             else:
-                # if dtype is datetime but tz-naive, promote to UTC
                 if not pd.api.types.is_datetime64tz_dtype(df['dt']):
                     df['dt'] = pd.to_datetime(df['dt'], utc=True)
 
-            # Build UTC-aware bounds robustly whether inputs are naive or already tz-aware
-            def _to_utc(ts):
-                ts = pd.Timestamp(ts)
-                return ts.tz_localize('UTC') if ts.tz is None else ts.tz_convert('UTC')
+            df['_dt_eastern'] = df['dt'].dt.tz_convert('America/New_York')
 
-            start_dt_utc = _to_utc(start_dt)
-            end_dt_utc = _to_utc(end_dt)
-            dff = df[(df['dt'] >= start_dt_utc) & (df['dt'] < end_dt_utc)].copy()
+            # Map tickers to market close times
+            tickers = sorted(set(df['t'].dropna().tolist()))
+            if tickers:
+                tclose_qs = (
+                    Ticker.objects
+                    .filter(ticker__in=tickers)
+                    .values_list('ticker', 'market__t_close')
+                )
+                tclose_map = {tkr: tc for tkr, tc in tclose_qs}
+            else:
+                tclose_map = {}
 
-            # Add a time column for display
-            dff['time'] = dff['dt'].dt.strftime('%H:%M:%S')
+            def _trading_day_row(row):
+                ts = row['_dt_eastern']
+                tkr = row['t']
+                d0 = ts.date()
+                if ts.weekday() >= 5:
+                    return next_business_day(d0)
+                t_close = tclose_map.get(tkr)
+                cutoff_time = t_close if t_close is not None else time(18, 0)
+                cutoff_local = pd.Timestamp(datetime.combine(d0, cutoff_time), tz='America/New_York')
+                return d0 if ts <= cutoff_local else next_business_day(d0)
+
+            df['d'] = df.apply(_trading_day_row, axis=1)
+            dff = df[df['d'] == d].copy()
+
+            # Add a full date-time column for display (use Eastern to align with trading day)
+            dff['time'] = dff['_dt_eastern'].dt.strftime('%Y-%m-%d %H:%M:%S')
 
             # Order by time
             dff.sort_values('dt', inplace=True)
@@ -443,10 +465,10 @@ class DailyTradesView(LoginRequiredMixin, TemplateView):
                 context['prices_formats'] = '{}'
 
             # --- Opening positions at start of the selected day ---
-            # Compute cumulative position prior to the day's start for tickers traded that day
+            # Compute cumulative position for all prior trading days for tickers traded that day
             tickers_today = sorted(set(dff['t'].dropna().tolist()))
             if tickers_today:
-                df_before = df[df['dt'] < start_dt_utc]
+                df_before = df[df['d'] < d]
                 if not df_before.empty:
                     # Net position per ticker at day open (sum of quantities)
                     pos_open = (
