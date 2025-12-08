@@ -2,6 +2,7 @@ from cachetools.func import ttl_cache
 from django.db import models
 from django.dispatch import receiver
 from django.db.models.signals import pre_save
+from datetime import time
 
 NOT_FUTURES_EXCHANGES = ['CASH', 'STOCK', 'BOND', 'ARCA', 'SMART']
 EXCHANGES = [(i, i) for i in
@@ -26,6 +27,10 @@ class Market(models.Model):
     yahoo_price_factor = models.FloatField(default=1.0, blank=False)
     pprec = models.IntegerField(default=4, blank=False)
     vprec = models.IntegerField(default=0, blank=False)
+    t_close = models.TimeField(
+        default=time(16, 0),
+        help_text='Market close time (EST)'
+    )
 
     def __str__(self):
         return f"{self.symbol}"

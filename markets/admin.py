@@ -9,6 +9,9 @@ class MarketAdmin(admin.ModelAdmin):
     list_filter = ('ib_exchange', )
     search_fields = list_display
 
+    class Media:
+        js = ('js/market_admin.js',)
+
 
 def get_historical_prices(modeladmin, request, qs):
     for ticker in qs:
