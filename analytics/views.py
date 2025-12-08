@@ -9,13 +9,15 @@ from django.views.generic import TemplateView, FormView
 from django.urls import reverse
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
-from analytics.pnl import pnl_summary, pnl_if_closed, ticker_pnl, performance, daily_pnl
+from analytics.pnl import (pnl_summary, pnl_if_closed, ticker_pnl,
+                           performance, daily_pnl)
 from analytics.utils import total_realized_gains, income, expenses
 from analytics.models import PPMResult
 from analytics.forms import PnLForm
 from trades.ib_flex import get_trades
 from trades.utils import weighted_average_price
-from tbgutils.dt import lbd_prior_month, our_now, prior_business_day, day_start_next_day, next_business_day
+from tbgutils.dt import (lbd_prior_month, our_now, prior_business_day,
+                         next_business_day)
 from tbgutils.str import is_near_zero, cround
 from markets.tbgyahoo import yahoo_url
 from markets.models import Ticker
@@ -230,6 +232,7 @@ class DailyPnLView(LoginRequiredMixin, TemplateView):
         getter = self.request.GET.get
         account = getter('a') or None
         quick_range = (getter('range') or '').strip().lower()
+
         # Parse dates from GET; default to last 30 days
         def parse_date(s):
             try:
@@ -240,7 +243,6 @@ class DailyPnLView(LoginRequiredMixin, TemplateView):
         end = parse_date(getter('end'))
         start = parse_date(getter('start'))
 
-        # Apply convenience ranges if requested; otherwise use provided dates or defaults
         today = date.today()
         if quick_range:
             if quick_range in ("current month", "current_month", "cm"):
@@ -294,7 +296,8 @@ class DailyPnLView(LoginRequiredMixin, TemplateView):
 
         # UI context
         context['title'] = 'Daily PnL'
-        context['accounts'] = Account.objects.filter(active_f=True).order_by('name')
+        context['accounts'] = (Account.objects.filter(active_f=True).
+                               order_by('name'))
         context['selected_account'] = account or ''
         context['selected_start'] = f"{start:%Y-%m-%d}"
         context['selected_end'] = f"{end:%Y-%m-%d}"
@@ -361,7 +364,8 @@ class DailyTradesView(LoginRequiredMixin, TemplateView):
                 day_pnl_val = 0.0
             else:
                 if account:
-                    day_pnl_val = float(d_pnl_df[d_pnl_df['a'] == account]['pnl'].sum())
+                    day_pnl_val = (
+                        float(d_pnl_df[d_pnl_df['a'] == account]['pnl'].sum()))
                 else:
                     day_pnl_val = float(d_pnl_df['pnl'].sum())
         except Exception:
@@ -377,7 +381,8 @@ class DailyTradesView(LoginRequiredMixin, TemplateView):
             context['data'] = []
             context['formats'] = '{}'
             # No trades -> no prices table either
-            context['prices_headings'] = nice_headings(['ticker', 'prev_close', 'close'])
+            context['prices_headings'] = nice_headings(['ticker', 'prev_close',
+                                                        'close'])
             context['prices_h'] = ['ticker', 'prev_close', 'close']
             context['prices_data'] = []
             context['prices_formats'] = '{}'
@@ -387,7 +392,8 @@ class DailyTradesView(LoginRequiredMixin, TemplateView):
             context['openpos_data'] = []
             context['openpos_formats'] = '{}'
         else:
-            # Compute per-market trading day using market t_close in America/New_York
+            # Compute per-market trading day using market t_close in
+            # America/New_York
             if not pd.api.types.is_datetime64_any_dtype(df['dt']):
                 df['dt'] = pd.to_datetime(df['dt'], utc=True)
             else:
@@ -416,13 +422,14 @@ class DailyTradesView(LoginRequiredMixin, TemplateView):
                     return next_business_day(d0)
                 t_close = tclose_map.get(tkr)
                 cutoff_time = t_close if t_close is not None else time(18, 0)
-                cutoff_local = pd.Timestamp(datetime.combine(d0, cutoff_time), tz='America/New_York')
+                cutoff_local = pd.Timestamp(datetime.combine(d0, cutoff_time),
+                                            tz='America/New_York')
                 return d0 if ts <= cutoff_local else next_business_day(d0)
 
             df['d'] = df.apply(_trading_day_row, axis=1)
             dff = df[df['d'] == d].copy()
 
-            # Add a full date-time column for display (use Eastern to align with trading day)
+            # Add a full date-time column for display
             dff['time'] = dff['_dt_eastern'].dt.strftime('%Y-%m-%d %H:%M:%S')
 
             # Order by time
@@ -430,12 +437,15 @@ class DailyTradesView(LoginRequiredMixin, TemplateView):
 
             # Select and rename columns for display
             show = dff[['time', 'a', 't', 'q', 'p', 'c', 'r']]
-            show.columns = ['time', 'a', 't', 'q', 'p', 'commission', 'reinvest']
+            show.columns = ['time', 'a', 't', 'q', 'p', 'commission',
+                            'reinvest']
 
             def formatter(time, a, t, q, p, commission, reinvest):
-                return time, a, t, q, p, commission, ('Y' if bool(reinvest) else '')
+                return (time, a, t, q, p, commission,
+                        ('Y' if bool(reinvest) else ''))
 
-            context['h'], context['data'], context['formats'] = df_to_jqtable(df=show, formatter=formatter)
+            context['h'], context['data'], context['formats'] = (
+                df_to_jqtable(df=show, formatter=formatter))
             context['headings'] = nice_headings(context['h'])
 
             # --- Prices table using pos_df from daily_pnl ---
@@ -456,28 +466,35 @@ class DailyTradesView(LoginRequiredMixin, TemplateView):
                     )
 
                     def px_formatter(t, prev_close, close):
-                        prev_fmt = '' if pd.isna(prev_close) else cround(float(prev_close))
+                        prev_fmt = '' if pd.isna(prev_close) else (
+                            cround(float(prev_close)))
                         cur_fmt = '' if pd.isna(close) else cround(float(close))
                         return t, prev_fmt, cur_fmt
 
                     if not px.empty:
-                        context['prices_h'], context['prices_data'], context['prices_formats'] = (
-                            df_to_jqtable(df=px[['t','prev_close','close']], formatter=px_formatter)
+                        (context['prices_h'], context['prices_data'],
+                         context['prices_formats']) = (
+                            df_to_jqtable(df=px[['t', 'prev_close', 'close']],
+                                          formatter=px_formatter)
                         )
-                        context['prices_headings'] = nice_headings(context['prices_h'])
+                        context['prices_headings'] = (
+                            nice_headings(context['prices_h']))
                     else:
-                        context['prices_headings'] = nice_headings(['ticker', 'prev_close', 'close'])
+                        context['prices_headings'] = nice_headings(
+                            ['ticker', 'prev_close', 'close'])
                         context['prices_h'] = ['ticker', 'prev_close', 'close']
                         context['prices_data'] = []
                         context['prices_formats'] = '{}'
                 else:
-                    context['prices_headings'] = nice_headings(['ticker', 'prev_close', 'close'])
+                    context['prices_headings'] = nice_headings(
+                        ['ticker', 'prev_close', 'close'])
                     context['prices_h'] = ['ticker', 'prev_close', 'close']
                     context['prices_data'] = []
                     context['prices_formats'] = '{}'
             except Exception:
                 # Fallback to empty prices table on any error
-                context['prices_headings'] = nice_headings(['ticker', 'prev_close', 'close'])
+                context['prices_headings'] = nice_headings(
+                    ['ticker', 'prev_close', 'close'])
                 context['prices_h'] = ['ticker', 'prev_close', 'close']
                 context['prices_data'] = []
                 context['prices_formats'] = '{}'
@@ -485,7 +502,8 @@ class DailyTradesView(LoginRequiredMixin, TemplateView):
             # (legacy prices building removed; now sourced from pos_df above)
 
             # --- Opening positions at start of the selected day ---
-            # Compute cumulative position for all prior trading days for tickers traded that day
+            # Compute cumulative position for all prior trading days
+            # for tickers traded that day
             tickers_today = sorted(set(dff['t'].dropna().tolist()))
             if tickers_today:
                 df_before = df[df['d'] < d]
@@ -496,10 +514,12 @@ class DailyTradesView(LoginRequiredMixin, TemplateView):
                         .groupby(['a', 't'], as_index=False)['q']
                         .sum()
                     )
-                    # If account filter provided, grouping still includes it; select only active account row
+                    # If account filter provided, grouping still includes it;
+                    # select only active account row
                     if account:
                         pos_open = pos_open[pos_open['a'] == account]
-                    pos_open = pos_open[['t', 'q']].rename(columns={'t': 'ticker', 'q': 'open_pos'})
+                    pos_open = pos_open[['t', 'q']].rename(
+                        columns={'t': 'ticker', 'q': 'open_pos'})
 
                     def pos_fmt(ticker, open_pos):
                         try:
@@ -507,17 +527,22 @@ class DailyTradesView(LoginRequiredMixin, TemplateView):
                         except Exception:
                             return ticker, open_pos
 
-                    context['openpos_h'], context['openpos_data'], context['openpos_formats'] = (
-                        df_to_jqtable(df=pos_open[['ticker', 'open_pos']], formatter=pos_fmt)
+                    (context['openpos_h'], context['openpos_data'],
+                     context['openpos_formats']) = (
+                        df_to_jqtable(df=pos_open[['ticker', 'open_pos']],
+                                      formatter=pos_fmt)
                     )
-                    context['openpos_headings'] = nice_headings(context['openpos_h'])
+                    context['openpos_headings'] = (
+                        nice_headings(context['openpos_h']))
                 else:
-                    context['openpos_headings'] = nice_headings(['ticker', 'open_pos'])
+                    context['openpos_headings'] = (
+                        nice_headings(['ticker', 'open_pos']))
                     context['openpos_h'] = ['ticker', 'open_pos']
                     context['openpos_data'] = []
                     context['openpos_formats'] = '{}'
             else:
-                context['openpos_headings'] = nice_headings(['ticker', 'open_pos'])
+                context['openpos_headings'] = (
+                    nice_headings(['ticker', 'open_pos']))
                 context['openpos_h'] = ['ticker', 'open_pos']
                 context['openpos_data'] = []
                 context['openpos_formats'] = '{}'
@@ -539,13 +564,15 @@ class DailyTradesView(LoginRequiredMixin, TemplateView):
                 rows.append([
                     rec.d.strftime('%Y-%m-%d'),
                     rec.account.name,
-                    getattr(rec, 'get_category_display', lambda: rec.category)(),
+                    getattr(rec, 'get_category_display',
+                            lambda: rec.category)(),
                     rec.description,
                     float(rec.amt),
                     'Y' if rec.cleared_f else ''
                 ])
 
-            headings = ['date', 'a', 'category', 'description', 'amt', 'cleared']
+            headings = ['date', 'a', 'category', 'description',
+                        'amt', 'cleared']
 
             def cash_formatter(date_s, a, category, description, amt, cleared):
                 return date_s, a, category, description, cround(amt), cleared
@@ -557,7 +584,8 @@ class DailyTradesView(LoginRequiredMixin, TemplateView):
             context['cash_headings'] = nice_headings(context['cash_h'])
             context['cash_total'] = cround(df_cash['amt'].sum())
         else:
-            headings = ['date', 'a', 'category', 'description', 'amt', 'cleared']
+            headings = ['date', 'a', 'category', 'description',
+                        'amt', 'cleared']
             context['cash_headings'] = nice_headings(headings)
             context['cash_h'] = headings
             context['cash_data'] = []

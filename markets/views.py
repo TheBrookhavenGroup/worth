@@ -20,7 +20,8 @@ def api_t_close(request):
     elif ticker_symbol:
         ticker = get_object_or_404(Ticker, ticker=ticker_symbol)
     else:
-        return JsonResponse({"error": "Missing ticker_id or ticker"}, status=400)
+        return JsonResponse({"error": "Missing ticker_id or ticker"},
+                            status=400)
 
     t = ticker.market.t_close
     hhmm = t.strftime('%H:%M') if hasattr(t, 'strftime') else str(t)

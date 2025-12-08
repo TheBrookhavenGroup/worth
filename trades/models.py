@@ -168,7 +168,8 @@ def bucketed_trades(d=None, t=None, a=None, only_non_qualified=False,
         df['_dt_eastern'] = df['dt'].dt.tz_convert('America/New_York')
     else:
         # Naive timestamps -> localize as America/New_York (do NOT treat as UTC)
-        df['_dt_eastern'] = pd.to_datetime(df['dt'], errors='coerce').dt.tz_localize('America/New_York')
+        df['_dt_eastern'] = (pd.to_datetime(df['dt'], errors='coerce')
+                             .dt.tz_localize('America/New_York'))
 
     # Map tickers to their market close times
     tickers = sorted(set(df['t'].dropna().tolist()))
@@ -191,12 +192,14 @@ def bucketed_trades(d=None, t=None, a=None, only_non_qualified=False,
             return next_business_day(d0)
         t_close = tclose_map.get(tkr)
         cutoff_time = t_close if t_close is not None else time(18, 0)
-        cutoff_local = pd.Timestamp(datetime.combine(d0, cutoff_time), tz='America/New_York')
+        cutoff_local = pd.Timestamp(datetime.combine(d0, cutoff_time),
+                                    tz='America/New_York')
         return d0 if ts <= cutoff_local else next_business_day(d0)
 
     df['d'] = df.apply(_trading_day_row, axis=1)
     # Ensure 'd' is a pure date column (not datetime/timestamp)
-    df['d'] = df['d'].apply(lambda x: x if isinstance(x, date_cls) else getattr(x, 'date', lambda: x)())
+    df['d'] = df['d'].apply(lambda x: x if isinstance(x, date_cls) else
+                getattr(x, 'date', lambda: x)())
 
     # Drop helper column used for computation
     if '_dt_eastern' in df.columns:
