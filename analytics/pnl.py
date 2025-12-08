@@ -6,11 +6,10 @@ from collections import OrderedDict
 import json
 from tbgutils.str import cround, is_near_zero
 from worth.utils import df_to_jqtable
-from tbgutils.dt import our_now, lbd_prior_month, prior_business_day
+from tbgutils.dt import our_now, lbd_prior_month, prior_business_day, next_business_day
 from moneycounter.pnl import pnl_calc
-from markets.models import get_ticker, NOT_FUTURES_EXCHANGES
+from markets.models import get_ticker, NOT_FUTURES_EXCHANGES, DailyPrice, Ticker
 from analytics.models import PPMResult
-from analytics.utils import roi
 from trades.models import copy_trades_df
 from trades.utils import pnl_asof, open_position_pnl
 from markets.utils import ticker_url, get_price
@@ -35,7 +34,7 @@ def format_rec(a, t, pos=0, price=1, value=0, daily=0, mtd=0, ytd=0, pnl=0):
         price = ''
     else:
         price = cround(price, pprec)
-    daily_pcnt = cround(roi(value - daily, daily), 1, symbol='%')
+
     if is_near_zero(value):
         value = ''
     else:
@@ -43,7 +42,8 @@ def format_rec(a, t, pos=0, price=1, value=0, daily=0, mtd=0, ytd=0, pnl=0):
     if is_near_zero(daily):
         daily = ''
     else:
-        daily = f"{cround(daily, 2)}  {daily_pcnt}"
+        # Show just the rounded daily value; percent not available here
+        daily = f"{cround(daily, 2)}"
     mtd = cround(mtd, 2)
     ytd = cround(ytd, 0)
     if is_near_zero(pnl):
@@ -277,5 +277,300 @@ def performance():
 
     totals = ['Total', cround(current_value, 2), cround(total_gain, 2), '']
     data.append(totals)
-
+    
     return headings, data, formats
+
+
+def daily_pnl(a=None, start=None, end=None):
+    """
+    Build a daily PnL dataframe per account.
+
+    Definition (synthetic-trade formulation):
+      For each day d and (account a, ticker t), treat:
+        - Opening position as a trade of quantity = start_pos at price = prior business day close.
+        - Closing position as a trade of quantity = -close_pos at price = today's close.
+      Combine these with any actual trades that day, and compute daily PnL as:
+        PnL(d,a) = - Σ_t Σ_lines [ cs * q * p ] - Σ(commission)
+
+    Args:
+        a: optional account name to filter trades.
+        start: optional inclusive start date (datetime.date).
+        end: optional inclusive end date (datetime.date).
+
+    Returns:
+        pandas.DataFrame with columns ['d', 'a', 'open_value', 'close_value', 'pnl']
+        sorted by date, account.
+    """
+    # Get trades (all time). We'll compute opening positions using ALL prior history,
+    # and restrict real trades and output rows to the requested date range.
+    df_all = copy_trades_df(a=a)
+    if df_all.empty:
+        return pd.DataFrame(columns=["d", "a", "open_value", "close_value", "pnl"])  # empty frame
+
+    # Convert timestamp to US/Eastern and bucket to TRADING DAY using 6pm ET session cut
+    # Rule: trading day =
+    #   - next_business_day(date) if time >= 18:00 ET
+    #   - next_business_day(date) if date is weekend (Sat/Sun)
+    #   - else the same calendar date
+    df_all = df_all.copy()
+    dt_series = pd.to_datetime(df_all["dt"], utc=True, errors="coerce")
+    # If any values were NaT due to errors, try without forcing UTC and then localize
+    if dt_series.isna().any():
+        dt_alt = pd.to_datetime(df_all["dt"], errors="coerce")
+        # localize naive to UTC for consistency
+        dt_alt = dt_alt.dt.tz_localize('UTC')
+        dt_series = dt_alt.fillna(dt_series)
+    df_all["_dt_eastern"] = dt_series.dt.tz_convert('America/New_York')
+
+    def _trading_day(ts):
+        if pd.isna(ts):
+            return None
+        d0 = ts.date()
+        # Weekend -> next business day
+        if ts.weekday() >= 5:
+            return next_business_day(d0)
+        # Evening session (>= 18:00 ET) belongs to next business day
+        if ts.hour >= 18:
+            return next_business_day(d0)
+        return d0
+
+    df_all["d"] = df_all["_dt_eastern"].apply(_trading_day)
+
+    # Establish date range (inclusive)
+    if end is None and start is None:
+        # default to the dates present in the data: min..max of available trading days
+        start = min(df_all["d"].min(), date.today())
+        end = df_all["d"].max()
+    elif start is None:
+        start = end
+    elif end is None:
+        end = start
+
+    target_mask = (df_all["d"] >= start) & (df_all["d"] <= end)
+
+    # Build the list of BUSINESS days in the requested range (Mon–Fri only)
+    # Weekends are excluded so we don't generate PnL rows for non-trading days.
+    dates_full = pd.bdate_range(start=start, end=end).date.tolist()
+
+    # Real trades strictly within the requested range
+    df_range = df_all.loc[target_mask].copy()
+    if df_range.empty:
+        # Even if there are no trades in range, we may still have MTM if a position is carried.
+        # We will continue using positions from prior history to compute MTM rows.
+        pass
+
+    # Collect dates we need closes for (include prior business day for each)
+    dates = sorted(set(dates_full))
+    # Map each date to its prior business day
+    d_prev_map = {d0: prior_business_day(d0) for d0 in dates}
+    prev_dates = sorted(set(d_prev_map.values()))
+    all_price_dates = sorted(set(dates) | set(prev_dates))
+
+    # --- Positions for synthetic trades ---
+    # IMPORTANT: compute starting positions using ALL history up to each day,
+    # not just trades within the requested range. Also produce rows for days with no trades
+    # in the requested range so that pure MTM is captured.
+    daily_q_all = (
+        df_all.groupby(["a", "t", "cs", "d"], as_index=False)["q"]
+        .sum()
+        .sort_values(["a", "t", "d"]) 
+    )
+
+    # Compute cumulative up to the day before `start` to get opening offsets
+    pre_mask = daily_q_all["d"] < start
+    if not daily_q_all.empty and pre_mask.any():
+        tmp = daily_q_all.copy()
+        tmp["cum_q"] = tmp.groupby(["a", "t"])['q'].cumsum()
+        offsets = (
+            tmp[pre_mask]
+            .sort_values(["a", "t", "d"])
+            .groupby(["a", "t"], as_index=False)
+            .tail(1)[["a", "t", "cum_q"]]
+            .rename(columns={"cum_q": "offset"})
+        )
+    else:
+        offsets = pd.DataFrame(columns=["a", "t", "offset"]).astype({"offset": float})
+
+    # Keys for all (a,t,cs) combos with any history
+    if not daily_q_all.empty:
+        keys = daily_q_all[["a", "t", "cs"]].drop_duplicates()
+    else:
+        keys = pd.DataFrame(columns=["a", "t", "cs"]).head(0)
+
+    # q over the requested dates only
+    q_range = daily_q_all[daily_q_all["d"].isin(dates)][["a", "t", "cs", "d", "q"]].copy()
+
+    # Cross join keys with dates to ensure a row per (a,t) per day
+    if not keys.empty and dates:
+        dates_df = pd.DataFrame({"d": dates})
+        keys["_key"] = 1
+        dates_df["_key"] = 1
+        full = pd.merge(keys, dates_df, on="_key").drop(columns=["_key"])  # (a,t,cs) x dates
+        full = pd.merge(full, q_range, on=["a", "t", "cs", "d"], how="left")
+        full["q"] = full["q"].fillna(0.0)
+        # attach offsets
+        full = pd.merge(full, offsets, on=["a", "t"], how="left")
+        full["offset"] = full["offset"].fillna(0.0)
+        # compute start_pos as position at start of day (offset + cum of prior days in range)
+        full = full.sort_values(["a", "t", "d"]).copy()
+        full["cum_in_range"] = full.groupby(["a", "t"])['q'].cumsum()
+        full["start_pos"] = full["offset"] + full.groupby(["a", "t"])['q'].cumsum().shift(1, fill_value=0)
+        pos = full[["a", "t", "cs", "d", "start_pos", "q"]].reset_index(drop=True)
+    else:
+        pos = pd.DataFrame(columns=["a", "t", "cs", "d", "start_pos", "q"])  # no positions
+
+    # Determine tickers to fetch prices for: any ticker appearing in pos (carried or traded)
+    tickers = sorted(set(pos['t'].tolist())) if not pos.empty else []
+
+    # Fetch closes from DailyPrice using ticker symbol and date for required tickers
+    if tickers:
+        prices_qs = (
+            DailyPrice.objects
+            .filter(ticker__ticker__in=tickers, d__in=all_price_dates)
+            .values_list("ticker__ticker", "d", "c")
+        )
+        prices = (
+            pd.DataFrame.from_records(list(prices_qs), columns=["t", "d", "close"]) if prices_qs
+            else pd.DataFrame(columns=["t", "d", "close"])
+        )
+        # For cash tickers (no bars), synthesize closes using fixed_price if present
+        ticker_objs = Ticker.objects.filter(ticker__in=tickers)\
+            .values_list("ticker", "market__symbol", "fixed_price")
+        to_df = (pd.DataFrame.from_records(list(ticker_objs),
+                                          columns=["t", "symbol", "fixed_price"])
+                 if ticker_objs else pd.DataFrame(columns=["t", "symbol", "fixed_price"]))
+        cash_tickers = set()
+        if not to_df.empty:
+            cash_tickers = set(to_df[to_df.symbol.str.lower() == "cash"]["t"].tolist())
+        if cash_tickers:
+            cash_prices_rows = []
+            fixed_price_map = {row.t: (1.0 if pd.isna(row.fixed_price) else float(row.fixed_price))
+                               for row in to_df.itertuples(index=False)}
+            for tkr in cash_tickers:
+                for d0 in all_price_dates:
+                    cash_prices_rows.append((tkr, d0, fixed_price_map.get(tkr, 1.0)))
+            cash_prices = pd.DataFrame.from_records(cash_prices_rows, columns=["t", "d", "close"])
+            prices = cash_prices if prices.empty else pd.concat([prices, cash_prices], ignore_index=True)
+    else:
+        prices = pd.DataFrame(columns=["t", "d", "close"]).head(0)
+
+    # Attach today's and prior day's close prices
+    pos_m = pd.merge(pos, prices, how="left", on=["t", "d"]) if not prices.empty else pos.copy()
+    pos_m.rename(columns={"close": "close_d"}, inplace=True)
+    pos_m["d_prev"] = pos_m["d"].map(d_prev_map)
+    prev_prices = prices.copy()
+    prev_prices.rename(columns={"d": "d_prev", "close": "close_prev"}, inplace=True)
+    pos_m = pd.merge(pos_m, prev_prices, how="left", on=["t", "d_prev"]) if not prev_prices.empty else pos_m
+
+    # Closing position = opening position + net trades of the day
+    pos_m["close_pos"] = pos_m["start_pos"] + pos_m["q"].fillna(0)
+
+    # Build synthetic opening and closing trades (commission = 0)
+    open_syn = pos_m[["d", "a", "t", "cs", "start_pos", "close_prev"]].copy()
+    open_syn.rename(columns={"start_pos": "q", "close_prev": "p"}, inplace=True)
+    open_syn["c"] = 0.0
+
+    close_syn = pos_m[["d", "a", "t", "cs", "close_pos", "close_d"]].copy()
+    close_syn.rename(columns={"close_pos": "q", "close_d": "p"}, inplace=True)
+    close_syn["q"] = -close_syn["q"]
+    close_syn["c"] = 0.0
+
+    # Actual trades for the day (already filtered by date range)
+    # Include 'dt' to preserve within-day order for position tracking
+    real_trades = df_range[["d", "a", "t", "cs", "q", "p", "c", "dt"]].copy()
+
+    # --- Price fallback policy: if a prev or close price is missing, use most recent prior price ---
+    _px_cache = {}
+
+    def _fallback_price(ticker_sym, on_date):
+        key = (ticker_sym, on_date)
+        if key in _px_cache:
+            return _px_cache[key]
+        rec = (
+            DailyPrice.objects
+            .filter(ticker__ticker=ticker_sym, d__lt=on_date)
+            .order_by('-d')
+            .values_list('c', flat=True)
+            .first()
+        )
+        _px_cache[key] = float(rec) if rec is not None else None
+        return _px_cache[key]
+
+    # Ensure we have prev/close prices; if missing, fetch exact day price first,
+    # then back-fill using most recent prior DB price as a last resort.
+    if not pos_m.empty:
+        need_prev = pos_m['close_prev'].isna()
+        if need_prev.any():
+            for idx in pos_m[need_prev].index:
+                tkr = pos_m.at[idx, 't']
+                dd_prev = pos_m.at[idx, 'd_prev']
+                # Try exact price for prior business day
+                try:
+                    px = get_price(tkr, dd_prev) if pd.notna(dd_prev) else None
+                except Exception:
+                    px = None
+                if px is None:
+                    # Fallback to most recent prior available in DB
+                    px = _fallback_price(tkr, dd_prev if pd.notna(dd_prev) else pos_m.at[idx, 'd'])
+                if px is not None:
+                    pos_m.at[idx, 'close_prev'] = float(px)
+        need_close = pos_m['close_d'].isna()
+        if need_close.any():
+            for idx in pos_m[need_close].index:
+                tkr = pos_m.at[idx, 't']
+                dd = pos_m.at[idx, 'd']
+                # Try exact price for the day
+                try:
+                    px = get_price(tkr, dd)
+                except Exception:
+                    px = None
+                if px is None:
+                    # Fallback to most recent prior available in DB
+                    px = _fallback_price(tkr, dd)
+                if px is not None:
+                    pos_m.at[idx, 'close_d'] = float(px)
+
+    # --- Synthetic-trade daily PnL per new definition ---
+    # Construct combined lines: opening synthetic, actual trades, and closing synthetic.
+    # Daily PnL(d,a) = - sum(cs * q * p) - sum(commission)
+
+    # Prepare synthetic frames to align with real trades schema
+    open_syn_use = open_syn.rename(columns={"p": "p", "q": "q"})["d a t cs q p c".split()].copy()
+    close_syn_use = close_syn.rename(columns={"p": "p", "q": "q"})["d a t cs q p c".split()].copy()
+    real_use = real_trades[["d", "a", "t", "cs", "q", "p", "c"]].copy()
+    for fr in (open_syn_use, close_syn_use, real_use):
+        if 'c' not in fr.columns:
+            fr['c'] = 0.0
+        fr['c'] = fr['c'].fillna(0.0)
+
+    combined = pd.concat([open_syn_use, real_use, close_syn_use], ignore_index=True)
+    if combined.empty:
+        return pd.DataFrame(columns=["d", "a", "open_value", "close_value", "pnl"])  # unlikely, but safe
+
+    # Compute open and close values for reference/reporting (not used by table view)
+    pos_values = pos_m.copy()
+    pos_values["open_value_line"] = pos_values["cs"] * pos_values["start_pos"] * pos_values["close_prev"]
+    pos_values["close_value_line"] = pos_values["cs"] * pos_values["close_pos"] * pos_values["close_d"]
+    oc = (
+        pos_values.groupby(["d", "a"], as_index=False)[["open_value_line", "close_value_line"]]
+        .sum()
+        .rename(columns={"open_value_line": "open_value", "close_value_line": "close_value"})
+    )
+
+    combined['line_val'] = combined['cs'] * combined['q'] * combined['p']
+    grouped = combined.groupby(["d", "a"], as_index=False).agg({"line_val": "sum", "c": "sum"})
+    grouped.rename(columns={"line_val": "sum_val", "c": "commission"}, inplace=True)
+    grouped["pnl"] = -grouped["sum_val"] - grouped["commission"]
+
+    res = pd.merge(oc, grouped[["d", "a", "pnl"]], on=["d", "a"], how="right")
+    # If open/close values are missing (e.g., no pos for that account-day), set to 0
+    if 'open_value' not in res.columns:
+        res['open_value'] = 0.0
+    if 'close_value' not in res.columns:
+        res['close_value'] = 0.0
+    res[['open_value', 'close_value']] = res[['open_value', 'close_value']].fillna(0.0)
+
+    res = res[["d", "a", "open_value", "close_value", "pnl"]].copy()
+    res.sort_values(["d", "a"], inplace=True)
+    res.reset_index(drop=True, inplace=True)
+    return res

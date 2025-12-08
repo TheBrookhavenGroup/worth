@@ -4,17 +4,18 @@ from plotly.offline import plot
 import plotly.graph_objs as go
 
 from django.http import HttpResponse
+import pandas as pd
 from django.views.generic import TemplateView, FormView
 from django.urls import reverse
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
-from analytics.pnl import pnl_summary, pnl_if_closed, ticker_pnl, performance
+from analytics.pnl import pnl_summary, pnl_if_closed, ticker_pnl, performance, daily_pnl
 from analytics.utils import total_realized_gains, income, expenses
 from analytics.models import PPMResult
 from analytics.forms import PnLForm
 from trades.ib_flex import get_trades
 from trades.utils import weighted_average_price
-from tbgutils.dt import lbd_prior_month, our_now, prior_business_day
+from tbgutils.dt import lbd_prior_month, our_now, prior_business_day, day_start_next_day
 from tbgutils.str import is_near_zero, cround
 from markets.tbgyahoo import yahoo_url
 from markets.models import Ticker
@@ -220,6 +221,55 @@ class RealizedGainView(LoginRequiredMixin, TemplateView):
         return context
 
 
+class DailyPnLView(LoginRequiredMixin, TemplateView):
+    template_name = 'analytics/daily_pnl.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        getter = self.request.GET.get
+        account = getter('a') or None
+        # Parse dates from GET; default to last 30 days
+        def parse_date(s):
+            try:
+                return datetime.strptime(s, '%Y-%m-%d').date()
+            except Exception:
+                return None
+
+        end = parse_date(getter('end'))
+        start = parse_date(getter('start'))
+
+        if end is None:
+            end = date.today()
+        if start is None:
+            start = end - timedelta(days=30)
+
+        # Build dataframe and present only date, account, and pnl (drop open/close values)
+        df = daily_pnl(a=account, start=start, end=end)
+
+        # Formatter for table rows (date string; turned into link via JS)
+        def formatter(d, a, pnl):
+            return f"{d:%Y-%m-%d}", a, cround(pnl)
+
+        # Only include the desired columns in the table view
+        context['h'], context['data'], context['formats'] = (
+            df_to_jqtable(df=df[['d', 'a', 'pnl']], formatter=formatter))
+        context['headings'] = nice_headings(context['h'])
+        # Total PnL across the displayed rows
+        total = float(df['pnl'].sum()) if not df.empty else 0.0
+        context['total_pnl'] = cround(total)
+
+        # UI context
+        context['title'] = 'Daily PnL'
+        context['accounts'] = Account.objects.filter(active_f=True).order_by('name')
+        context['selected_account'] = account or ''
+        context['selected_start'] = f"{start:%Y-%m-%d}"
+        context['selected_end'] = f"{end:%Y-%m-%d}"
+        context['daily_trades_url'] = reverse('analytics:daily_trades')
+
+        return context
+
+
 def realized_csv_view(request, param=None):
     if param is None:
         year = date.today().year
@@ -250,6 +300,228 @@ class PnLIfClosedView(LoginRequiredMixin, TemplateView):
         context['headings1'] = nice_headings(h)
         context['title'] = 'Worth - Losers'
         context['d'] = f'PnL if closed today.'
+        return context
+
+
+class DailyTradesView(LoginRequiredMixin, TemplateView):
+    template_name = 'analytics/daily_trades.html'
+
+    def get_context_data(self, **kwargs):
+        from trades.models import get_trades_df
+        from accounts.models import CashRecord
+
+        context = super().get_context_data(**kwargs)
+        getter = self.request.GET.get
+        d_str = getter('d')
+        account = getter('a') or None
+
+        try:
+            d = datetime.strptime(d_str, '%Y-%m-%d').date()
+        except Exception:
+            d = date.today()
+
+        # Compute Daily PnL for the selected day (and optional account)
+        try:
+            d_pnl_df = daily_pnl(a=account, start=d, end=d)
+            if d_pnl_df.empty:
+                day_pnl_val = 0.0
+            else:
+                if account:
+                    day_pnl_val = float(d_pnl_df[d_pnl_df['a'] == account]['pnl'].sum())
+                else:
+                    day_pnl_val = float(d_pnl_df['pnl'].sum())
+        except Exception:
+            day_pnl_val = 0.0
+        context['day_pnl'] = cround(day_pnl_val)
+
+        # Load trades and filter to the specific day
+        df = get_trades_df(a=account)
+        if df.empty:
+            headings = ['time', 'a', 't', 'q', 'p', 'commission', 'reinvest']
+            context['headings'] = nice_headings(headings)
+            context['h'] = headings
+            context['data'] = []
+            context['formats'] = '{}'
+            # No trades -> no prices table either
+            context['prices_headings'] = nice_headings(['ticker', 'prev_close', 'close'])
+            context['prices_h'] = ['ticker', 'prev_close', 'close']
+            context['prices_data'] = []
+            context['prices_formats'] = '{}'
+            # Opening positions (none)
+            context['openpos_headings'] = nice_headings(['ticker', 'open_pos'])
+            context['openpos_h'] = ['ticker', 'open_pos']
+            context['openpos_data'] = []
+            context['openpos_formats'] = '{}'
+        else:
+            start_dt = datetime.combine(d, datetime.min.time())
+            end_dt = day_start_next_day(d)
+            # Ensure timezone compatibility between DataFrame datetimes and bounds
+            # df['dt'] is often tz-aware (UTC); compare using UTC-aware bounds
+            if not pd.api.types.is_datetime64_any_dtype(df['dt']):
+                df['dt'] = pd.to_datetime(df['dt'], utc=True)
+            else:
+                # if dtype is datetime but tz-naive, promote to UTC
+                if not pd.api.types.is_datetime64tz_dtype(df['dt']):
+                    df['dt'] = pd.to_datetime(df['dt'], utc=True)
+
+            # Build UTC-aware bounds robustly whether inputs are naive or already tz-aware
+            def _to_utc(ts):
+                ts = pd.Timestamp(ts)
+                return ts.tz_localize('UTC') if ts.tz is None else ts.tz_convert('UTC')
+
+            start_dt_utc = _to_utc(start_dt)
+            end_dt_utc = _to_utc(end_dt)
+            dff = df[(df['dt'] >= start_dt_utc) & (df['dt'] < end_dt_utc)].copy()
+
+            # Add a time column for display
+            dff['time'] = dff['dt'].dt.strftime('%H:%M:%S')
+
+            # Order by time
+            dff.sort_values('dt', inplace=True)
+
+            # Select and rename columns for display
+            show = dff[['time', 'a', 't', 'q', 'p', 'c', 'r']]
+            show.columns = ['time', 'a', 't', 'q', 'p', 'commission', 'reinvest']
+
+            def formatter(time, a, t, q, p, commission, reinvest):
+                return time, a, t, q, p, commission, ('Y' if bool(reinvest) else '')
+
+            context['h'], context['data'], context['formats'] = df_to_jqtable(df=show, formatter=formatter)
+            context['headings'] = nice_headings(context['h'])
+
+            # --- Prices (prev close and close) for tickers traded this day ---
+            tickers = sorted(set(dff['t'].dropna().tolist()))
+            if tickers:
+                prev_d = prior_business_day(d)
+                # Fetch price rows for both dates
+                price_qs = (
+                    DailyPrice.objects
+                    .filter(ticker__ticker__in=tickers, d__in=[prev_d, d])
+                    .values_list('ticker__ticker', 'd', 'c')
+                )
+                prices = pd.DataFrame.from_records(list(price_qs), columns=['t', 'd', 'close']) if price_qs else pd.DataFrame(columns=['t','d','close'])
+
+                # Handle cash tickers (no bars) using fixed_price or 1.0
+                tkr_meta = Ticker.objects.filter(ticker__in=tickers).values_list('ticker', 'market__symbol', 'fixed_price')
+                if tkr_meta:
+                    meta_df = pd.DataFrame.from_records(list(tkr_meta), columns=['t','symbol','fixed_price'])
+                    cash_tickers = meta_df[meta_df['symbol'].str.lower() == 'cash']['t'].tolist() if not meta_df.empty else []
+                    if cash_tickers:
+                        rows = []
+                        for row in meta_df.itertuples(index=False):
+                            if row.symbol and row.symbol.lower() == 'cash':
+                                fp = 1.0 if pd.isna(row.fixed_price) else float(row.fixed_price)
+                                rows.append([row.t, prev_d, fp])
+                                rows.append([row.t, d, fp])
+                        cash_df = pd.DataFrame(rows, columns=['t','d','close'])
+                        prices = cash_df if prices.empty else pd.concat([prices, cash_df], ignore_index=True)
+
+                if not prices.empty:
+                    # Pivot to prev_close and close columns per ticker
+                    prev_df = prices[prices['d'] == prev_d][['t','close']].rename(columns={'close':'prev_close'})
+                    cur_df = prices[prices['d'] == d][['t','close']].rename(columns={'close':'close'})
+                    px = pd.merge(prev_df, cur_df, on='t', how='outer').sort_values('t')
+
+                    def px_formatter(t, prev_close, close):
+                        prev_fmt = '' if pd.isna(prev_close) else cround(float(prev_close))
+                        cur_fmt = '' if pd.isna(close) else cround(float(close))
+                        return t, prev_fmt, cur_fmt
+
+                    context['prices_h'], context['prices_data'], context['prices_formats'] = (
+                        df_to_jqtable(df=px[['t','prev_close','close']], formatter=px_formatter)
+                    )
+                    context['prices_headings'] = nice_headings(context['prices_h'])
+                else:
+                    context['prices_headings'] = nice_headings(['ticker', 'prev_close', 'close'])
+                    context['prices_h'] = ['ticker', 'prev_close', 'close']
+                    context['prices_data'] = []
+                    context['prices_formats'] = '{}'
+            else:
+                context['prices_headings'] = nice_headings(['ticker', 'prev_close', 'close'])
+                context['prices_h'] = ['ticker', 'prev_close', 'close']
+                context['prices_data'] = []
+                context['prices_formats'] = '{}'
+
+            # --- Opening positions at start of the selected day ---
+            # Compute cumulative position prior to the day's start for tickers traded that day
+            tickers_today = sorted(set(dff['t'].dropna().tolist()))
+            if tickers_today:
+                df_before = df[df['dt'] < start_dt_utc]
+                if not df_before.empty:
+                    # Net position per ticker at day open (sum of quantities)
+                    pos_open = (
+                        df_before[df_before['t'].isin(tickers_today)]
+                        .groupby(['a', 't'], as_index=False)['q']
+                        .sum()
+                    )
+                    # If account filter provided, grouping still includes it; select only active account row
+                    if account:
+                        pos_open = pos_open[pos_open['a'] == account]
+                    pos_open = pos_open[['t', 'q']].rename(columns={'t': 'ticker', 'q': 'open_pos'})
+
+                    def pos_fmt(ticker, open_pos):
+                        try:
+                            return ticker, int(round(float(open_pos)))
+                        except Exception:
+                            return ticker, open_pos
+
+                    context['openpos_h'], context['openpos_data'], context['openpos_formats'] = (
+                        df_to_jqtable(df=pos_open[['ticker', 'open_pos']], formatter=pos_fmt)
+                    )
+                    context['openpos_headings'] = nice_headings(context['openpos_h'])
+                else:
+                    context['openpos_headings'] = nice_headings(['ticker', 'open_pos'])
+                    context['openpos_h'] = ['ticker', 'open_pos']
+                    context['openpos_data'] = []
+                    context['openpos_formats'] = '{}'
+            else:
+                context['openpos_headings'] = nice_headings(['ticker', 'open_pos'])
+                context['openpos_h'] = ['ticker', 'open_pos']
+                context['openpos_data'] = []
+                context['openpos_formats'] = '{}'
+
+        context['title'] = 'Trades for Day'
+        context['selected_account'] = account or ''
+        context['selected_date'] = d.strftime('%Y-%m-%d')
+        context['daily_pnl_url'] = reverse('analytics:daily_pnl')
+
+        # --- Cash transactions for the day ---
+        cash_qs = CashRecord.objects.filter(ignored=False, d=d)
+        if account:
+            cash_qs = cash_qs.filter(account__name=account)
+
+        if cash_qs.exists():
+            # Build rows
+            rows = []
+            for rec in cash_qs.select_related('account').order_by('id'):
+                rows.append([
+                    rec.d.strftime('%Y-%m-%d'),
+                    rec.account.name,
+                    getattr(rec, 'get_category_display', lambda: rec.category)(),
+                    rec.description,
+                    float(rec.amt),
+                    'Y' if rec.cleared_f else ''
+                ])
+
+            headings = ['date', 'a', 'category', 'description', 'amt', 'cleared']
+
+            def cash_formatter(date_s, a, category, description, amt, cleared):
+                return date_s, a, category, description, cround(amt), cleared
+
+            df_cash = pd.DataFrame(rows, columns=headings)
+            context['cash_h'], context['cash_data'], context['cash_formats'] = (
+                df_to_jqtable(df=df_cash, formatter=cash_formatter)
+            )
+            context['cash_headings'] = nice_headings(context['cash_h'])
+            context['cash_total'] = cround(df_cash['amt'].sum())
+        else:
+            headings = ['date', 'a', 'category', 'description', 'amt', 'cleared']
+            context['cash_headings'] = nice_headings(headings)
+            context['cash_h'] = headings
+            context['cash_data'] = []
+            context['cash_formats'] = '{}'
+            context['cash_total'] = cround(0.0)
+
         return context
 
 

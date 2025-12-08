@@ -6,7 +6,11 @@ from tbgutils.dt import our_now
 from moneycounter import wap_calc
 from tbgutils.str import is_near_zero
 from accounts.models import copy_cash_df
-from markets.models import get_ticker, get_tickers, NOT_FUTURES_EXCHANGES
+from markets.models import (
+    get_ticker,
+    get_tickers,
+    NOT_FUTURES_EXCHANGES,
+)
 from trades.models import copy_trades_df
 from markets.utils import get_price
 from markets.tbgyahoo import yahooQuotes
@@ -227,3 +231,5 @@ def open_position_pnl(df):
     df.sort_values(by=["pnl"], ignore_index=True, inplace=True)
 
     return df
+
+

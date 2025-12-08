@@ -10,13 +10,6 @@ from trades.utils import pnl_asof
 from accounts.models import get_expenses_df, get_income_df
 
 
-def roi(initial, delta):
-    if is_not_near_zero(initial):
-        return delta / initial
-
-    return 0
-
-
 def format_realized_rec(a, t, realized):
     realized = cround(realized, 2)
     return [a, t, realized]
