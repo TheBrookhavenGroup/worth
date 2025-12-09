@@ -11,7 +11,7 @@ from markets.models import (
     get_tickers,
     NOT_FUTURES_EXCHANGES,
 )
-from trades.models import copy_trades_df
+from trades.models import copy_trades_df, bucketed_trades
 from markets.utils import get_price
 from markets.tbgyahoo import yahooQuotes
 
@@ -154,7 +154,7 @@ def pnl_asof(d=None, a=None, only_non_qualified=False, active_f=True,
     Return YTD data for active positions.
     """
 
-    df = copy_trades_df(d=d, a=a, only_non_qualified=only_non_qualified,
+    df = bucketed_trades(d=d, a=a, only_non_qualified=only_non_qualified,
                         active_f=active_f)
 
     pnl = trades_pnl(df, d=d)

@@ -372,8 +372,9 @@ class DailyTradesView(LoginRequiredMixin, TemplateView):
             day_pnl_val = 0.0
         context['day_pnl'] = cround(day_pnl_val)
 
-        # Load trades and filter to the specific day
-        df = get_trades_df(a=account)
+        # Load trades bucketed by trading day (uses Market.t_close per ticker)
+        from trades.models import bucketed_trades
+        df = bucketed_trades(a=account)
         if df.empty:
             headings = ['time', 'a', 't', 'q', 'p', 'commission', 'reinvest']
             context['headings'] = nice_headings(headings)
@@ -392,42 +393,20 @@ class DailyTradesView(LoginRequiredMixin, TemplateView):
             context['openpos_data'] = []
             context['openpos_formats'] = '{}'
         else:
-            # Compute per-market trading day using market t_close in
-            # America/New_York
-            if not pd.api.types.is_datetime64_any_dtype(df['dt']):
-                df['dt'] = pd.to_datetime(df['dt'], utc=True)
-            else:
-                if not pd.api.types.is_datetime64tz_dtype(df['dt']):
-                    df['dt'] = pd.to_datetime(df['dt'], utc=True)
-
-            df['_dt_eastern'] = df['dt'].dt.tz_convert('America/New_York')
-
-            # Map tickers to market close times
-            tickers = sorted(set(df['t'].dropna().tolist()))
-            if tickers:
-                tclose_qs = (
-                    Ticker.objects
-                    .filter(ticker__in=tickers)
-                    .values_list('ticker', 'market__t_close')
-                )
-                tclose_map = {tkr: tc for tkr, tc in tclose_qs}
-            else:
-                tclose_map = {}
-
-            def _trading_day_row(row):
-                ts = row['_dt_eastern']
-                tkr = row['t']
-                d0 = ts.date()
-                if ts.weekday() >= 5:
-                    return next_business_day(d0)
-                t_close = tclose_map.get(tkr)
-                cutoff_time = t_close if t_close is not None else time(18, 0)
-                cutoff_local = pd.Timestamp(datetime.combine(d0, cutoff_time),
-                                            tz='America/New_York')
-                return d0 if ts <= cutoff_local else next_business_day(d0)
-
-            df['d'] = df.apply(_trading_day_row, axis=1)
+            # Filter to the selected trading day, and prepare display columns
             dff = df[df['d'] == d].copy()
+
+            # Ensure timezone-aware New York timestamp for display
+            if not pd.api.types.is_datetime64_any_dtype(dff['dt']):
+                dff['dt'] = pd.to_datetime(dff['dt'], errors='coerce')
+            if pd.api.types.is_datetime64tz_dtype(dff['dt']):
+                dff['_dt_eastern'] = dff['dt'].dt.tz_convert('America/New_York')
+            else:
+                # Treat naive timestamps as local America/New_York wall time
+                dff['_dt_eastern'] = (
+                    pd.to_datetime(dff['dt'], errors='coerce')
+                    .dt.tz_localize('America/New_York')
+                )
 
             # Add a full date-time column for display
             dff['time'] = dff['_dt_eastern'].dt.strftime('%Y-%m-%d %H:%M:%S')
@@ -551,46 +530,6 @@ class DailyTradesView(LoginRequiredMixin, TemplateView):
         context['selected_account'] = account or ''
         context['selected_date'] = d.strftime('%Y-%m-%d')
         context['daily_pnl_url'] = reverse('analytics:daily_pnl')
-
-        # --- Cash transactions for the day ---
-        cash_qs = CashRecord.objects.filter(ignored=False, d=d)
-        if account:
-            cash_qs = cash_qs.filter(account__name=account)
-
-        if cash_qs.exists():
-            # Build rows
-            rows = []
-            for rec in cash_qs.select_related('account').order_by('id'):
-                rows.append([
-                    rec.d.strftime('%Y-%m-%d'),
-                    rec.account.name,
-                    getattr(rec, 'get_category_display',
-                            lambda: rec.category)(),
-                    rec.description,
-                    float(rec.amt),
-                    'Y' if rec.cleared_f else ''
-                ])
-
-            headings = ['date', 'a', 'category', 'description',
-                        'amt', 'cleared']
-
-            def cash_formatter(date_s, a, category, description, amt, cleared):
-                return date_s, a, category, description, cround(amt), cleared
-
-            df_cash = pd.DataFrame(rows, columns=headings)
-            context['cash_h'], context['cash_data'], context['cash_formats'] = (
-                df_to_jqtable(df=df_cash, formatter=cash_formatter)
-            )
-            context['cash_headings'] = nice_headings(context['cash_h'])
-            context['cash_total'] = cround(df_cash['amt'].sum())
-        else:
-            headings = ['date', 'a', 'category', 'description',
-                        'amt', 'cleared']
-            context['cash_headings'] = nice_headings(headings)
-            context['cash_h'] = headings
-            context['cash_data'] = []
-            context['cash_formats'] = '{}'
-            context['cash_total'] = cround(0.0)
 
         return context
 

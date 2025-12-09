@@ -472,7 +472,7 @@ def daily_pnl(a=None, start=None, end=None):
         net_by_day.sort_values(["a", "t", "d"], inplace=True)
         net_by_day["closing_pos"] = (
             net_by_day.groupby(["a", "t"]).
-            apply(lambda x: (x["offset"].iloc[0] + x["q"].cumsum())).
+            apply(lambda x: (x["offset"].iloc[0] + x["q"].cumsum()), include_groups=False).
             reset_index(level=[0, 1], drop=True))
         net_by_day["opening_pos"] = net_by_day["closing_pos"] - net_by_day["q"]
         pos_df = net_by_day.rename(columns={"t": "ticker"})[
@@ -481,50 +481,44 @@ def daily_pnl(a=None, start=None, end=None):
         pos_df = pd.DataFrame(columns=["d", "a", "ticker", "opening_pos",
                                        "closing_pos"]).head(0)
 
-    # Attach prices: today's close and prior business day close
+    # Attach prices and then fill missing using markets.utils.get_price
     pos_df = add_close_to_pos(pos_df)
-    # If the final range includes today and there is an open position today,
-    # override today's "close" with a live price via markets.utils.get_price.
-    # This affects only the synthetic closing trades for today and leaves
-    # historical days unchanged.
+    # General fallback: for any date where we have a non-zero closing position
+    # but missing/zero close, fetch via get_price(ticker, d)
     try:
         if len(pos_df):
-            today_d = our_now().date()
-            if today_d in set(dates_full):
-                mask_today_open = (
-                    (pos_df["d"] == today_d)
-                    & (pos_df["closing_pos"].fillna(0) != 0)
-                )
-                if mask_today_open.any():
-                    tickers_today = sorted(
-                        set(pos_df.loc[mask_today_open, "ticker"].tolist())
+            need_close = (pos_df["closing_pos"].fillna(0) != 0)
+            # Treat NA or 0.0 as missing
+            close_missing = pos_df["close"].isna() | (pd.to_numeric(pos_df["close"], errors="coerce").fillna(0.0) == 0.0)
+            need_close &= close_missing
+            if need_close.any():
+                need_pairs = (pos_df.loc[need_close, ["ticker", "d"]]
+                              .drop_duplicates())
+                tickers_needed = sorted(set(need_pairs["ticker"]))
+                t_map = {t.ticker: t for t in Ticker.objects.filter(ticker__in=tickers_needed)}
+                price_map = {}
+                for rec in need_pairs.itertuples(index=False):
+                    tk = rec.ticker
+                    dd = rec.d
+                    t_obj = t_map.get(tk)
+                    if t_obj is None:
+                        continue
+                    try:
+                        p = get_price(t_obj, d=dd)
+                        if p is not None and float(p) > 0:
+                            price_map[(tk, dd)] = float(p)
+                    except Exception:
+                        # leave missing
+                        pass
+                if price_map:
+                    keys = list(zip(pos_df["ticker"], pos_df["d"]))
+                    mapped = pd.Series(keys).map(price_map)
+                    # Only fill rows in need_close
+                    pos_df.loc[need_close, "close"] = (
+                        mapped.loc[need_close].combine_first(pos_df.loc[need_close, "close"])
                     )
-                    if tickers_today:
-                        t_objs = (
-                            Ticker.objects
-                            .filter(ticker__in=tickers_today)
-                        )
-                        t_map = {t.ticker: t for t in t_objs}
-                        price_map = {}
-                        for tk, obj in t_map.items():
-                            try:
-                                p = get_price(obj)
-                                # Use only positive, non-null prices
-                                if p is not None and float(p) > 0:
-                                    price_map[tk] = float(p)
-                            except Exception:
-                                # On any failure, skip and keep existing close
-                                pass
-                        if price_map:
-                            mapped = (pos_df.loc[mask_today_open, "ticker"].
-                                      map(price_map))
-                            # Only override where we have a mapped price
-                            pos_df.loc[mask_today_open, "close"] = (
-                                mapped.combine_first(pos_df.loc[mask_today_open,
-                                "close"])
-                            )
     except Exception:
-        # If anything goes wrong, continue with database closes only
+        # Continue even if price fetch fails
         pass
     if len(pos_df):
         d_prev_map = {d0: prior_business_day(d0) for d0 in dates_full}
@@ -553,6 +547,39 @@ def daily_pnl(a=None, start=None, end=None):
                               how="left")
         else:
             pos_df["prev_close"] = pd.NA
+
+        # Fallback for prev_close: if opening_pos != 0 and prev_close missing/zero
+        try:
+            need_prev = (pos_df["opening_pos"].fillna(0) != 0)
+            prev_missing = pos_df["prev_close"].isna() | (pd.to_numeric(pos_df["prev_close"], errors="coerce").fillna(0.0) == 0.0)
+            need_prev &= prev_missing & pos_df["d_prev"].notna()
+            if need_prev.any():
+                need_prev_pairs = (pos_df.loc[need_prev, ["ticker", "d_prev"]]
+                                   .drop_duplicates())
+                need_prev_pairs.rename(columns={"d_prev": "d"}, inplace=True)
+                tickers_prev = sorted(set(need_prev_pairs["ticker"]))
+                t_map_prev = {t.ticker: t for t in Ticker.objects.filter(ticker__in=tickers_prev)}
+                prev_price_map = {}
+                for rec in need_prev_pairs.itertuples(index=False):
+                    tk = rec.ticker
+                    dd = rec.d
+                    t_obj = t_map_prev.get(tk)
+                    if t_obj is None:
+                        continue
+                    try:
+                        p = get_price(t_obj, d=dd)
+                        if p is not None and float(p) > 0:
+                            prev_price_map[(tk, dd)] = float(p)
+                    except Exception:
+                        pass
+                if prev_price_map:
+                    keys_prev = list(zip(pos_df["ticker"], pos_df["d_prev"]))
+                    mapped_prev = pd.Series(keys_prev).map(prev_price_map)
+                    pos_df.loc[need_prev, "prev_close"] = (
+                        mapped_prev.loc[need_prev].combine_first(pos_df.loc[need_prev, "prev_close"])
+                    )
+        except Exception:
+            pass
 
     # Contract size per ticker
     cs_map = {}

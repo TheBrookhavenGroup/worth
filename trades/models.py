@@ -167,9 +167,11 @@ def bucketed_trades(d=None, t=None, a=None, only_non_qualified=False,
     if pd.api.types.is_datetime64tz_dtype(df['dt']):
         df['_dt_eastern'] = df['dt'].dt.tz_convert('America/New_York')
     else:
-        # Naive timestamps -> localize as America/New_York (do NOT treat as UTC)
-        df['_dt_eastern'] = (pd.to_datetime(df['dt'], errors='coerce')
-                             .dt.tz_localize('America/New_York'))
+        # Naive timestamps -> interpret as America/New_York wall time
+        df['_dt_eastern'] = (
+            pd.to_datetime(df['dt'], errors='coerce')
+            .dt.tz_localize('America/New_York')
+        )
 
     # Map tickers to their market close times
     tickers = sorted(set(df['t'].dropna().tolist()))

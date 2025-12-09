@@ -32,15 +32,10 @@
             <h3>Opening Positions</h3>
             {% include 'table.html' with table_id="TABLE_open_positions" data=openpos_data headings=openpos_headings formats=openpos_formats %}
 
+            <div style="margin-top: 16px;"></div>
+            <h3>Trades</h3>
             {% include 'table.html' with table_id="TABLE_daily_trades" data=data headings=headings formats=formats %}
 
-            <div style="margin-top: 24px;"></div>
-            <h3>Cash Transactions</h3>
-
-            {% include 'table.html' with table_id="TABLE_cash_txns" data=cash_data headings=cash_headings formats=cash_formats %}
-
-            <div class="text-right" style="margin-top: 8px; font-weight: bold;">
-                Total Cash: {{ cash_total }}
             </div>
         </div>
     </div>
