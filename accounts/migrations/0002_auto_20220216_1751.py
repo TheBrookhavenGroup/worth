@@ -6,20 +6,55 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('accounts', '0001_initial'),
+        ("accounts", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='cashrecord',
-            name='account',
-            field=models.ForeignKey(default=accounts.models.get_bofa_account, on_delete=django.db.models.deletion.CASCADE, to='accounts.account'),
+            model_name="cashrecord",
+            name="account",
+            field=models.ForeignKey(
+                default=accounts.models.get_bofa_account,
+                on_delete=django.db.models.deletion.CASCADE,
+                to="accounts.account",
+            ),
         ),
         migrations.AlterField(
-            model_name='cashrecord',
-            name='category',
-            field=models.CharField(choices=[('AB', 'Avi Bar Mitzvah'), ('AV', 'Deposit to Avi account'), ('BF', 'Bank fee'), ('BNK', 'Bank Check'), ('BM', 'Bar Mitzvah'), ('BH', 'Baltimore House'), ('CH', 'Charity'), ('CE', 'College Expenses'), ('DE', 'Deposits'), ('ED', 'Education/Lessons/Tutoring'), ('FC', 'Food & Clothing'), ('GN', 'General'), ('HO', 'House - Mortgage/Rent/Maintenance/Renovation'), ('HS', 'Health Savings Account'), ('IN', 'Insurance'), ('MD', 'Medical'), ('OL', 'business officers loan to Brookhaven'), ('PR', 'Professional'), ('SA', 'Savings'), ('SB', 'Sailboat'), ('TA', 'Taxes and Accounting'), ('UT', 'Utilities'), ('VA', 'Vacation'), ('WA', 'Wages from tutoring'), ('GB', 'Gila Bat Mitzvah'), ('IT', 'Interest'), ('GU', 'Gila UTMA')], default='GN', max_length=3),
+            model_name="cashrecord",
+            name="category",
+            field=models.CharField(
+                choices=[
+                    ("AB", "Avi Bar Mitzvah"),
+                    ("AV", "Deposit to Avi account"),
+                    ("BF", "Bank fee"),
+                    ("BNK", "Bank Check"),
+                    ("BM", "Bar Mitzvah"),
+                    ("BH", "Baltimore House"),
+                    ("CH", "Charity"),
+                    ("CE", "College Expenses"),
+                    ("DE", "Deposits"),
+                    ("ED", "Education/Lessons/Tutoring"),
+                    ("FC", "Food & Clothing"),
+                    ("GN", "General"),
+                    ("HO", "House - Mortgage/Rent/Maintenance/Renovation"),
+                    ("HS", "Health Savings Account"),
+                    ("IN", "Insurance"),
+                    ("MD", "Medical"),
+                    ("OL", "business officers loan to Brookhaven"),
+                    ("PR", "Professional"),
+                    ("SA", "Savings"),
+                    ("SB", "Sailboat"),
+                    ("TA", "Taxes and Accounting"),
+                    ("UT", "Utilities"),
+                    ("VA", "Vacation"),
+                    ("WA", "Wages from tutoring"),
+                    ("GB", "Gila Bat Mitzvah"),
+                    ("IT", "Interest"),
+                    ("GU", "Gila UTMA"),
+                ],
+                default="GN",
+                max_length=3,
+            ),
         ),
     ]

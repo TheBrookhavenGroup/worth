@@ -5,8 +5,7 @@ from trades.models import Trade
 
 
 def add_to_last_trade(a, t, q):
-    qs = Trade.objects.filter(account__name=a).filter(
-        ticker__ticker=t).order_by('-dt')
+    qs = Trade.objects.filter(account__name=a).filter(ticker__ticker=t).order_by("-dt")
     for i in qs:
         i.qd += q
         i.save()
@@ -14,9 +13,8 @@ def add_to_last_trade(a, t, q):
 
 
 def find_small_q():
-    qs = Trade.objects.values_list('ticker__ticker', 'account__name').annotate(
-        Sum('q'))
-    qs = qs.order_by('account__name', 'ticker__name')
+    qs = Trade.objects.values_list("ticker__ticker", "account__name").annotate(Sum("q"))
+    qs = qs.order_by("account__name", "ticker__name")
     for t, a, q in qs:
         if q == 0:
             continue

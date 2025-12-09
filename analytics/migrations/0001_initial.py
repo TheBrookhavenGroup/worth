@@ -5,19 +5,25 @@ import django.utils.timezone
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='PPMResult',
+            name="PPMResult",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('dt', models.DateTimeField(default=django.utils.timezone.now)),
-                ('total', models.FloatField()),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("dt", models.DateTimeField(default=django.utils.timezone.now)),
+                ("total", models.FloatField()),
             ],
         ),
     ]

@@ -4,43 +4,51 @@ from django.dispatch import receiver
 from django.db.models.signals import pre_save
 from datetime import time
 
-NOT_FUTURES_EXCHANGES = ['CASH', 'STOCK', 'BOND', 'ARCA', 'SMART']
-EXCHANGES = [(i, i) for i in
-             NOT_FUTURES_EXCHANGES + ['CME', 'NYM', 'NYMEX', 'NYBOT', 'NYB',
-                                      'CFE', 'ECBOT']]
+NOT_FUTURES_EXCHANGES = ["CASH", "STOCK", "BOND", "ARCA", "SMART"]
+EXCHANGES = [
+    (i, i)
+    for i in NOT_FUTURES_EXCHANGES
+    + ["CME", "NYM", "NYMEX", "NYBOT", "NYB", "CFE", "ECBOT"]
+]
 MAX_EXCHANGES_LEN = max([len(i[0]) for i in EXCHANGES]) + 1
 
 
 class Market(models.Model):
-    symbol = models.CharField(max_length=20, unique=True, blank=False,
-                              null=False)
+    symbol = models.CharField(max_length=20, unique=True, blank=False, null=False)
     name = models.CharField(max_length=50)
-    ib_exchange = models.CharField(max_length=MAX_EXCHANGES_LEN,
-                                   choices=EXCHANGES,
-                                   blank=False, default='STOCK')
-    yahoo_exchange = models.CharField(max_length=MAX_EXCHANGES_LEN,
-                                      choices=EXCHANGES,
-                                      blank=False, default='STOCK')
+    ib_exchange = models.CharField(
+        max_length=MAX_EXCHANGES_LEN, choices=EXCHANGES, blank=False, default="STOCK"
+    )
+    yahoo_exchange = models.CharField(
+        max_length=MAX_EXCHANGES_LEN, choices=EXCHANGES, blank=False, default="STOCK"
+    )
     cs = models.FloatField(default=1.0, blank=False)
     commission = models.FloatField(default=0.0)
     ib_price_factor = models.FloatField(default=1.0, blank=False)
     yahoo_price_factor = models.FloatField(default=1.0, blank=False)
     pprec = models.IntegerField(default=4, blank=False)
     vprec = models.IntegerField(default=0, blank=False)
-    t_close = models.TimeField(
-        default=time(16, 0),
-        help_text='Market close time (EST)'
-    )
+    t_close = models.TimeField(default=time(16, 0), help_text="Market close time (EST)")
 
     def __str__(self):
         return f"{self.symbol}"
 
     def description(self):
-        return '|'.join([str(i) for i in [self.symbol, self.name,
-                                          self.ib_exchange, self.yahoo_exchange,
-                                          self.cs, self.commission,
-                                          self.ib_price_factor,
-                                          self.yahoo_price_factor]])
+        return "|".join(
+            [
+                str(i)
+                for i in [
+                    self.symbol,
+                    self.name,
+                    self.ib_exchange,
+                    self.yahoo_exchange,
+                    self.cs,
+                    self.commission,
+                    self.ib_price_factor,
+                    self.yahoo_price_factor,
+                ]
+            ]
+        )
 
     @property
     def is_futures(self):
@@ -48,7 +56,7 @@ class Market(models.Model):
 
     @property
     def is_cash(self):
-        return self.symbol.lower() == 'cash'
+        return self.symbol.lower() == "cash"
 
 
 @receiver(pre_save, sender=Market)
@@ -57,18 +65,22 @@ def upcase_symbol(sender, instance, **kwargs):
 
 
 class Ticker(models.Model):
-    ticker = models.CharField(max_length=20, unique=True, blank=False,
-                              null=False)
-    name = models.CharField(max_length=50, blank=True, null=True,
-                            help_text='Optional override to Market '
-                                      'description.')
+    ticker = models.CharField(max_length=20, unique=True, blank=False, null=False)
+    name = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        help_text="Optional override to Market " "description.",
+    )
     market = models.ForeignKey(Market, on_delete=models.CASCADE)
-    fixed_price = models.FloatField(null=True, blank=True,
-                                    help_text="If set then this is the price "
-                                              "that will always be used.")
+    fixed_price = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="If set then this is the price " "that will always be used.",
+    )
 
     class Meta:
-        ordering = ('ticker',)
+        ordering = ("ticker",)
 
     def __str__(self):
         return f"{self.ticker}"
@@ -110,12 +122,15 @@ class Ticker(models.Model):
         if e in NOT_FUTURES_EXCHANGES:
             return ticker
 
-        ticker = ticker[:-4] + ticker[-2:] + '.' + e
+        ticker = ticker[:-4] + ticker[-2:] + "." + e
         return ticker
 
     def __lt__(self, other):
         return (self.symbol, self.year, self.month) < (
-            other.symbol, other.year, other.month)
+            other.symbol,
+            other.year,
+            other.month,
+        )
 
     @staticmethod
     def key_sorting(obj):
@@ -134,7 +149,7 @@ def upcase_ticker(sender, instance, **kwargs):
 class DailyPrice(models.Model):
     ticker = models.ForeignKey(Ticker, on_delete=models.CASCADE)
     d = models.DateField(null=False)
-    c = models.FloatField(help_text='Closing Price')
+    c = models.FloatField(help_text="Closing Price")
 
     class Meta:
         unique_together = [["ticker", "d"]]
@@ -157,8 +172,7 @@ class TBGDailyBar(models.Model):
         unique_together = [["ticker", "d"]]
 
     def __str__(self):
-        return f"{self.d}|{self.o}|{self.h}|" \
-               f"{self.l}|{self.c}|{self.v}|{self.oi}"
+        return f"{self.d}|{self.o}|{self.h}|" f"{self.l}|{self.c}|{self.v}|{self.oi}"
 
 
 @ttl_cache(maxsize=10000, ttl=10)

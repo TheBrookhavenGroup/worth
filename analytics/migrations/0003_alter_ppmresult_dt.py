@@ -5,15 +5,14 @@ import django.utils.timezone
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('analytics', '0002_rename_total_ppmresult_value'),
+        ("analytics", "0002_rename_total_ppmresult_value"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='ppmresult',
-            name='dt',
+            model_name="ppmresult",
+            name="dt",
             field=models.DateTimeField(default=django.utils.timezone.now, unique=True),
         ),
     ]

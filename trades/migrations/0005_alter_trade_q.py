@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('trades', '0004_alter_trade_reinvest'),
+        ("trades", "0004_alter_trade_reinvest"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='trade',
-            name='q',
+            model_name="trade",
+            name="q",
             field=models.DecimalField(decimal_places=10, default=0, max_digits=20),
         ),
     ]

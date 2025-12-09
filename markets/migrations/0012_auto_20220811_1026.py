@@ -4,25 +4,60 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('markets', '0011_market_vprec'),
+        ("markets", "0011_market_vprec"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='ticker',
-            name='name',
+            model_name="ticker",
+            name="name",
             field=models.CharField(blank=True, max_length=50, null=True),
         ),
         migrations.AlterField(
-            model_name='market',
-            name='ib_exchange',
-            field=models.CharField(choices=[('CASH', 'CASH'), ('C_O_H', 'C_O_H'), ('STOCK', 'STOCK'), ('BOND', 'BOND'), ('ARCA', 'ARCA'), ('SMART', 'SMART'), ('CME', 'CME'), ('NYM', 'NYM'), ('NYMEX', 'NYMEX'), ('NYBOT', 'NYBOT'), ('NYB', 'NYB'), ('CFE', 'CFE'), ('ECBOT', 'ECBOT')], default='STOCK', max_length=6),
+            model_name="market",
+            name="ib_exchange",
+            field=models.CharField(
+                choices=[
+                    ("CASH", "CASH"),
+                    ("C_O_H", "C_O_H"),
+                    ("STOCK", "STOCK"),
+                    ("BOND", "BOND"),
+                    ("ARCA", "ARCA"),
+                    ("SMART", "SMART"),
+                    ("CME", "CME"),
+                    ("NYM", "NYM"),
+                    ("NYMEX", "NYMEX"),
+                    ("NYBOT", "NYBOT"),
+                    ("NYB", "NYB"),
+                    ("CFE", "CFE"),
+                    ("ECBOT", "ECBOT"),
+                ],
+                default="STOCK",
+                max_length=6,
+            ),
         ),
         migrations.AlterField(
-            model_name='market',
-            name='yahoo_exchange',
-            field=models.CharField(choices=[('CASH', 'CASH'), ('C_O_H', 'C_O_H'), ('STOCK', 'STOCK'), ('BOND', 'BOND'), ('ARCA', 'ARCA'), ('SMART', 'SMART'), ('CME', 'CME'), ('NYM', 'NYM'), ('NYMEX', 'NYMEX'), ('NYBOT', 'NYBOT'), ('NYB', 'NYB'), ('CFE', 'CFE'), ('ECBOT', 'ECBOT')], default='STOCK', max_length=6),
+            model_name="market",
+            name="yahoo_exchange",
+            field=models.CharField(
+                choices=[
+                    ("CASH", "CASH"),
+                    ("C_O_H", "C_O_H"),
+                    ("STOCK", "STOCK"),
+                    ("BOND", "BOND"),
+                    ("ARCA", "ARCA"),
+                    ("SMART", "SMART"),
+                    ("CME", "CME"),
+                    ("NYM", "NYM"),
+                    ("NYMEX", "NYMEX"),
+                    ("NYBOT", "NYBOT"),
+                    ("NYB", "NYB"),
+                    ("CFE", "CFE"),
+                    ("ECBOT", "ECBOT"),
+                ],
+                default="STOCK",
+                max_length=6,
+            ),
         ),
     ]

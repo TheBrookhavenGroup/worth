@@ -5,27 +5,39 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('markets', '0007_auto_20220301_0911'),
+        ("markets", "0007_auto_20220301_0911"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='TBGDailyBar',
+            name="TBGDailyBar",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('d', models.DateField()),
-                ('o', models.FloatField()),
-                ('h', models.FloatField()),
-                ('l', models.FloatField()),
-                ('c', models.FloatField()),
-                ('v', models.FloatField()),
-                ('oi', models.FloatField()),
-                ('ticker', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='markets.ticker')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("d", models.DateField()),
+                ("o", models.FloatField()),
+                ("h", models.FloatField()),
+                ("l", models.FloatField()),
+                ("c", models.FloatField()),
+                ("v", models.FloatField()),
+                ("oi", models.FloatField()),
+                (
+                    "ticker",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE, to="markets.ticker"
+                    ),
+                ),
             ],
             options={
-                'unique_together': {('ticker', 'd')},
+                "unique_together": {("ticker", "d")},
             },
         ),
     ]

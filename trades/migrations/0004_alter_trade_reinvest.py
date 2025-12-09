@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('trades', '0003_alter_trade_commission'),
+        ("trades", "0003_alter_trade_commission"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='trade',
-            name='reinvest',
+            model_name="trade",
+            name="reinvest",
             field=models.BooleanField(default=False),
         ),
     ]

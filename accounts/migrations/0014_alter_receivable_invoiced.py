@@ -5,15 +5,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('accounts', '0013_alter_receivable_expected_alter_receivable_received'),
+        ("accounts", "0013_alter_receivable_expected_alter_receivable_received"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='receivable',
-            name='invoiced',
+            model_name="receivable",
+            name="invoiced",
             field=models.DateField(default=datetime.date.today),
         ),
     ]

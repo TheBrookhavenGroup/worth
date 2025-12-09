@@ -6,35 +6,63 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('accounts', '0014_alter_receivable_invoiced'),
+        ("accounts", "0014_alter_receivable_invoiced"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Vendor',
+            name="Vendor",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=100, unique=True)),
-                ('description', models.CharField(blank=True, max_length=200)),
-                ('url', models.URLField(blank=True, null=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=100, unique=True)),
+                ("description", models.CharField(blank=True, max_length=200)),
+                ("url", models.URLField(blank=True, null=True)),
             ],
         ),
         migrations.AlterModelOptions(
-            name='account',
-            options={'ordering': ('-active_f', 'name')},
+            name="account",
+            options={"ordering": ("-active_f", "name")},
         ),
         migrations.CreateModel(
-            name='Expense',
+            name="Expense",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('d', models.DateField()),
-                ('description', models.CharField(max_length=180)),
-                ('paid', models.DateField(blank=True, null=True)),
-                ('amt', models.FloatField()),
-                ('account', models.ForeignKey(default=accounts.models.get_tbg_account, on_delete=django.db.models.deletion.CASCADE, to='accounts.account')),
-                ('vendor', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='accounts.vendor')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("d", models.DateField()),
+                ("description", models.CharField(max_length=180)),
+                ("paid", models.DateField(blank=True, null=True)),
+                ("amt", models.FloatField()),
+                (
+                    "account",
+                    models.ForeignKey(
+                        default=accounts.models.get_tbg_account,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="accounts.account",
+                    ),
+                ),
+                (
+                    "vendor",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="accounts.vendor",
+                    ),
+                ),
             ],
         ),
     ]

@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('accounts', '0004_account_active_f'),
+        ("accounts", "0004_account_active_f"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='account',
-            name='url',
+            model_name="account",
+            name="url",
             field=models.URLField(blank=True, null=True),
         ),
     ]

@@ -4,15 +4,19 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('markets', '0012_auto_20220811_1026'),
+        ("markets", "0012_auto_20220811_1026"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='ticker',
-            name='name',
-            field=models.CharField(blank=True, help_text='Optional override to Market description.', max_length=50, null=True),
+            model_name="ticker",
+            name="name",
+            field=models.CharField(
+                blank=True,
+                help_text="Optional override to Market description.",
+                max_length=50,
+                null=True,
+            ),
         ),
     ]

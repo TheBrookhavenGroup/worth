@@ -5,15 +5,16 @@ import datetime
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('markets', '0015_alter_ticker_options'),
+        ("markets", "0015_alter_ticker_options"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='market',
-            name='t_close',
-            field=models.TimeField(default=datetime.time(16, 0), help_text='Market close time (EST)'),
+            model_name="market",
+            name="t_close",
+            field=models.TimeField(
+                default=datetime.time(16, 0), help_text="Market close time (EST)"
+            ),
         ),
     ]

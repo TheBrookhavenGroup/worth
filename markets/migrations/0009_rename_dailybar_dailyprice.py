@@ -4,14 +4,13 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('markets', '0008_tbgdailybar'),
+        ("markets", "0008_tbgdailybar"),
     ]
 
     operations = [
         migrations.RenameModel(
-            old_name='DailyBar',
-            new_name='DailyPrice',
+            old_name="DailyBar",
+            new_name="DailyPrice",
         ),
     ]

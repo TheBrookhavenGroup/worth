@@ -5,27 +5,45 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('markets', '0001_initial'),
-        ('accounts', '0001_initial'),
+        ("markets", "0001_initial"),
+        ("accounts", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Trade',
+            name="Trade",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('dt', models.DateTimeField()),
-                ('reinvest', models.BooleanField(default=True)),
-                ('q', models.FloatField()),
-                ('p', models.FloatField()),
-                ('commission', models.FloatField(default=0.0)),
-                ('note', models.CharField(blank=True, max_length=180, null=True)),
-                ('account', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='accounts.account')),
-                ('ticker', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='markets.ticker')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("dt", models.DateTimeField()),
+                ("reinvest", models.BooleanField(default=True)),
+                ("q", models.FloatField()),
+                ("p", models.FloatField()),
+                ("commission", models.FloatField(default=0.0)),
+                ("note", models.CharField(blank=True, max_length=180, null=True)),
+                (
+                    "account",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="accounts.account",
+                    ),
+                ),
+                (
+                    "ticker",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE, to="markets.ticker"
+                    ),
+                ),
             ],
         ),
     ]

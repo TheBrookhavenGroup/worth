@@ -16,19 +16,20 @@ def is_futures(exchange):
 def ticker_url(ticker):
     if ticker.market.is_cash:
         url = ticker.ticker
-        if url.lower() != 'cash':
+        if url.lower() != "cash":
             url = f"CASH {url}"
     else:
         ticker = ticker.ticker
-        url = reverse('analytics:ticker_view', kwargs={'ticker': ticker})
-        url = mark_safe(f'<a href={url}>{ticker}</a>')
+        url = reverse("analytics:ticker_view", kwargs={"ticker": ticker})
+        url = mark_safe(f"<a href={url}>{ticker}</a>")
     return url
 
 
 def ticker_admin_url(request, ticker):
     from django.contrib.sites.shortcuts import get_current_site
+
     url = get_current_site(request)
-    url = f'{request.scheme}://{url}/admin/markets/ticker/{ticker.id}/change/'
+    url = f"{request.scheme}://{url}/admin/markets/ticker/{ticker.id}/change/"
     url = f'<a href="{url}" target="_blank">admin ticker</a>'
     return mark_safe(url)
 
@@ -71,8 +72,13 @@ def get_historical_bar(ticker, d):
     return None
 
 
-fixed_prices = {'AAPL': 305.0, 'MSFT': 305.0, 'AMZN': 115.0, 'ESZ2021': 4300.0,
-                'MBXIX': 33.0}
+fixed_prices = {
+    "AAPL": 305.0,
+    "MSFT": 305.0,
+    "AMZN": 115.0,
+    "ESZ2021": 4300.0,
+    "MBXIX": 33.0,
+}
 
 
 @ttl_cache(maxsize=1000, ttl=10)
@@ -98,7 +104,8 @@ def get_price(ticker, d=None):
                     if TBGDailyBar.objects.filter(ticker=ticker, d=d).exists():
                         print(
                             f"Bar exists in TBGDaily, saving to DailyPrice: "
-                            f"{d} {ticker}")
+                            f"{d} {ticker}"
+                        )
                         tb = TBGDailyBar.objects.get(ticker=ticker, d=d)
                         p = tb.c
                         DailyPrice.objects.create(ticker=ticker, d=d, c=p)
@@ -106,14 +113,13 @@ def get_price(ticker, d=None):
                         print(f"Cannot find price in TBGDaily: {d} {ticker}")
                         print(
                             f"Try https://www.barchart.com/futures/quotes/"
-                            f"{ticker}/interactive-chart")
+                            f"{ticker}/interactive-chart"
+                        )
                         p = 0.0
                 else:
                     d_bar, o, h, l, c, v, oi = bar
                     if d_bar != d:
-                        print(
-                            f"Using price found on {d_bar} for {d} for "
-                            f"{ticker}")
+                        print(f"Using price found on {d_bar} for {d} for " f"{ticker}")
                     DailyPrice.objects.create(ticker=ticker, d=d, c=c)
                     p = c
     else:

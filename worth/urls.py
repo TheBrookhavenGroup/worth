@@ -1,4 +1,3 @@
-
 from django.conf import settings
 from django.contrib import admin
 from django.urls import path, include
@@ -11,9 +10,9 @@ admin.site.site_title = title
 
 
 urlpatterns = [
-    path('admin/', admin.site.urls, name='admin'),
-    path('', RedirectView.as_view(url='admin', permanent=False)),
-    path('', include('analytics.urls')),
-    path('', include('accounts.urls')),
-    path('', include('markets.urls')),
+    path("admin/", admin.site.urls, name="admin"),
+    path("", RedirectView.as_view(url="admin", permanent=False)),
+    path("", include("analytics.urls")),
+    path("", include("accounts.urls")),
+    path("", include("markets.urls")),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

@@ -5,15 +5,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('analytics', '0003_alter_ppmresult_dt'),
+        ("analytics", "0003_alter_ppmresult_dt"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='ppmresult',
-            name='dt',
+            model_name="ppmresult",
+            name="dt",
             field=models.DateField(default=datetime.date.today, unique=True),
         ),
     ]

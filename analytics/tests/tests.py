@@ -14,7 +14,6 @@ class PnLTests(TestCase):
 
     @staticmethod
     def results(d=None):
-
         df, total, total_today, _ = pnl(d=d)
 
         def get_pnl(ticker):
@@ -24,44 +23,50 @@ class PnLTests(TestCase):
                 p = 0
             return p
 
-        coh = df[df.Account == 'ALL COH'].iloc[0][4]
-        cash = df[df.Ticker == 'CASH'].iloc[0][4]
-        msft = get_pnl('MSFT')
-        amzn = get_pnl('AMZN')
-        aapl = get_pnl('AAPL')
+        coh = df[df.Account == "ALL COH"].iloc[0][4]
+        cash = df[df.Ticker == "CASH"].iloc[0][4]
+        msft = get_pnl("MSFT")
+        amzn = get_pnl("AMZN")
+        aapl = get_pnl("AAPL")
 
-        return {'TOTAL': total, 'COH': coh, 'CASH': cash, 'MSFT': msft,
-                'AAPL': aapl, 'AMZN': amzn}, df
+        return {
+            "TOTAL": total,
+            "COH": coh,
+            "CASH": cash,
+            "MSFT": msft,
+            "AAPL": aapl,
+            "AMZN": amzn,
+        }, df
 
     def test_today(self):
         data, _ = self.results()
 
-        self.assertAlmostEqual(1021456.2, data['TOTAL'])
+        self.assertAlmostEqual(1021456.2, data["TOTAL"])
 
-        cash = data['CASH']
+        cash = data["CASH"]
         self.assertAlmostEqual(974435.0, cash)
-        self.assertEqual(974435.0, data['COH'])
-        self.assertAlmostEqual(-50.0, data['MSFT'])
-        self.assertAlmostEqual(7370, data['AMZN'])
+        self.assertEqual(974435.0, data["COH"])
+        self.assertAlmostEqual(-50.0, data["MSFT"])
+        self.assertAlmostEqual(7370, data["AMZN"])
 
     def test_givendate(self):
         data, _ = self.results(d=datetime.date(2021, 10, 23))
-        self.assertAlmostEqual(500, data['AAPL'])
+        self.assertAlmostEqual(500, data["AAPL"])
 
         data, _ = self.results(d=datetime.date(2021, 10, 30))
-        self.assertAlmostEqual(100, data['AAPL'])
+        self.assertAlmostEqual(100, data["AAPL"])
 
     def test_sell(self):
         # AAPL was sold on 10/25/2021
         data, df = self.results(d=datetime.date(2021, 10, 25))
 
-        aapl_today = list(df[df.Ticker == 'AAPL'].Today)[0]
+        aapl_today = list(df[df.Ticker == "AAPL"].Today)[0]
         self.assertAlmostEqual(-400, aapl_today)
 
-        total_today = list(df[df.Account == 'TOTAL'].Today)[0]
+        total_today = list(df[df.Account == "TOTAL"].Today)[0]
         self.assertAlmostEqual(3360.0, total_today)
 
-        cash_today = list(df[df.Ticker == 'CASH'].Today)[0]
+        cash_today = list(df[df.Ticker == "CASH"].Today)[0]
         self.assertAlmostEqual(24660.0, cash_today)
 
 
@@ -80,7 +85,7 @@ class PnLSplitTests(TestCase):
         self.assertAlmostEqual(expected_pnl, pnl)
 
     def test_split(self):
-        df, total, total_today, _ = pnl(a='MSFidelity')
+        df, total, total_today, _ = pnl(a="MSFidelity")
 
         # Split
         # These are the trades used for testing with zero for price on split
@@ -101,19 +106,22 @@ class PnLIfClosedTests(TestCase):
 
     def test_if_closed(self):
         expected = pd.DataFrame(
-            {'a': ['MSFidelity', 'MSFidelity', 'MSFidelity'],
-             't': ['MSFT', 'MBXIX', 'AMZN'],
-             'position': [10.0, 1001.4, 95.0],
-             'wap': [310.00, 29.01431, 94.36842],
-             'cs': [1.0, 1.0, 1.0],
-             'price': [305.0, 33.0, 115.0],
-             'value': [3050.0, 33046.2, 10925.0],
-             'pnl': [-50.0, 3991.274, 1960.0]})
+            {
+                "a": ["MSFidelity", "MSFidelity", "MSFidelity"],
+                "t": ["MSFT", "MBXIX", "AMZN"],
+                "position": [10.0, 1001.4, 95.0],
+                "wap": [310.00, 29.01431, 94.36842],
+                "cs": [1.0, 1.0, 1.0],
+                "price": [305.0, 33.0, 115.0],
+                "value": [3050.0, 33046.2, 10925.0],
+                "pnl": [-50.0, 3991.274, 1960.0],
+            }
+        )
 
         df, format_rec = pnl_if_closed()
 
-        df.sort_values(by=['t'], inplace=True, ignore_index=True)
-        expected.sort_values(by=['t'], inplace=True, ignore_index=True)
+        df.sort_values(by=["t"], inplace=True, ignore_index=True)
+        expected.sort_values(by=["t"], inplace=True, ignore_index=True)
 
         print(df)
         print(expected)

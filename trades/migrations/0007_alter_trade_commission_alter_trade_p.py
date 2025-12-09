@@ -5,20 +5,24 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('trades', '0006_alter_trade_options'),
+        ("trades", "0006_alter_trade_options"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='trade',
-            name='commission',
-            field=models.DecimalField(decimal_places=10, default=0, max_digits=20, validators=[django.core.validators.MinValueValidator(0.0)]),
+            model_name="trade",
+            name="commission",
+            field=models.DecimalField(
+                decimal_places=10,
+                default=0,
+                max_digits=20,
+                validators=[django.core.validators.MinValueValidator(0.0)],
+            ),
         ),
         migrations.AlterField(
-            model_name='trade',
-            name='p',
+            model_name="trade",
+            name="p",
             field=models.DecimalField(decimal_places=10, default=0, max_digits=20),
         ),
     ]

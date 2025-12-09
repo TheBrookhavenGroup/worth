@@ -5,15 +5,19 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('accounts', '0015_vendor_alter_account_options_expense'),
+        ("accounts", "0015_vendor_alter_account_options_expense"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='expense',
-            name='cash_transaction',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='accounts.cashrecord'),
+            model_name="expense",
+            name="cash_transaction",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                to="accounts.cashrecord",
+            ),
         ),
     ]

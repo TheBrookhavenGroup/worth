@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('accounts', '0005_account_url'),
+        ("accounts", "0005_account_url"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='account',
-            name='reconciled_f',
+            model_name="account",
+            name="reconciled_f",
             field=models.BooleanField(default=False),
         ),
     ]

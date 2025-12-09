@@ -4,18 +4,17 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('markets', '0006_dailybar_unique_daily_bar'),
+        ("markets", "0006_dailybar_unique_daily_bar"),
     ]
 
     operations = [
         migrations.RemoveConstraint(
-            model_name='dailybar',
-            name='unique_daily_bar',
+            model_name="dailybar",
+            name="unique_daily_bar",
         ),
         migrations.AlterUniqueTogether(
-            name='dailybar',
-            unique_together={('ticker', 'd')},
+            name="dailybar",
+            unique_together={("ticker", "d")},
         ),
     ]
