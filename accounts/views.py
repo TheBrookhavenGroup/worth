@@ -69,10 +69,7 @@ class CashTransferView(LoginRequiredMixin, FormView):
             from_accnt = form.cleaned_data["from_account"]
             to_accnt = form.cleaned_data["to_account"]
             amt = form.cleaned_data["amt"]
-            s = (
-                f"{d} from_account: {from_accnt}, "
-                f"to_account: {to_accnt}, amt: {amt}"
-            )
+            s = f"{d} from_account: {from_accnt}, to_account: {to_accnt}, amt: {amt}"
             try:
                 with transaction.atomic():
                     CashRecord.objects.create(

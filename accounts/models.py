@@ -132,9 +132,7 @@ class CashRecord(models.Model):
         (GU, "Gila UTMA"),
     ]
 
-    account = models.ForeignKey(
-        Account, on_delete=models.CASCADE, default=get_bofa_account
-    )
+    account = models.ForeignKey(Account, on_delete=models.CASCADE, default=get_bofa_account)
     d = models.DateField()
     category = models.CharField(max_length=3, choices=CATEGORY_CHOICES, default=GN)
     description = models.CharField(max_length=180)
@@ -193,9 +191,7 @@ def get_tbg_account():
 
 
 class Expense(models.Model):
-    account = models.ForeignKey(
-        Account, on_delete=models.CASCADE, default=get_tbg_account
-    )
+    account = models.ForeignKey(Account, on_delete=models.CASCADE, default=get_tbg_account)
     vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE)
     d = models.DateField()
     description = models.CharField(max_length=180)

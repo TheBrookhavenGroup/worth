@@ -9,4 +9,4 @@ class PPMResultAdmin(admin.ModelAdmin):
     date_hierarchy = "d"
 
     def total(self, obj):
-        return f"{obj.value / 1.e6:.3f}M"
+        return f"{obj.value / 1.0e6:.3f}M"

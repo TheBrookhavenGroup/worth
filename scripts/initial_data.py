@@ -86,9 +86,7 @@ def get_account(a):
     if Account.objects.filter(name=a).exists():
         account = Account.objects.get(name=a)
     else:
-        account = Account(
-            name=a, owner="MSRK", broker="", broker_account=a, description=""
-        )
+        account = Account(name=a, owner="MSRK", broker="", broker_account=a, description="")
         account.save()
     return account
 
@@ -118,9 +116,7 @@ def fix_none_accounts(none_accounts):
     for a in none_accounts.keys():
         balance = cash_balance(a)
         a = get_account(a)
-        description = (
-            "Stub to close account because there never was this " "cash account."
-        )
+        description = "Stub to close account because there never was this cash account."
         CashRecord(
             account=a,
             d=none_accounts[a.name].date(),

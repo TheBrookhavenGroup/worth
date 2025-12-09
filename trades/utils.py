@@ -24,9 +24,7 @@ def reindexed_wap(df):
     t = df.loc[0, "t"]
     cs = df.loc[0, "cs"]
     position = df.q.sum()
-    result = pd.DataFrame(
-        {"a": [a], "t": [t], "position": [position], "wap": [wap], "cs": cs}
-    )
+    result = pd.DataFrame({"a": [a], "t": [t], "position": [position], "wap": [wap], "cs": cs})
     return result
 
 
@@ -109,8 +107,9 @@ def trades_pnl(df, d=None):
         d = our_now().date()
 
     if df.empty:
-        pnl = pd.DataFrame(columns=['a', 't', 'qp', 'qpr', 'q', 'cs',
-                                    'c', 'e', 'price', 'pnl', 'value'])
+        pnl = pd.DataFrame(
+            columns=["a", "t", "qp", "qpr", "q", "cs", "c", "e", "price", "pnl", "value"]
+        )
     else:
         df["qp"] = -df.q * df.p
 
@@ -151,9 +150,7 @@ def pnl_asof(d=None, a=None, only_non_qualified=False, active_f=True, cleared=Fa
     Return YTD data for active positions.
     """
 
-    df = bucketed_trades(
-        d=d, a=a, only_non_qualified=only_non_qualified, active_f=active_f
-    )
+    df = bucketed_trades(d=d, a=a, only_non_qualified=only_non_qualified, active_f=active_f)
 
     pnl = trades_pnl(df, d=d)
 
@@ -198,9 +195,9 @@ def pnl_asof(d=None, a=None, only_non_qualified=False, active_f=True, cleared=Fa
 def trades_with_position(df):
     # Get only trades that are in position.
 
-    pos = pd.pivot_table(
-        df, index=["a", "t"], aggfunc={"q": "sum", "cs": "first"}
-    ).reset_index(["a", "t"])
+    pos = pd.pivot_table(df, index=["a", "t"], aggfunc={"q": "sum", "cs": "first"}).reset_index(
+        ["a", "t"]
+    )
     pos = pos[pos.q != 0]
     df = pd.merge(df, pos, how="inner", on=["a", "t"])
     df.drop(["q_y", "cs_y"], axis=1, inplace=True)

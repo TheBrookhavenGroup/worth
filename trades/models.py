@@ -15,12 +15,8 @@ class Trade(models.Model):
     account = models.ForeignKey(Account, on_delete=models.CASCADE)
     ticker = models.ForeignKey(Ticker, on_delete=models.CASCADE)
     reinvest = models.BooleanField(default=False, blank=False, null=False)
-    q = models.DecimalField(
-        max_digits=20, decimal_places=10, default=0, blank=False, null=False
-    )
-    p = models.DecimalField(
-        max_digits=20, decimal_places=10, default=0, blank=False, null=False
-    )
+    q = models.DecimalField(max_digits=20, decimal_places=10, default=0, blank=False, null=False)
+    p = models.DecimalField(max_digits=20, decimal_places=10, default=0, blank=False, null=False)
     commission = models.DecimalField(
         max_digits=20,
         decimal_places=10,
@@ -74,18 +70,16 @@ class Trade(models.Model):
         if isinstance(account, str):
             account = Account.objects.get(name=account)
         qs = cls.more_filtering(account, ticker, only_non_qualified)
-        return qs.filter(
-            ~Q(ticker__market__ib_exchange__in=(NOT_FUTURES_EXCHANGES))
-        ).order_by("dt")
+        return qs.filter(~Q(ticker__market__ib_exchange__in=(NOT_FUTURES_EXCHANGES))).order_by(
+            "dt"
+        )
 
     @classmethod
     def equity_trades(cls, account=None, ticker=None, only_non_qualified=False):
         if isinstance(account, str):
             account = Account.objects.get(name=account)
         qs = cls.more_filtering(account, ticker, only_non_qualified)
-        return qs.filter(
-            ticker__market__ib_exchange__in=(NOT_FUTURES_EXCHANGES)
-        ).order_by("dt")
+        return qs.filter(ticker__market__ib_exchange__in=(NOT_FUTURES_EXCHANGES)).order_by("dt")
 
     @classmethod
     def any_trades(cls, account=None, ticker=None, only_non_qualified=False):
@@ -146,9 +140,7 @@ def get_trades_df(a=None, t=None, only_non_qualified=False, active_f=True):
 
 
 def copy_trades_df(d=None, t=None, a=None, only_non_qualified=False, active_f=True):
-    df = get_trades_df(
-        a=a, t=t, only_non_qualified=only_non_qualified, active_f=active_f
-    )
+    df = get_trades_df(a=a, t=t, only_non_qualified=only_non_qualified, active_f=active_f)
     df = df.copy(deep=True)
     if (not df.empty) and (d is not None):
         dt = day_start_next_day(d)
@@ -167,9 +159,7 @@ def bucketed_trades(d=None, t=None, a=None, only_non_qualified=False, active_f=T
       timestamp (in America/New_York) is later than the Market.t_close
       for its ticker, the date is moved to the next business day.
     """
-    df = copy_trades_df(
-        d=d, t=t, a=a, only_non_qualified=only_non_qualified, active_f=active_f
-    )
+    df = copy_trades_df(d=d, t=t, a=a, only_non_qualified=only_non_qualified, active_f=active_f)
 
     if df.empty:
         return df
@@ -206,9 +196,7 @@ def bucketed_trades(d=None, t=None, a=None, only_non_qualified=False, active_f=T
             return next_business_day(d0)
         t_close = tclose_map.get(tkr)
         cutoff_time = t_close if t_close is not None else time(18, 0)
-        cutoff_local = pd.Timestamp(
-            datetime.combine(d0, cutoff_time), tz="America/New_York"
-        )
+        cutoff_local = pd.Timestamp(datetime.combine(d0, cutoff_time), tz="America/New_York")
         return d0 if ts <= cutoff_local else next_business_day(d0)
 
     df["d"] = df.apply(_trading_day_row, axis=1)

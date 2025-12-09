@@ -152,7 +152,7 @@ class CashRecordChangeList(ChangeList):
     def get_results(self, request):
         super().get_results(request)
 
-        msg = "Totals are shown here when a specific date and account " "are selected."
+        msg = "Totals are shown here when a specific date and account are selected."
         if "active" in request.GET:
             account_id = request.GET["active"]
 
@@ -247,17 +247,13 @@ def book_expense(modeladmin, request, qs):
             rec.cash_transaction = new_rec
             rec.save()
         else:
-            messages.add_message(
-                request, messages.INFO, f"Already booked: {description}"
-            )
+            messages.add_message(request, messages.INFO, f"Already booked: {description}")
 
 
 def expense_form_factory(d, a):
     class CashForm(ModelForm):
         cash_transaction = ModelChoiceField(
-            queryset=CashRecord.objects.filter(
-                account=a, d__gte=d, amt__lte=0
-            ).order_by("-d"),
+            queryset=CashRecord.objects.filter(account=a, d__gte=d, amt__lte=0).order_by("-d"),
             required=False,
         )
 
@@ -290,9 +286,7 @@ class ExpenseAdmin(admin.ModelAdmin):
 
     def cash_transaction_link(self, obj):
         if obj.cash_transaction is not None:
-            link = reverse(
-                "admin:accounts_cashrecord_change", args=[obj.cash_transaction.id]
-            )
+            link = reverse("admin:accounts_cashrecord_change", args=[obj.cash_transaction.id])
             return format_html('<a href="{}">{}</a>', link, obj.cash_transaction.d)
         else:
             return "Unassigned"

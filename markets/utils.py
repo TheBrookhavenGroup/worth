@@ -102,10 +102,7 @@ def get_price(ticker, d=None):
                 bar = get_historical_bar(ticker, d)
                 if bar is None:
                     if TBGDailyBar.objects.filter(ticker=ticker, d=d).exists():
-                        print(
-                            f"Bar exists in TBGDaily, saving to DailyPrice: "
-                            f"{d} {ticker}"
-                        )
+                        print(f"Bar exists in TBGDaily, saving to DailyPrice: {d} {ticker}")
                         tb = TBGDailyBar.objects.get(ticker=ticker, d=d)
                         p = tb.c
                         DailyPrice.objects.create(ticker=ticker, d=d, c=p)
@@ -119,7 +116,7 @@ def get_price(ticker, d=None):
                 else:
                     d_bar, o, h, l, c, v, oi = bar
                     if d_bar != d:
-                        print(f"Using price found on {d_bar} for {d} for " f"{ticker}")
+                        print(f"Using price found on {d_bar} for {d} for {ticker}")
                     DailyPrice.objects.create(ticker=ticker, d=d, c=c)
                     p = c
     else:

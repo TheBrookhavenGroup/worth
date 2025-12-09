@@ -23,10 +23,7 @@ def get_account_url(a):
         if a.url is None:
             a = f"{a.name}{chart_url}"
         else:
-            a = (
-                f'<a href={a.url} target="_blank">{a.name}</a>{chart_url} '
-                f"{diff_url}"
-            )
+            a = f'<a href={a.url} target="_blank">{a.name}</a>{chart_url} {diff_url}'
 
     return mark_safe(a)
 

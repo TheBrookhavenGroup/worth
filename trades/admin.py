@@ -52,13 +52,9 @@ class ExchangeTypeFilter(SimpleListFilter):
     def queryset(self, request, queryset):
         v = self.value()
         if "futures" == v:
-            return queryset.filter(
-                ~Q(ticker__market__ib_exchange__in=NOT_FUTURES_EXCHANGES)
-            )
+            return queryset.filter(~Q(ticker__market__ib_exchange__in=NOT_FUTURES_EXCHANGES))
         elif "equities" == v:
-            return queryset.filter(
-                ticker__market__ib_exchange__in=NOT_FUTURES_EXCHANGES
-            )
+            return queryset.filter(ticker__market__ib_exchange__in=NOT_FUTURES_EXCHANGES)
         return queryset
 
 

@@ -14,9 +14,7 @@ def get_market(s):
         m = Market.objects.get(symbol=s)
     except Market.DoesNotExist:
         print(f"Making market for {s}")
-        m = Market.objects.get_or_create(
-            symbol=s, name=s, ib_exchange="CME", yahoo_exchange="CME"
-        )
+        m = Market.objects.get_or_create(symbol=s, name=s, ib_exchange="CME", yahoo_exchange="CME")
         m = m[0]
     return m
 
@@ -53,9 +51,7 @@ def add_trades():
             ticker = Ticker(ticker=t, market=market)
             ticker.save()
 
-        trade = Trade(
-            dt=dt, account=account, ticker=ticker, q=q, p=p, commission=c, note=note
-        )
+        trade = Trade(dt=dt, account=account, ticker=ticker, q=q, p=p, commission=c, note=note)
         trade.save()
 
 

@@ -14,12 +14,8 @@ class PnLForm(forms.Form):
     account = forms.ModelChoiceField(
         queryset=Account.objects.filter(active_f=True).all(), required=False
     )
-    days = forms.IntegerField(
-        min_value=0, required=False, help_text="How many days back?"
-    )
+    days = forms.IntegerField(min_value=0, required=False, help_text="How many days back?")
 
 
 class CheckingForm(forms.Form):
-    account = forms.ModelChoiceField(
-        queryset=list_accounts_without_trades(), required=False
-    )
+    account = forms.ModelChoiceField(queryset=list_accounts_without_trades(), required=False)

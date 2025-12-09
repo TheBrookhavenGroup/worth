@@ -6,9 +6,7 @@ from datetime import time
 
 NOT_FUTURES_EXCHANGES = ["CASH", "STOCK", "BOND", "ARCA", "SMART"]
 EXCHANGES = [
-    (i, i)
-    for i in NOT_FUTURES_EXCHANGES
-    + ["CME", "NYM", "NYMEX", "NYBOT", "NYB", "CFE", "ECBOT"]
+    (i, i) for i in NOT_FUTURES_EXCHANGES + ["CME", "NYM", "NYMEX", "NYBOT", "NYB", "CFE", "ECBOT"]
 ]
 MAX_EXCHANGES_LEN = max([len(i[0]) for i in EXCHANGES]) + 1
 
@@ -70,13 +68,13 @@ class Ticker(models.Model):
         max_length=50,
         blank=True,
         null=True,
-        help_text="Optional override to Market " "description.",
+        help_text="Optional override to Market description.",
     )
     market = models.ForeignKey(Market, on_delete=models.CASCADE)
     fixed_price = models.FloatField(
         null=True,
         blank=True,
-        help_text="If set then this is the price " "that will always be used.",
+        help_text="If set then this is the price that will always be used.",
     )
 
     class Meta:
@@ -172,7 +170,7 @@ class TBGDailyBar(models.Model):
         unique_together = [["ticker", "d"]]
 
     def __str__(self):
-        return f"{self.d}|{self.o}|{self.h}|" f"{self.l}|{self.c}|{self.v}|{self.oi}"
+        return f"{self.d}|{self.o}|{self.h}|{self.l}|{self.c}|{self.v}|{self.oi}"
 
 
 @ttl_cache(maxsize=10000, ttl=10)

@@ -126,9 +126,7 @@ def pnl(d=None, a=None, active_f=True):
 
     total_worth = total_worth.value.sum() + cash_sum
 
-    df = pd.merge(
-        pnl_eod, pnl_eoy, on=["a", "t"], how="outer", suffixes=("_yesterday", "_year")
-    )
+    df = pd.merge(pnl_eod, pnl_eoy, on=["a", "t"], how="outer", suffixes=("_yesterday", "_year"))
     # Note: merge only uses suffixes if both df's have the same column headings.
     #        so this one wouldn't use them anyway
     df = pd.merge(df, pnl_total, on=["a", "t"], how="outer")
@@ -322,18 +320,12 @@ def performance():
     d = date.today()
     n_months = 120
 
-    dtes = [d, prior_business_day(d)] + [
-        d := lbd_prior_month(d) for i in range(int(n_months))
-    ]
+    dtes = [d, prior_business_day(d)] + [d := lbd_prior_month(d) for i in range(int(n_months))]
     dtes.reverse()
     d_exists = PPMResult.objects.filter(d__in=dtes).values_list("d", flat=True)
     for d in set(dtes) - set(d_exists):
         pnl_summary(d, active_f=False)
-    values = (
-        PPMResult.objects.filter(d__in=dtes)
-        .order_by("d")
-        .values_list("value", flat=True)
-    )
+    values = PPMResult.objects.filter(d__in=dtes).order_by("d").values_list("value", flat=True)
 
     values = list(values)
     data = list(zip(dtes, values))
@@ -359,9 +351,7 @@ def performance():
 def add_close_to_pos(pos_df):
     # If no positions, return as-is with an empty 'close' column
     if pos_df is None or len(pos_df) == 0:
-        empty = pd.DataFrame(
-            columns=["d", "ticker", "opening_pos", "closing_pos", "close"]
-        )  # noqa: E501
+        empty = pd.DataFrame(columns=["d", "ticker", "opening_pos", "closing_pos", "close"])  # noqa: E501
         return empty
 
     # Fetch closing prices for each (d, ticker) present in pos_df
@@ -369,9 +359,9 @@ def add_close_to_pos(pos_df):
     tickers = sorted(set(pos_df["ticker"].tolist()))
 
     if dates and tickers:
-        price_qs = DailyPrice.objects.filter(
-            ticker__ticker__in=tickers, d__in=dates
-        ).values_list("ticker__ticker", "d", "c")
+        price_qs = DailyPrice.objects.filter(ticker__ticker__in=tickers, d__in=dates).values_list(
+            "ticker__ticker", "d", "c"
+        )
         prices = (
             pd.DataFrame.from_records(list(price_qs), columns=["ticker", "d", "close"])  # noqa: E501
             if price_qs
@@ -470,9 +460,9 @@ def daily_pnl(a=None, start=None, end=None):
                 ]
             )  # noqa: E501
             return empty_pnl, empty_pos
-        base = pd.MultiIndex.from_product(
-            [dates_full, accounts], names=["d", "a"]
-        ).to_frame(index=False)  # noqa: E501
+        base = pd.MultiIndex.from_product([dates_full, accounts], names=["d", "a"]).to_frame(
+            index=False
+        )  # noqa: E501
         base["pnl"] = 0.0
         empty_pos = pd.DataFrame(
             columns=[
@@ -510,17 +500,13 @@ def daily_pnl(a=None, start=None, end=None):
 
     # Net traded quantity per (d,a,t)
     dq = (
-        trades_all.groupby(["d", "a", "t"], as_index=False)["q"]
-        .sum()
-        .sort_values(["a", "t", "d"])
+        trades_all.groupby(["d", "a", "t"], as_index=False)["q"].sum().sort_values(["a", "t", "d"])
     )
 
     # Initial offsets (trades prior to start)
     pre_start = dq[dq["d"] < start]
     offsets = (
-        pre_start.groupby(["a", "t"], as_index=False)["q"]
-        .sum()
-        .rename(columns={"q": "offset"})
+        pre_start.groupby(["a", "t"], as_index=False)["q"].sum().rename(columns={"q": "offset"})
     )
 
     # Daily net_q within [start, end] but reindexed to include all business days
@@ -561,9 +547,7 @@ def daily_pnl(a=None, start=None, end=None):
         net_by_day.sort_values(["a", "t", "d"], inplace=True)
         net_by_day["closing_pos"] = (
             net_by_day.groupby(["a", "t"])
-            .apply(
-                lambda x: (x["offset"].iloc[0] + x["q"].cumsum()), include_groups=False
-            )
+            .apply(lambda x: (x["offset"].iloc[0] + x["q"].cumsum()), include_groups=False)
             .reset_index(level=[0, 1], drop=True)
         )
         net_by_day["opening_pos"] = net_by_day["closing_pos"] - net_by_day["q"]
@@ -571,9 +555,7 @@ def daily_pnl(a=None, start=None, end=None):
             ["d", "a", "ticker", "opening_pos", "closing_pos"]
         ]
     else:
-        pos_df = pd.DataFrame(
-            columns=["d", "a", "ticker", "opening_pos", "closing_pos"]
-        ).head(0)
+        pos_df = pd.DataFrame(columns=["d", "a", "ticker", "opening_pos", "closing_pos"]).head(0)
 
     # Attach prices and then fill missing using markets.utils.get_price
     pos_df = add_close_to_pos(pos_df)
@@ -590,10 +572,7 @@ def daily_pnl(a=None, start=None, end=None):
             if need_close.any():
                 need_pairs = pos_df.loc[need_close, ["ticker", "d"]].drop_duplicates()
                 tickers_needed = sorted(set(need_pairs["ticker"]))
-                t_map = {
-                    t.ticker: t
-                    for t in Ticker.objects.filter(ticker__in=tickers_needed)
-                }
+                t_map = {t.ticker: t for t in Ticker.objects.filter(ticker__in=tickers_needed)}
                 price_map = {}
                 for rec in need_pairs.itertuples(index=False):
                     tk = rec.ticker
@@ -612,9 +591,9 @@ def daily_pnl(a=None, start=None, end=None):
                     keys = list(zip(pos_df["ticker"], pos_df["d"]))
                     mapped = pd.Series(keys).map(price_map)
                     # Only fill rows in need_close
-                    pos_df.loc[need_close, "close"] = mapped.loc[
-                        need_close
-                    ].combine_first(pos_df.loc[need_close, "close"])
+                    pos_df.loc[need_close, "close"] = mapped.loc[need_close].combine_first(
+                        pos_df.loc[need_close, "close"]
+                    )
     except Exception:
         # Continue even if price fetch fails
         pass
@@ -634,9 +613,7 @@ def daily_pnl(a=None, start=None, end=None):
                 else pd.DataFrame(columns=["ticker", "d_prev", "prev_close"])
             )
         else:
-            prev_prices = pd.DataFrame(columns=["ticker", "d_prev", "prev_close"]).head(
-                0
-            )
+            prev_prices = pd.DataFrame(columns=["ticker", "d_prev", "prev_close"]).head(0)
 
         pos_df["d_prev"] = pos_df["d"].map(d_prev_map)
         if not prev_prices.empty:
@@ -652,14 +629,10 @@ def daily_pnl(a=None, start=None, end=None):
             )
             need_prev &= prev_missing & pos_df["d_prev"].notna()
             if need_prev.any():
-                need_prev_pairs = pos_df.loc[
-                    need_prev, ["ticker", "d_prev"]
-                ].drop_duplicates()
+                need_prev_pairs = pos_df.loc[need_prev, ["ticker", "d_prev"]].drop_duplicates()
                 need_prev_pairs.rename(columns={"d_prev": "d"}, inplace=True)
                 tickers_prev = sorted(set(need_prev_pairs["ticker"]))
-                t_map_prev = {
-                    t.ticker: t for t in Ticker.objects.filter(ticker__in=tickers_prev)
-                }
+                t_map_prev = {t.ticker: t for t in Ticker.objects.filter(ticker__in=tickers_prev)}
                 prev_price_map = {}
                 for rec in need_prev_pairs.itertuples(index=False):
                     tk = rec.ticker
@@ -676,9 +649,9 @@ def daily_pnl(a=None, start=None, end=None):
                 if prev_price_map:
                     keys_prev = list(zip(pos_df["ticker"], pos_df["d_prev"]))
                     mapped_prev = pd.Series(keys_prev).map(prev_price_map)
-                    pos_df.loc[need_prev, "prev_close"] = mapped_prev.loc[
-                        need_prev
-                    ].combine_first(pos_df.loc[need_prev, "prev_close"])
+                    pos_df.loc[need_prev, "prev_close"] = mapped_prev.loc[need_prev].combine_first(
+                        pos_df.loc[need_prev, "prev_close"]
+                    )
         except Exception:
             pass
 
@@ -687,9 +660,7 @@ def daily_pnl(a=None, start=None, end=None):
     try:
         tickers_all = sorted(set(pos_df["ticker"].tolist()))
         if tickers_all:
-            tcs = Ticker.objects.filter(ticker__in=tickers_all).values_list(
-                "ticker", "market__cs"
-            )
+            tcs = Ticker.objects.filter(ticker__in=tickers_all).values_list("ticker", "market__cs")
             cs_map = {t: float(cs) for t, cs in tcs}
     except Exception:
         cs_map = {}
@@ -698,9 +669,7 @@ def daily_pnl(a=None, start=None, end=None):
     open_syn_cols = ["d", "a", "t", "cs", "q", "p", "c"]
     if len(pos_df):
         open_mask = pos_df["opening_pos"].fillna(0) != 0
-        open_df = pos_df.loc[
-            open_mask, ["d", "a", "ticker", "opening_pos", "prev_close"]
-        ].copy()
+        open_df = pos_df.loc[open_mask, ["d", "a", "ticker", "opening_pos", "prev_close"]].copy()
         open_df.rename(
             columns={"ticker": "t", "opening_pos": "q", "prev_close": "p"}, inplace=True
         )
@@ -714,12 +683,8 @@ def daily_pnl(a=None, start=None, end=None):
     # Synthetic closing trades
     if len(pos_df):
         close_mask = pos_df["closing_pos"].fillna(0) != 0
-        close_df = pos_df.loc[
-            close_mask, ["d", "a", "ticker", "closing_pos", "close"]
-        ].copy()
-        close_df.rename(
-            columns={"ticker": "t", "closing_pos": "q", "close": "p"}, inplace=True
-        )
+        close_df = pos_df.loc[close_mask, ["d", "a", "ticker", "closing_pos", "close"]].copy()
+        close_df.rename(columns={"ticker": "t", "closing_pos": "q", "close": "p"}, inplace=True)
         close_df["q"] = -close_df["q"]
         close_df["cs"] = close_df["t"].map(cs_map).astype(float)
         close_df["c"] = 0.0
@@ -740,9 +705,7 @@ def daily_pnl(a=None, start=None, end=None):
     # Combine all lines
     lines = [df for df in (open_df, close_df, real_df) if len(df)]
     all_lines = (
-        pd.concat(lines, ignore_index=True)
-        if lines
-        else pd.DataFrame(columns=real_cols).head(0)
+        pd.concat(lines, ignore_index=True) if lines else pd.DataFrame(columns=real_cols).head(0)
     )
 
     if len(all_lines):
@@ -760,9 +723,9 @@ def daily_pnl(a=None, start=None, end=None):
         pnl_df = pd.DataFrame(columns=["d", "a", "pnl"]).head(0)
 
     # Ensure all business days are present for all accounts, filling  0
-    base = pd.MultiIndex.from_product(
-        [dates_full, accounts], names=["d", "a"]
-    ).to_frame(index=False)
+    base = pd.MultiIndex.from_product([dates_full, accounts], names=["d", "a"]).to_frame(
+        index=False
+    )
     pnl_full = base.merge(pnl_df, on=["d", "a"], how="left").fillna({"pnl": 0.0})
     pnl_full.sort_values(["d", "a"], inplace=True)
     pnl_full.reset_index(drop=True, inplace=True)

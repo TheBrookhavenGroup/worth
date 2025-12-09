@@ -169,9 +169,7 @@ class ValueChartView(LoginRequiredMixin, TemplateView):
         account = getter("a")
         # Treat missing or empty 'a' as All Accounts
         if not account:
-            d_exists = PPMResult.objects.filter(d__in=x_axis).values_list(
-                "d", flat=True
-            )
+            d_exists = PPMResult.objects.filter(d__in=x_axis).values_list("d", flat=True)
             for d in set(x_axis) - set(d_exists):
                 pnl_summary(d, active_f=False)
             y_axis = (
@@ -182,9 +180,7 @@ class ValueChartView(LoginRequiredMixin, TemplateView):
             y_axis = [i / 1.0e6 for i in y_axis]
             name = self.title
         else:
-            y_axis = [
-                pnl_summary(d, a=account, active_f=False)[-2] / 1.0e6 for d in x_axis
-            ]
+            y_axis = [pnl_summary(d, a=account, active_f=False)[-2] / 1.0e6 for d in x_axis]
             name = f"{self.title} for {account}"
 
         x_axis = [f"{d:%Y-%m-%d}" for d in x_axis]
@@ -227,9 +223,7 @@ class RealizedGainView(LoginRequiredMixin, TemplateView):
 
         realized, formatter = total_realized_gains(year)
 
-        context["h"], context["realized"], _ = df_to_jqtable(
-            df=realized, formatter=formatter
-        )
+        context["h"], context["realized"], _ = df_to_jqtable(df=realized, formatter=formatter)
         context["f"] = formatter
         context["realizedcsvurl"] = reverse("analytics:realizedcsv", args=[year])
 
@@ -343,9 +337,7 @@ class PnLIfClosedView(LoginRequiredMixin, TemplateView):
 
         losses, formatter = pnl_if_closed()
 
-        h, context["data1"], context["formats"] = df_to_jqtable(
-            df=losses, formatter=formatter
-        )
+        h, context["data1"], context["formats"] = df_to_jqtable(df=losses, formatter=formatter)
         context["headings1"] = nice_headings(h)
         context["title"] = "Worth - Losers"
         context["d"] = "PnL if closed today."
@@ -391,9 +383,7 @@ class DailyTradesView(LoginRequiredMixin, TemplateView):
             context["data"] = []
             context["formats"] = "{}"
             # No trades -> no prices table either
-            context["prices_headings"] = nice_headings(
-                ["ticker", "prev_close", "close"]
-            )
+            context["prices_headings"] = nice_headings(["ticker", "prev_close", "close"])
             context["prices_h"] = ["ticker", "prev_close", "close"]
             context["prices_data"] = []
             context["prices_formats"] = "{}"
@@ -413,9 +403,9 @@ class DailyTradesView(LoginRequiredMixin, TemplateView):
                 dff["_dt_eastern"] = dff["dt"].dt.tz_convert("America/New_York")
             else:
                 # Treat naive timestamps as local America/New_York wall time
-                dff["_dt_eastern"] = pd.to_datetime(
-                    dff["dt"], errors="coerce"
-                ).dt.tz_localize("America/New_York")
+                dff["_dt_eastern"] = pd.to_datetime(dff["dt"], errors="coerce").dt.tz_localize(
+                    "America/New_York"
+                )
 
             # Add a full date-time column for display
             dff["time"] = dff["_dt_eastern"].dt.strftime("%Y-%m-%d %H:%M:%S")
@@ -453,9 +443,7 @@ class DailyTradesView(LoginRequiredMixin, TemplateView):
                     )
 
                     def px_formatter(t, prev_close, close):
-                        prev_fmt = (
-                            "" if pd.isna(prev_close) else (cround(float(prev_close)))
-                        )
+                        prev_fmt = "" if pd.isna(prev_close) else (cround(float(prev_close)))
                         cur_fmt = "" if pd.isna(close) else cround(float(close))
                         return t, prev_fmt, cur_fmt
 
@@ -476,17 +464,13 @@ class DailyTradesView(LoginRequiredMixin, TemplateView):
                         context["prices_data"] = []
                         context["prices_formats"] = "{}"
                 else:
-                    context["prices_headings"] = nice_headings(
-                        ["ticker", "prev_close", "close"]
-                    )
+                    context["prices_headings"] = nice_headings(["ticker", "prev_close", "close"])
                     context["prices_h"] = ["ticker", "prev_close", "close"]
                     context["prices_data"] = []
                     context["prices_formats"] = "{}"
             except Exception:
                 # Fallback to empty prices table on any error
-                context["prices_headings"] = nice_headings(
-                    ["ticker", "prev_close", "close"]
-                )
+                context["prices_headings"] = nice_headings(["ticker", "prev_close", "close"])
                 context["prices_h"] = ["ticker", "prev_close", "close"]
                 context["prices_data"] = []
                 context["prices_formats"] = "{}"
@@ -524,9 +508,7 @@ class DailyTradesView(LoginRequiredMixin, TemplateView):
                         context["openpos_h"],
                         context["openpos_data"],
                         context["openpos_formats"],
-                    ) = df_to_jqtable(
-                        df=pos_open[["ticker", "open_pos"]], formatter=pos_fmt
-                    )
+                    ) = df_to_jqtable(df=pos_open[["ticker", "open_pos"]], formatter=pos_fmt)
                     context["openpos_headings"] = nice_headings(context["openpos_h"])
                 else:
                     context["openpos_headings"] = nice_headings(["ticker", "open_pos"])
@@ -575,14 +557,10 @@ class IncomeExpenseView(LoginRequiredMixin, TemplateView):
         total_income = income_df["amt"].iloc[-1]
         net_profit = total_income - total_expenses
 
-        context["e_h"], context["expense"], _ = df_to_jqtable(
-            df=expense_df, formatter=formatter
-        )
+        context["e_h"], context["expense"], _ = df_to_jqtable(df=expense_df, formatter=formatter)
         context["e_f"] = expense_fmt
 
-        context["i_h"], context["income"], _ = df_to_jqtable(
-            df=income_df, formatter=formatter
-        )
+        context["i_h"], context["income"], _ = df_to_jqtable(df=income_df, formatter=formatter)
         context["i_f"] = income_fmt
 
         # Expose totals to the template
