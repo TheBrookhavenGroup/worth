@@ -4,20 +4,49 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('markets', '0003_auto_20220220_0900'),
+        ("markets", "0003_auto_20220220_0900"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='market',
-            name='ib_exchange',
-            field=models.CharField(choices=[('CASH', 'CASH'), ('STOCK', 'STOCK'), ('BOND', 'BOND'), ('ARCA', 'ARCA'), ('SMART', 'SMART'), ('CME', 'CME'), ('NYM', 'NYM'), ('NYMEX', 'NYMEX'), ('NYBOT', 'NYBOT'), ('NYB', 'NYB')], default='STOCK', max_length=6),
+            model_name="market",
+            name="ib_exchange",
+            field=models.CharField(
+                choices=[
+                    ("CASH", "CASH"),
+                    ("STOCK", "STOCK"),
+                    ("BOND", "BOND"),
+                    ("ARCA", "ARCA"),
+                    ("SMART", "SMART"),
+                    ("CME", "CME"),
+                    ("NYM", "NYM"),
+                    ("NYMEX", "NYMEX"),
+                    ("NYBOT", "NYBOT"),
+                    ("NYB", "NYB"),
+                ],
+                default="STOCK",
+                max_length=6,
+            ),
         ),
         migrations.AlterField(
-            model_name='market',
-            name='yahoo_exchange',
-            field=models.CharField(choices=[('CASH', 'CASH'), ('STOCK', 'STOCK'), ('BOND', 'BOND'), ('ARCA', 'ARCA'), ('SMART', 'SMART'), ('CME', 'CME'), ('NYM', 'NYM'), ('NYMEX', 'NYMEX'), ('NYBOT', 'NYBOT'), ('NYB', 'NYB')], default='STOCK', max_length=6),
+            model_name="market",
+            name="yahoo_exchange",
+            field=models.CharField(
+                choices=[
+                    ("CASH", "CASH"),
+                    ("STOCK", "STOCK"),
+                    ("BOND", "BOND"),
+                    ("ARCA", "ARCA"),
+                    ("SMART", "SMART"),
+                    ("CME", "CME"),
+                    ("NYM", "NYM"),
+                    ("NYMEX", "NYMEX"),
+                    ("NYBOT", "NYBOT"),
+                    ("NYB", "NYB"),
+                ],
+                default="STOCK",
+                max_length=6,
+            ),
         ),
     ]

@@ -4,35 +4,34 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('markets', '0009_rename_dailybar_dailyprice'),
+        ("markets", "0009_rename_dailybar_dailyprice"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='dailyprice',
-            name='h',
+            model_name="dailyprice",
+            name="h",
         ),
         migrations.RemoveField(
-            model_name='dailyprice',
-            name='l',
+            model_name="dailyprice",
+            name="l",
         ),
         migrations.RemoveField(
-            model_name='dailyprice',
-            name='o',
+            model_name="dailyprice",
+            name="o",
         ),
         migrations.RemoveField(
-            model_name='dailyprice',
-            name='oi',
+            model_name="dailyprice",
+            name="oi",
         ),
         migrations.RemoveField(
-            model_name='dailyprice',
-            name='v',
+            model_name="dailyprice",
+            name="v",
         ),
         migrations.AlterField(
-            model_name='dailyprice',
-            name='c',
-            field=models.FloatField(help_text='Closing Price'),
+            model_name="dailyprice",
+            name="c",
+            field=models.FloatField(help_text="Closing Price"),
         ),
     ]

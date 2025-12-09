@@ -4,20 +4,53 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('markets', '0004_auto_20220224_1621'),
+        ("markets", "0004_auto_20220224_1621"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='market',
-            name='ib_exchange',
-            field=models.CharField(choices=[('CASH', 'CASH'), ('STOCK', 'STOCK'), ('BOND', 'BOND'), ('ARCA', 'ARCA'), ('SMART', 'SMART'), ('CME', 'CME'), ('NYM', 'NYM'), ('NYMEX', 'NYMEX'), ('NYBOT', 'NYBOT'), ('NYB', 'NYB'), ('CFE', 'CFE'), ('ECBOT', 'ECBOT')], default='STOCK', max_length=6),
+            model_name="market",
+            name="ib_exchange",
+            field=models.CharField(
+                choices=[
+                    ("CASH", "CASH"),
+                    ("STOCK", "STOCK"),
+                    ("BOND", "BOND"),
+                    ("ARCA", "ARCA"),
+                    ("SMART", "SMART"),
+                    ("CME", "CME"),
+                    ("NYM", "NYM"),
+                    ("NYMEX", "NYMEX"),
+                    ("NYBOT", "NYBOT"),
+                    ("NYB", "NYB"),
+                    ("CFE", "CFE"),
+                    ("ECBOT", "ECBOT"),
+                ],
+                default="STOCK",
+                max_length=6,
+            ),
         ),
         migrations.AlterField(
-            model_name='market',
-            name='yahoo_exchange',
-            field=models.CharField(choices=[('CASH', 'CASH'), ('STOCK', 'STOCK'), ('BOND', 'BOND'), ('ARCA', 'ARCA'), ('SMART', 'SMART'), ('CME', 'CME'), ('NYM', 'NYM'), ('NYMEX', 'NYMEX'), ('NYBOT', 'NYBOT'), ('NYB', 'NYB'), ('CFE', 'CFE'), ('ECBOT', 'ECBOT')], default='STOCK', max_length=6),
+            model_name="market",
+            name="yahoo_exchange",
+            field=models.CharField(
+                choices=[
+                    ("CASH", "CASH"),
+                    ("STOCK", "STOCK"),
+                    ("BOND", "BOND"),
+                    ("ARCA", "ARCA"),
+                    ("SMART", "SMART"),
+                    ("CME", "CME"),
+                    ("NYM", "NYM"),
+                    ("NYMEX", "NYMEX"),
+                    ("NYBOT", "NYBOT"),
+                    ("NYB", "NYB"),
+                    ("CFE", "CFE"),
+                    ("ECBOT", "ECBOT"),
+                ],
+                default="STOCK",
+                max_length=6,
+            ),
         ),
     ]

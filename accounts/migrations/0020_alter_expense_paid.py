@@ -4,15 +4,18 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('accounts', '0019_alter_expense_cash_transaction'),
+        ("accounts", "0019_alter_expense_cash_transaction"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='expense',
-            name='paid',
-            field=models.DateField(blank=True, help_text='May have date different from cash transaction. This determine which tax year it is used in.', null=True),
+            model_name="expense",
+            name="paid",
+            field=models.DateField(
+                blank=True,
+                help_text="May have date different from cash transaction. This determine which tax year it is used in.",
+                null=True,
+            ),
         ),
     ]

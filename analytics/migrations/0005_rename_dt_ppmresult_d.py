@@ -4,15 +4,14 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('analytics', '0004_alter_ppmresult_dt'),
+        ("analytics", "0004_alter_ppmresult_dt"),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='ppmresult',
-            old_name='dt',
-            new_name='d',
+            model_name="ppmresult",
+            old_name="dt",
+            new_name="d",
         ),
     ]

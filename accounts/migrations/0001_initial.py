@@ -5,36 +5,112 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Account',
+            name="Account",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=50, unique=True)),
-                ('owner', models.CharField(max_length=50)),
-                ('broker', models.CharField(max_length=50)),
-                ('broker_account', models.CharField(max_length=50, unique=True)),
-                ('description', models.CharField(blank=True, max_length=200)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=50, unique=True)),
+                ("owner", models.CharField(max_length=50)),
+                ("broker", models.CharField(max_length=50)),
+                ("broker_account", models.CharField(max_length=50, unique=True)),
+                ("description", models.CharField(blank=True, max_length=200)),
             ],
         ),
         migrations.CreateModel(
-            name='CashRecord',
+            name="CashRecord",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('ignored', models.BooleanField(default=False)),
-                ('d', models.DateField()),
-                ('type', models.CharField(choices=[('U', ''), ('A', 'ATM'), ('B', 'Bill Pay'), ('C', 'Cell Phone Depoist'), ('D', 'Auto Deducted'), ('E', 'Electronic Transfer'), ('I', 'Paid on IRS Site'), ('M', 'Debit Card'), ('S', 'Transfer to Savings'), ('P', 'PayPal'), ('T', 'Transfer'), ('Z', 'Zelle')], default='U', max_length=1)),
-                ('category', models.CharField(choices=[('AB', 'Avi Bar Mitzvah'), ('AV', 'Deposit to Avi account'), ('BF', 'Bank fee'), ('BNK', 'Bank Check'), ('BM', 'Bar Mitzvah'), ('BH', 'Baltimore House'), ('CH', 'Charity'), ('CE', 'College Expenses'), ('DE', 'Deposits'), ('ED', 'Education/Lessons/Tutoring'), ('FC', 'Food & Clothing'), ('GN', 'General'), ('HO', 'House - Mortgage/Rent/Maintenance/Renovation'), ('HS', 'Health Savings Account'), ('IN', 'Insurance'), ('MD', 'Medical'), ('OL', 'business officers loan to Brookhaven'), ('PR', 'Professional'), ('SA', 'Savings'), ('SB', 'Sailboat'), ('TA', 'Taxes and Accounting'), ('TX', 'Taxes and Accounting'), ('UT', 'Utilities'), ('VA', 'Vacation'), ('WA', 'Wages from tutoring'), ('GB', 'Gila Bat Mitzvah'), ('IT', 'Interest'), ('GU', 'Gila UTMA')], default='GN', max_length=3)),
-                ('description', models.CharField(max_length=180)),
-                ('amt', models.FloatField()),
-                ('cleared_f', models.BooleanField(default=False)),
-                ('account', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='accounts.account')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("ignored", models.BooleanField(default=False)),
+                ("d", models.DateField()),
+                (
+                    "type",
+                    models.CharField(
+                        choices=[
+                            ("U", ""),
+                            ("A", "ATM"),
+                            ("B", "Bill Pay"),
+                            ("C", "Cell Phone Depoist"),
+                            ("D", "Auto Deducted"),
+                            ("E", "Electronic Transfer"),
+                            ("I", "Paid on IRS Site"),
+                            ("M", "Debit Card"),
+                            ("S", "Transfer to Savings"),
+                            ("P", "PayPal"),
+                            ("T", "Transfer"),
+                            ("Z", "Zelle"),
+                        ],
+                        default="U",
+                        max_length=1,
+                    ),
+                ),
+                (
+                    "category",
+                    models.CharField(
+                        choices=[
+                            ("AB", "Avi Bar Mitzvah"),
+                            ("AV", "Deposit to Avi account"),
+                            ("BF", "Bank fee"),
+                            ("BNK", "Bank Check"),
+                            ("BM", "Bar Mitzvah"),
+                            ("BH", "Baltimore House"),
+                            ("CH", "Charity"),
+                            ("CE", "College Expenses"),
+                            ("DE", "Deposits"),
+                            ("ED", "Education/Lessons/Tutoring"),
+                            ("FC", "Food & Clothing"),
+                            ("GN", "General"),
+                            ("HO", "House - Mortgage/Rent/Maintenance/Renovation"),
+                            ("HS", "Health Savings Account"),
+                            ("IN", "Insurance"),
+                            ("MD", "Medical"),
+                            ("OL", "business officers loan to Brookhaven"),
+                            ("PR", "Professional"),
+                            ("SA", "Savings"),
+                            ("SB", "Sailboat"),
+                            ("TA", "Taxes and Accounting"),
+                            ("TX", "Taxes and Accounting"),
+                            ("UT", "Utilities"),
+                            ("VA", "Vacation"),
+                            ("WA", "Wages from tutoring"),
+                            ("GB", "Gila Bat Mitzvah"),
+                            ("IT", "Interest"),
+                            ("GU", "Gila UTMA"),
+                        ],
+                        default="GN",
+                        max_length=3,
+                    ),
+                ),
+                ("description", models.CharField(max_length=180)),
+                ("amt", models.FloatField()),
+                ("cleared_f", models.BooleanField(default=False)),
+                (
+                    "account",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="accounts.account",
+                    ),
+                ),
             ],
         ),
     ]

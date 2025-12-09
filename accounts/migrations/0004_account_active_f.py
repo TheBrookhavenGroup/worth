@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('accounts', '0003_remove_cashrecord_type'),
+        ("accounts", "0003_remove_cashrecord_type"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='account',
-            name='active_f',
+            model_name="account",
+            name="active_f",
             field=models.BooleanField(default=True),
         ),
     ]

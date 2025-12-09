@@ -4,15 +4,18 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('accounts', '0016_expense_cash_transaction'),
+        ("accounts", "0016_expense_cash_transaction"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='expense',
-            name='paid',
-            field=models.DateField(blank=True, help_text='May be different from cash transaction if paid by credit card.', null=True),
+            model_name="expense",
+            name="paid",
+            field=models.DateField(
+                blank=True,
+                help_text="May be different from cash transaction if paid by credit card.",
+                null=True,
+            ),
         ),
     ]

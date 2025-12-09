@@ -1,5 +1,4 @@
-from django.db.models import Sum
-from accounts.models import CashRecord, Account
+from accounts.models import Account
 from trades.utils import pnl_asof
 
 

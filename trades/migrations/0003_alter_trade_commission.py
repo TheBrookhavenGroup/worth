@@ -5,15 +5,16 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('trades', '0002_trade_trade_id'),
+        ("trades", "0002_trade_trade_id"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='trade',
-            name='commission',
-            field=models.FloatField(default=0.0, validators=[django.core.validators.MinValueValidator(0.0)]),
+            model_name="trade",
+            name="commission",
+            field=models.FloatField(
+                default=0.0, validators=[django.core.validators.MinValueValidator(0.0)]
+            ),
         ),
     ]

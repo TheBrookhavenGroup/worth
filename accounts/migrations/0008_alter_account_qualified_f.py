@@ -4,15 +4,17 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('accounts', '0007_account_qualified_f'),
+        ("accounts", "0007_account_qualified_f"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='account',
-            name='qualified_f',
-            field=models.BooleanField(default=False, help_text='Tax status - set flag if account is qualified.'),
+            model_name="account",
+            name="qualified_f",
+            field=models.BooleanField(
+                default=False,
+                help_text="Tax status - set flag if account is qualified.",
+            ),
         ),
     ]

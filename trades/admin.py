@@ -12,15 +12,14 @@ from trades.utils import trades_pnl
 
 class GetTradesFilter(SimpleListFilter):
     title = "Get Trades"
-    parameter_name = 'new_trades'
+    parameter_name = "new_trades"
 
     def lookups(self, request, model_admin):
-        return [('today', 'Today'), ('lbd', 'LBD')]
+        return [("today", "Today"), ("lbd", "LBD")]
 
     def queryset(self, request, queryset):
-
         if self.value() is not None:
-            if 'lbd' == self.value():
+            if "lbd" == self.value():
                 get_trades(report_id=lbd)
                 t = day_start(prior_business_day())
             else:
@@ -32,53 +31,51 @@ class GetTradesFilter(SimpleListFilter):
 
 class NoCommissionFilter(SimpleListFilter):
     title = "No Commission"
-    parameter_name = 'no_commission'
+    parameter_name = "no_commission"
 
     def lookups(self, request, model_admin):
-        return [('no', 'No Commission')]
+        return [("no", "No Commission")]
 
     def queryset(self, request, queryset):
-        if 'no' == self.value():
+        if "no" == self.value():
             return queryset.filter(commission__range=(-0.001, 0.001))
         return queryset
 
 
 class ExchangeTypeFilter(SimpleListFilter):
     title = "Exchange Type"
-    parameter_name = 'exchange_type'
+    parameter_name = "exchange_type"
 
     def lookups(self, request, model_admin):
-        return [('futures', 'Futures'), ('equities', 'Equities')]
+        return [("futures", "Futures"), ("equities", "Equities")]
 
     def queryset(self, request, queryset):
         v = self.value()
-        if 'futures' == v:
-            return queryset.filter(
-                ~Q(ticker__market__ib_exchange__in=NOT_FUTURES_EXCHANGES))
-        elif 'equities' == v:
-            return queryset.filter(
-                ticker__market__ib_exchange__in=NOT_FUTURES_EXCHANGES)
+        if "futures" == v:
+            return queryset.filter(~Q(ticker__market__ib_exchange__in=NOT_FUTURES_EXCHANGES))
+        elif "equities" == v:
+            return queryset.filter(ticker__market__ib_exchange__in=NOT_FUTURES_EXCHANGES)
         return queryset
 
 
 class IsActiveAccountFilter(SimpleListFilter):
     title = "Active Accounts Only"
-    parameter_name = 'activeaccount'
+    parameter_name = "activeaccount"
 
     def lookups(self, request, model_admin):
-        return [('active', 'Active'), ('not_active', 'Not Active')]
+        return [("active", "Active"), ("not_active", "Not Active")]
 
     def queryset(self, request, queryset):
         v = self.value()
         if v:
-            flag = 'active' == v
+            flag = "active" == v
             return queryset.filter(account__active_f=flag)
         return queryset
 
 
 class TradesAccountFilter(SimpleListFilter):
     title = "Active Account"
-    parameter_name = 'active_account'
+    parameter_name = "active_account"
 
     def lookups(self, request, model_admin):
         active = Account.objects.filter(active_f=True).all()
@@ -93,32 +90,32 @@ class TradesAccountFilter(SimpleListFilter):
 
 class BuySellFilter(SimpleListFilter):
     title = "Buy/Sell"
-    parameter_name = 'buy_sell'
+    parameter_name = "buy_sell"
 
     def lookups(self, request, model_admin):
-        return [('buy', 'Buy'), ('sell', 'Sell')]
+        return [("buy", "Buy"), ("sell", "Sell")]
 
     def queryset(self, request, queryset):
         v = self.value()
-        if 'buy' == v:
+        if "buy" == v:
             return queryset.filter(q__gte=0.0)
-        elif 'sell' == v:
+        elif "sell" == v:
             return queryset.filter(q__lt=0.0)
         return queryset
 
 
 class SplitsFilter(SimpleListFilter):
     title = "Splits"
-    parameter_name = 'splits'
+    parameter_name = "splits"
 
     def lookups(self, request, model_admin):
-        return [('yes', 'Yes'), ('no', 'No')]
+        return [("yes", "Yes"), ("no", "No")]
 
     def queryset(self, request, queryset):
         v = self.value()
-        if 'yes' == v:
+        if "yes" == v:
             return queryset.filter(reinvest=True, p__gt=-0.001, p__lt=0.001)
-        elif 'no' == v:
+        elif "no" == v:
             return queryset.filter(~Q(reinvest=True, p__gt=-0.001, p__lt=0.001))
         return queryset
 
@@ -126,10 +123,16 @@ class SplitsFilter(SimpleListFilter):
 def duplicate_record(modeladmin, request, qs):
     t = our_now()
     for rec in qs:
-        new_rec = Trade(dt=t, account=rec.account, ticker=rec.ticker,
-                        reinvest=rec.reinvest,
-                        q=rec.q, p=rec.p, commission=rec.commission,
-                        note=rec.note)
+        new_rec = Trade(
+            dt=t,
+            account=rec.account,
+            ticker=rec.ticker,
+            reinvest=rec.reinvest,
+            q=rec.q,
+            p=rec.p,
+            commission=rec.commission,
+            note=rec.note,
+        )
         new_rec.save()
 
 
@@ -153,20 +156,34 @@ class TradeAdmin(admin.ModelAdmin):
     def time_date(self, obj):
         return obj.dt.date()
 
-    time_date.short_description = 'Date'
+    time_date.short_description = "Date"
 
-    date_hierarchy = 'dt'
+    date_hierarchy = "dt"
 
     list_display = (
-        'dt', 'account', 'ticker', 'q', 'p', 'commission', 'reinvest',
-        'trade_id',
-        'note')
+        "dt",
+        "account",
+        "ticker",
+        "q",
+        "p",
+        "commission",
+        "reinvest",
+        "trade_id",
+        "note",
+    )
     list_filter = (
-        GetTradesFilter, NoCommissionFilter, BuySellFilter, ExchangeTypeFilter,
-        TradesAccountFilter, IsActiveAccountFilter, SplitsFilter, 'reinvest')
-    search_fields = ('account__name', 'dt', 'note', 'ticker__ticker')
-    ordering = ('account', '-dt')
+        GetTradesFilter,
+        NoCommissionFilter,
+        BuySellFilter,
+        ExchangeTypeFilter,
+        TradesAccountFilter,
+        IsActiveAccountFilter,
+        SplitsFilter,
+        "reinvest",
+    )
+    search_fields = ("account__name", "dt", "note", "ticker__ticker")
+    ordering = ("account", "-dt")
     actions = [duplicate_record, sum_commissions, pnl_selected]
 
     class Media:
-        js = ('js/admin.js',)
+        js = ("js/trade_admin.js",)

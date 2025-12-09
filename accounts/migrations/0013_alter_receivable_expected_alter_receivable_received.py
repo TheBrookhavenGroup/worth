@@ -4,20 +4,19 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('accounts', '0012_alter_receivable_received'),
+        ("accounts", "0012_alter_receivable_received"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='receivable',
-            name='expected',
+            model_name="receivable",
+            name="expected",
             field=models.DateField(blank=True, null=True),
         ),
         migrations.AlterField(
-            model_name='receivable',
-            name='received',
+            model_name="receivable",
+            name="received",
             field=models.DateField(blank=True, null=True),
         ),
     ]

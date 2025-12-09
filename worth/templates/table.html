@@ -11,7 +11,7 @@
     {% for rec in data %}
         <tr>
             {% for x in rec %}
-                <td>{{ x }}</td>
+                <td>{{ x|safe }}</td>
             {% endfor %}
         </tr>
     {% endfor %}

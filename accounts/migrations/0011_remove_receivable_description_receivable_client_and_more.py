@@ -4,29 +4,28 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('accounts', '0010_rename_receivables_receivable'),
+        ("accounts", "0010_rename_receivables_receivable"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='receivable',
-            name='description',
+            model_name="receivable",
+            name="description",
         ),
         migrations.AddField(
-            model_name='receivable',
-            name='client',
+            model_name="receivable",
+            name="client",
             field=models.CharField(blank=True, max_length=100),
         ),
         migrations.AddField(
-            model_name='receivable',
-            name='invoice',
+            model_name="receivable",
+            name="invoice",
             field=models.CharField(blank=True, max_length=80),
         ),
         migrations.AlterField(
-            model_name='receivable',
-            name='expected',
+            model_name="receivable",
+            name="expected",
             field=models.DateField(blank=True),
         ),
     ]

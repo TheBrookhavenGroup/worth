@@ -15,15 +15,15 @@ def tbg_ticker2ticker(ticker):
 
     if len(re.findall("\.", ticker)) != 1:
         return None
-    symbol, exchange = ticker.split('.')
+    symbol, exchange = ticker.split(".")
     symbol, mo, yr = symbol[:-3], symbol[-3:-2], symbol[-2:]
 
     try:
-        m = Market.objects.get(symbol=symbol)
+        Market.objects.get(symbol=symbol)
     except Market.DoesNotExist:
-        m = Market.objects.get_or_create(symbol=symbol, name=symbol,
-                                         ib_exchange='CME',
-                                         yahoo_exchange='CME')[0]
+        Market.objects.get_or_create(
+            symbol=symbol, name=symbol, ib_exchange="CME", yahoo_exchange="CME"
+        )[0]
 
     yr = int(yr)
     if yr < 25:
@@ -47,19 +47,19 @@ def get_ticker(ticker):
 
 
 def insert(ti, d, o, h, l, c, v=0, oi=0):
-    if '-' in d:
-        d = datetime.strptime(d, '%Y-%m-%d')
-    elif '/' in d:
-        d = datetime.strptime(d, '%m/%d/%Y')
+    if "-" in d:
+        d = datetime.strptime(d, "%Y-%m-%d")
+    elif "/" in d:
+        d = datetime.strptime(d, "%m/%d/%Y")
     else:
-        d = datetime.strptime(d, '%Y%m%d')
+        d = datetime.strptime(d, "%Y%m%d")
     d = date(d.year, d.month, d.day)
     o = float(o)
     h = float(h)
     l = float(l)
     c = float(c)
     v = int(v)
-    if '' == oi:
+    if "" == oi:
         oi = 0
     else:
         oi = int(oi)
@@ -70,35 +70,33 @@ def insert(ti, d, o, h, l, c, v=0, oi=0):
         print(f"No ticker for {ti}")
     else:
         try:
-            bar = TBGDailyBar.objects.update_or_create(ticker=ticker, d=d,
-                                                       defaults={'o': o, 'h': h,
-                                                                 'l': l, 'c': c,
-                                                                 'v': v,
-                                                                 'oi': oi})
+            TBGDailyBar.objects.update_or_create(
+                ticker=ticker, d=d, defaults={"o": o, "h": h, "l": l, "c": c, "v": v, "oi": oi}
+            )
         except IntegrityError as e:
             print(e)
-            print(f'Could not add {ti} {d} {o} {h} {l} {c} {oi}')
+            print(f"Could not add {ti} {d} {o} {h} {l} {c} {oi}")
 
 
 def process_line(line):
-    id, d, o, h, l, c, v, oi, ti = line.strip().split(',')
+    id, d, o, h, l, c, v, oi, ti = line.strip().split(",")
     insert(ti, d, o, h, l, c, v, oi)
 
 
 def do_csv():
-    fn = 'dailybars.csv'
-    fh = open(fn, 'r')
+    fn = "dailybars.csv"
+    fh = open(fn, "r")
     l = fh.readline()
     while True:
         l = fh.readline()
-        if '' == l:
+        if "" == l:
             break
         process_line(l)
     fh.close()
 
 
 def do_txt():
-    txt = '''
+    txt = """
     AAL20210716P5.00 20210128 0.550 0.550 0.550 0.550
     AAL20210716P5.00 20210129 0.405 0.405 0.405 0.405
     AAL20210716P5.00 20210225 0.160 0.160 0.160 0.160
@@ -133,9 +131,9 @@ def do_txt():
     MNDT 20211229 17.4282 17.79 17.4282 17.56
     MNDT 20220128 14.16 14.24 13.755 14.24
     MNDT 20220225 18.70 19.33 18.2214 19.30
-    '''
+    """
 
-    txt = '''
+    txt = """
     CTXS 20200528 139.31 142.79 139.0163 141.19
     CTXS 20200629 142.46 145.399 141.03 144.82
     CTXS 20200730 138.40 152.01 136.93 141.69
@@ -157,9 +155,9 @@ def do_txt():
     USO210115C4 20200430 0.160 0.160 0.160 0.160
     WORK 20190530 3.75 3.77 3.68 3.77
     WORK 20190531 3.75 3.77 3.68 3.77
-    '''
+    """
 
-    txt = '''
+    txt = """
     AAL20210716P5.00	    20201127 0.32
     AAL20210716P5.00	    20201130 0.32
     AAL20210716P5.00	    20201230 0.19
@@ -178,9 +176,9 @@ def do_txt():
     UAL20210618P18.00	    20201231 0.325
     USO210115C2		        20200429 0.570
     USO210115C2             20200430 0.710
-    '''
+    """
 
-    for line in txt.split('\n'):
+    for line in txt.split("\n"):
         line = line.strip()
         if not line:
             continue
@@ -191,23 +189,23 @@ def do_txt():
             o = h = l = 0
         else:
             ti, d, o, h, l, c = items
-        print(f'{ti} {d} {o} {h} {l} {c}')
+        print(f"{ti} {d} {o} {h} {l} {c}")
         insert(ti, d, o, h, l, c)
 
 
 def do_investing_com(ticker):
-    fn = f'/Users/ms/Downloads/{ticker}.csv'
-    with open(fn, 'r') as fh:
+    fn = f"/Users/ms/Downloads/{ticker}.csv"
+    with open(fn, "r") as fh:
         l = fh.readline()
         while len(l):
             l = fh.readline()
-            l = l.replace('"', '')
+            l = l.replace('"', "")
             if not l:
                 continue
             # NOTE: Price is before ohl
             print(l)
             try:
-                d, c, o, h, l, _, _ = l.strip().split(',')
+                d, c, o, h, l, _, _ = l.strip().split(",")
             except ValueError as e:
                 print(e)
 
@@ -217,12 +215,12 @@ def do_investing_com(ticker):
 # May 16, 2019 - July 10, 2019
 def copy_bevvf_to_bee():
     #  BEVVF prices are good enough for estimating portfolio values
-    bevvf = Ticker.objects.get(ticker='BEVVF')
+    bevvf = Ticker.objects.get(ticker="BEVVF")
     data = yahooHistory(bevvf)
     # fd = date(2019, 5, 16)
     # ld = date(2019, 7, 10)
 
-    ticker = 'BEE'
+    ticker = "BEE"
     for d, o, h, l, c, v, oi in data:
         print(ticker, d, c)
         # insert(ticker, str(d), o, h, l, c, v=0, oi=0)

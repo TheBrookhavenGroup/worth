@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block local_javascript_imports %}
+    {% include 'jquery_table.html' %}
+{% endblock %}
+
+{% load humanize %}
+
+{% block title %}{{ title }}{% endblock title %}
+
+{% block content %}
+    <div class="container">
+        <p>
+        <a href="/admin">Admin</a>
+        {% with exclude_quick_links_caption=True %}
+            {% include "admin/quick_links.html" with show_changelinks=True %}
+        {% endwith %}
+        </p>
+
+        <div style="width: 950px">
+            <h2>Daily PnL</h2>
+
+            <style>
+            /* Make the first column (date) look like a link */
+            #TABLE_daily_pnl tbody td:first-child {
+                color: #007bff;           /* bootstrap link color */
+                text-decoration: underline;
+                cursor: pointer;
+            }
+            #TABLE_daily_pnl tbody tr:hover td:first-child {
+                color: #0056b3;           /* darker on hover */
+            }
+            </style>
+
+            <form method="get" class="form-inline" style="margin-bottom: 16px;">
+                <label for="a">Account:&nbsp;</label>
+                <select id="a" name="a">
+                    <option value="" {% if not selected_account %}selected{% endif %}>(All Accounts)</option>
+                    {% for acct in accounts %}
+                        <option value="{{ acct.name }}" {% if selected_account == acct.name %}selected{% endif %}>{{ acct.name }}</option>
+                    {% endfor %}
+                </select>
+
+                <span style="margin-left: 16px;"></span>
+
+                <!-- Quick ranges -->
+                <div class="btn-group btn-group-sm" role="group" aria-label="Quick ranges">
+                    {% with base_q='?a='|add:selected_account %}
+                        <a class="btn btn-outline-secondary {% if selected_range == 'current month' or selected_range == 'current_month' or selected_range == 'cm' %}active{% endif %}"
+                           href="{{ request.path }}{{ base_q }}&range=current_month">Current Month</a>
+                        <a class="btn btn-outline-secondary {% if selected_range == 'last month' or selected_range == 'last_month' or selected_range == 'lm' %}active{% endif %}"
+                           href="{{ request.path }}{{ base_q }}&range=last_month">Last Month</a>
+                        <a class="btn btn-outline-secondary {% if selected_range == 'current year' or selected_range == 'current_year' or selected_range == 'cy' %}active{% endif %}"
+                           href="{{ request.path }}{{ base_q }}&range=current_year">Current Year</a>
+                    {% endwith %}
+                </div>
+
+                <span style="margin-left: 16px;"></span>
+
+                <label for="start">Start:&nbsp;</label>
+                <input id="start" type="date" name="start" value="{{ selected_start }}" />
+
+                <span style="margin-left: 8px;"></span>
+
+                <label for="end">End:&nbsp;</label>
+                <input id="end" type="date" name="end" value="{{ selected_end }}" />
+
+                <span style="margin-left: 12px;"></span>
+
+                <button type="submit" class="btn btn-primary btn-sm">Update</button>
+            </form>
+
+            {% include 'table.html' with table_id="TABLE_daily_pnl" data=data headings=headings formats=formats %}
+
+            <div class="text-right" style="margin-top: 8px; font-weight: bold;">
+                Total PnL: {{ total_pnl }}
+            </div>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+    // Make the date in the first column clickable to view trades for that day
+    (function() {
+        const baseUrl = "{{ daily_trades_url }}";
+        const acct = "{{ selected_account }}";
+        const tableSel = '#TABLE_daily_pnl';
+        $(document).ready(function() {
+            // Mark cells visually and semantically like links
+            $(`${tableSel} tbody td:first-child`).attr({
+                'title': 'View trades and cash for this day',
+                'role': 'link',
+                'tabindex': '0'
+            });
+
+            $(`${tableSel} tbody`).on('click', 'tr td:first-child', function() {
+                const d = $(this).text().trim();
+                if (!d) return;
+                let url = `${baseUrl}?d=${encodeURIComponent(d)}`;
+                if (acct) url += `&a=${encodeURIComponent(acct)}`;
+                // Open the daily trades view in a new tab
+                window.open(url, '_blank');
+            });
+
+            // Keyboard activation (Enter/Space)
+            $(`${tableSel} tbody`).on('keydown', 'tr td:first-child', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    $(this).click();
+                }
+            });
+        });
+    })();
+    </script>
+{% endblock content %}

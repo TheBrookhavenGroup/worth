@@ -11,16 +11,14 @@ def gpg_encrypt(fn):
     # If fn = foo.txt then output file would be foo.txt.asc.
     # gpg --encrypt --sign --armor -r <email> --homedir ~/.gnupg foo.txt
 
-    fn_out = fn + '.asc'
+    fn_out = fn + ".asc"
     gpgemail = settings.GPG_EMAIL
     gpgpass = settings.GPG_PASS
 
-    with open(fn, 'rb') as f:
-        status = gpg.encrypt_file(f,
-                                  recipients=[gpgemail],
-                                  armor=True,
-                                  output=fn_out,
-                                  passphrase=gpgpass)
+    with open(fn, "rb") as f:
+        status = gpg.encrypt_file(
+            f, recipients=[gpgemail], armor=True, output=fn_out, passphrase=gpgpass
+        )
 
     return status
 
@@ -30,10 +28,10 @@ def gpg_decrypt(fn, fn_out=None):
     # gpg --homedir ~/.gnupg fn.txt.asc
 
     if fn_out is None:
-        fn_out = fn.strip('.pgp')
+        fn_out = fn.strip(".pgp")
 
     gpgpass = settings.GPG_PASS
-    with open(fn, 'rb') as f:
+    with open(fn, "rb") as f:
         status = gpg.decrypt_file(f, output=fn_out, passphrase=gpgpass)
 
     return fn_out, status
@@ -46,16 +44,16 @@ def ib_statements(decrypt=False):
 
     ftp = FTP(server)
     ftp.login(user, pw)
-    ftp.cwd('outgoing')
+    ftp.cwd("outgoing")
     ftp_files = []
-    ftp.retrlines('NLST', ftp_files.append)
+    ftp.retrlines("NLST", ftp_files.append)
     file_names = []
     for f in ftp_files:
-        fn = os.path.join('/Users/ms/Downloads', f)
+        fn = os.path.join("/Users/ms/Downloads", f)
         file_names.append(fn)
-        print(f'Saving {fn}')
-        with open(fn, 'wb') as fh:
-            ftp.retrbinary('RETR ' + f, fh.write)
+        print(f"Saving {fn}")
+        with open(fn, "wb") as fh:
+            ftp.retrbinary("RETR " + f, fh.write)
     if decrypt:
         file_names = [gpg_decrypt(fn)[0] for fn in file_names]
 

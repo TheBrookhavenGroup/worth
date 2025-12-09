@@ -6,30 +6,33 @@ from tbgutils.dt import our_now
 from moneycounter import wap_calc
 from tbgutils.str import is_near_zero
 from accounts.models import copy_cash_df
-from markets.models import get_ticker, get_tickers, NOT_FUTURES_EXCHANGES
-from trades.models import copy_trades_df
+from markets.models import (
+    get_ticker,
+    get_tickers,
+    NOT_FUTURES_EXCHANGES,
+)
+from trades.models import copy_trades_df, bucketed_trades
 from markets.utils import get_price
 from markets.tbgyahoo import yahooQuotes
 
 
 def reindexed_wap(df):
-    df.sort_values(by=['dt'])
+    df.sort_values(by=["dt"])
     df.reset_index(inplace=True)
     wap = wap_calc(df, fifo=settings.FIFO)
-    a = df.loc[0, 'a']
-    t = df.loc[0, 't']
-    cs = df.loc[0, 'cs']
+    a = df.loc[0, "a"]
+    t = df.loc[0, "t"]
+    cs = df.loc[0, "cs"]
     position = df.q.sum()
-    result = pd.DataFrame(
-        {'a': [a], 't': [t], 'position': [position], 'wap': [wap], 'cs': cs})
+    result = pd.DataFrame({"a": [a], "t": [t], "position": [position], "wap": [wap], "cs": cs})
     return result
 
 
 def wap_df(df):
     # Must compute WAP separately for each account to make sure
     # trades are closed out against trades in the same account.
-    g1 = df.groupby(['a', 't'], group_keys=False)
-    df = g1[['a', 't', 'dt', 'q', 'p', 'cs']].apply(reindexed_wap)
+    g1 = df.groupby(["a", "t"], group_keys=False)
+    df = g1[["a", "t", "dt", "q", "p", "cs"]].apply(reindexed_wap)
     df = df[df.position != 0]
     df.reset_index(inplace=True, drop=True)
     return df
@@ -100,63 +103,59 @@ def get_current_price_mapper(tickers):
 
 
 def trades_pnl(df, d=None):
-
     if d is None:
         d = our_now().date()
 
     if df.empty:
         pnl = pd.DataFrame(
-            columns=['a', 't', 'qp', 'qpr', 'q', 'cs', 'c', 'e', 'price', 'pnl',
-                     'value'])
+            columns=["a", "t", "qp", "qpr", "q", "cs", "c", "e", "price", "pnl", "value"]
+        )
     else:
-        df['qp'] = -df.q * df.p
+        df["qp"] = -df.q * df.p
 
-        reinvested_recs = df[df.r == True]
-        df['qpr'] = reinvested_recs.qp - reinvested_recs.c
+        reinvested_recs = df[df.r]
+        df["qpr"] = reinvested_recs.qp - reinvested_recs.c
 
         pnl = pd.pivot_table(
             df,
             index=["a", "t"],
             aggfunc={
-                'qp': 'sum',
-                'qpr': 'sum',
-                'q': 'sum',
-                'cs': 'max',
-                'c': 'sum',
-                'e': 'first'
-            }
-        ).reset_index(['a', 't'])
+                "qp": "sum",
+                "qpr": "sum",
+                "q": "sum",
+                "cs": "max",
+                "c": "sum",
+                "e": "first",
+            },
+        ).reset_index(["a", "t"])
 
-        pnl['q'] = pnl['q'].apply(
-            lambda x: 0 if is_near_zero(x, epsilon=1e-8) else x)
+        pnl["q"] = pnl["q"].apply(lambda x: 0 if is_near_zero(x, epsilon=1e-8) else x)
 
         if d == our_now().date():
             tickers = [t for t, f in zip(pnl.t, pnl.q == 0) if not f]
             mapper = get_current_price_mapper(tickers)
-            pnl['price'] = pnl.apply(lambda x: mapper(x), axis=1)
+            pnl["price"] = pnl.apply(lambda x: mapper(x), axis=1)
         else:
-            pnl['price'] = pnl.apply(lambda x: price_mapper(x, d), axis=1)
-        pnl['pnl'] = pnl.cs * (pnl.qp + pnl.q * pnl.price) - pnl.c
-        pnl['value'] = pnl.cs * pnl.q * pnl.price
+            pnl["price"] = pnl.apply(lambda x: price_mapper(x, d), axis=1)
+        pnl["pnl"] = pnl.cs * (pnl.qp + pnl.q * pnl.price) - pnl.c
+        pnl["value"] = pnl.cs * pnl.q * pnl.price
 
     return pnl
 
 
-def pnl_asof(d=None, a=None, only_non_qualified=False, active_f=True,
-             cleared=False):
+def pnl_asof(d=None, a=None, only_non_qualified=False, active_f=True, cleared=False):
     """
     Calculate PnL from all trades - need that for cash flow.
     Calculate Cash balances.
     Return YTD data for active positions.
     """
 
-    df = copy_trades_df(d=d, a=a, only_non_qualified=only_non_qualified,
-                        active_f=active_f)
+    df = bucketed_trades(d=d, a=a, only_non_qualified=only_non_qualified, active_f=active_f)
 
     pnl = trades_pnl(df, d=d)
 
     # Need to add cash flow to cash records for each account.
-    pnl['cash_flow'] = pnl.qp - pnl.c - pnl.qpr
+    pnl["cash_flow"] = pnl.qp - pnl.c - pnl.qpr
 
     # The full pnl for futures should be added to cash
     # The cs * sum(q*p) for everything else, not the pnl, should be added to
@@ -164,33 +163,31 @@ def pnl_asof(d=None, a=None, only_non_qualified=False, active_f=True,
     # Pivot on these to get cash contributions for each account
 
     futures_cash = pnl[~pnl.e.isin(NOT_FUTURES_EXCHANGES)]
-    futures_cash = futures_cash.groupby('a')['pnl'].sum().reset_index()
+    futures_cash = futures_cash.groupby("a")["pnl"].sum().reset_index()
 
     non_futures_cash = pnl[pnl.e.isin(NOT_FUTURES_EXCHANGES)]
-    non_futures_cash = non_futures_cash.groupby('a')[
-        'cash_flow'].sum().reset_index()
+    non_futures_cash = non_futures_cash.groupby("a")["cash_flow"].sum().reset_index()
 
     if futures_cash.empty:
         cash_adj = non_futures_cash
-        cash_adj.rename(columns={'cash_flow': 'q'}, inplace=True)
+        cash_adj.rename(columns={"cash_flow": "q"}, inplace=True)
     elif non_futures_cash.empty:
         cash_adj = futures_cash
-        cash_adj.rename(columns={'pnl': 'q'}, inplace='True')
+        cash_adj.rename(columns={"pnl": "q"}, inplace="True")
     else:
-        cash_adj = pd.merge(futures_cash, non_futures_cash, how='outer', on='a')
+        cash_adj = pd.merge(futures_cash, non_futures_cash, how="outer", on="a")
         cash_adj.fillna(0, inplace=True)
-        cash_adj['q'] = cash_adj.cash_flow + cash_adj.pnl
-        cash_adj.drop(['cash_flow', 'pnl'], axis=1, inplace=True)
+        cash_adj["q"] = cash_adj.cash_flow + cash_adj.pnl
+        cash_adj.drop(["cash_flow", "pnl"], axis=1, inplace=True)
 
-    cash = copy_cash_df(d=d, a=a, pivot=True, active_f=active_f,
-                        cleared=cleared)
+    cash = copy_cash_df(d=d, a=a, pivot=True, active_f=active_f, cleared=cleared)
     # if empty: cash = pd.DataFrame(columns=['a', 'q'])
     # concat with axis=1 is an outer join
-    cash = pd.merge(cash, cash_adj, on='a', how='outer')
+    cash = pd.merge(cash, cash_adj, on="a", how="outer")
     cash.fillna(0, inplace=True)
     cash.q_x = cash.q_x + cash.q_y
-    cash.drop(['q_y'], axis=1, inplace=True)
-    cash.rename(columns={'q_x': 'q'}, inplace=True)
+    cash.drop(["q_y"], axis=1, inplace=True)
+    cash.rename(columns={"q_x": "q"}, inplace=True)
 
     return pnl, cash
 
@@ -198,15 +195,13 @@ def pnl_asof(d=None, a=None, only_non_qualified=False, active_f=True,
 def trades_with_position(df):
     # Get only trades that are in position.
 
-    pos = pd.pivot_table(
-        df,
-        index=["a", "t"],
-        aggfunc={'q': 'sum', 'cs': 'first'}
-    ).reset_index(['a', 't'])
+    pos = pd.pivot_table(df, index=["a", "t"], aggfunc={"q": "sum", "cs": "first"}).reset_index(
+        ["a", "t"]
+    )
     pos = pos[pos.q != 0]
-    df = pd.merge(df, pos, how='inner', on=['a', 't'])
-    df.drop(['q_y', 'cs_y'], axis=1, inplace=True)
-    df.rename(columns={'q_x': 'q', 'cs_x': 'cs'}, inplace=True)
+    df = pd.merge(df, pos, how="inner", on=["a", "t"])
+    df.drop(["q_y", "cs_y"], axis=1, inplace=True)
+    df.rename(columns={"q_x": "q", "cs_x": "cs"}, inplace=True)
 
     return df
 
@@ -221,9 +216,9 @@ def open_position_pnl(df):
     df = wap_df(df)
     tickers = [t for t in df.t]
     mapper = get_current_price_mapper(tickers)
-    df['price'] = df.t.apply(lambda x: mapper(x))
-    df['value'] = df.cs * df.price * df.position
-    df['pnl'] = df.cs * df.position * (df.price - df.wap)
+    df["price"] = df.t.apply(lambda x: mapper(x))
+    df["value"] = df.cs * df.price * df.position
+    df["pnl"] = df.cs * df.position * (df.price - df.wap)
     df.sort_values(by=["pnl"], ignore_index=True, inplace=True)
 
     return df

@@ -25,8 +25,8 @@ def transfer_cash_balance(d, a_from, a_to):
 # Inputs
 t = set_tz(datetime(2023, 11, 6, 16, 15))
 d = t.date()
-from_account = 'TDA'
-to_account = 'MSRKCS2'
+from_account = "TDA"
+to_account = "MSRKCS2"
 
 a_from = Account.objects.get(name=from_account)
 a_to = Account.objects.get(name=to_account)
@@ -39,7 +39,7 @@ prices = {i.ticker.ticker: i.c for i in qs}
 # Get open positions not incluing cash
 df = get_trades_df(a=from_account)
 df = open_position_pnl(df)
-positions = [(row['t'], row['position']) for index, row in df.iterrows()]
+positions = [(row["t"], row["position"]) for index, row in df.iterrows()]
 
 
 # Process

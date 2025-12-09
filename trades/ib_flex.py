@@ -6,34 +6,38 @@ from accounts.models import Account
 from trades.models import Trade
 from markets.utils import ib_symbol2ticker
 
-daily = '905409'
-lbd = '905414'
-last30days = '905412'
+daily = "905409"
+lbd = "905414"
+last30days = "905412"
 
 
 def get_trades(report_id=daily):
     formats = json.dumps(
-        {'columnDefs': [{"targets": [0], 'className': "dt-nowrap"},
-                        {"targets": [1], 'className': "dt-body-left"},
-                        {'targets': [2, 3, 4], 'className': 'dt-body-right'}],
-         # 'ordering': False
-         })
+        {
+            "columnDefs": [
+                {"targets": [0], "className": "dt-nowrap"},
+                {"targets": [1], "className": "dt-body-left"},
+                {"targets": [2, 3, 4], "className": "dt-body-right"},
+            ],
+            # 'ordering': False
+        }
+    )
 
-    headings = ['Date-Time', 'Ticker', 'Q', 'P', 'Commission']
+    headings = ["Date-Time", "Ticker", "Q", "P", "Commission"]
     data = []
 
     try:
         report = FlexReport(settings.IB_FLEX_TOKEN, report_id)
     except FlexError as e:
         msg = str(e)
-        data.append([msg, '', '', '', ''])
+        data.append([msg, "", "", "", ""])
         print(msg)
         return headings, data, formats
 
     # print(report.topics())
     # {'TradeConfirm', 'FlexQueryResponse', 'FlexStatements', 'FlexStatement'}
 
-    trades = report.extract('TradeConfirm')
+    trades = report.extract("TradeConfirm")
     account = Account.objects.get(name=settings.IB_DEFAULT_ACCOUNT)
     for i in trades:
         t = dt2dt(i.dateTime)
@@ -51,11 +55,25 @@ def get_trades(report_id=daily):
             trade.p = p
             trade.commission = -i.commission
         except Trade.DoesNotExist:
-            trade = Trade(dt=t, account=account, ticker=ticker, q=q, p=p,
-                          commission=i.commission, trade_id=i.tradeID)
+            trade = Trade(
+                dt=t,
+                account=account,
+                ticker=ticker,
+                q=q,
+                p=p,
+                commission=i.commission,
+                trade_id=i.tradeID,
+            )
         trade.save()
 
-        data.append([set_tz(trade.dt).strftime("%Y%m%d %H:%M:%S"), trade.ticker,
-                     trade.q, trade.p, trade.commission])
+        data.append(
+            [
+                set_tz(trade.dt).strftime("%Y%m%d %H:%M:%S"),
+                trade.ticker,
+                trade.q,
+                trade.p,
+                trade.commission,
+            ]
+        )
 
     return headings, data, formats

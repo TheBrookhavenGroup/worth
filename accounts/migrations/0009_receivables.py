@@ -4,21 +4,28 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('accounts', '0008_alter_account_qualified_f'),
+        ("accounts", "0008_alter_account_qualified_f"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Receivables',
+            name="Receivables",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('invoiced', models.DateField(auto_now_add=True)),
-                ('expected', models.DateField()),
-                ('received', models.DateField()),
-                ('description', models.CharField(max_length=180)),
-                ('amt', models.FloatField()),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("invoiced", models.DateField(auto_now_add=True)),
+                ("expected", models.DateField()),
+                ("received", models.DateField()),
+                ("description", models.CharField(max_length=180)),
+                ("amt", models.FloatField()),
             ],
         ),
     ]

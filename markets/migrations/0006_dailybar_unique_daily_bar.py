@@ -4,14 +4,15 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('markets', '0005_auto_20220228_1408'),
+        ("markets", "0005_auto_20220228_1408"),
     ]
 
     operations = [
         migrations.AddConstraint(
-            model_name='dailybar',
-            constraint=models.UniqueConstraint(fields=('ticker', 'd'), name='unique_daily_bar'),
+            model_name="dailybar",
+            constraint=models.UniqueConstraint(
+                fields=("ticker", "d"), name="unique_daily_bar"
+            ),
         ),
     ]

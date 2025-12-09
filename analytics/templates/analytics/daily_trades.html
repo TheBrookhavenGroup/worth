@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block local_javascript_imports %}
+    {% include 'jquery_table.html' %}
+{% endblock %}
+
+{% load humanize %}
+
+{% block title %}{{ title }}{% endblock title %}
+
+{% block content %}
+    <div class="container">
+        <p>
+        <a href="/admin">Admin</a>
+        {% with exclude_quick_links_caption=True %}
+            {% include "admin/quick_links.html" with show_changelinks=True %}
+        {% endwith %}
+        </p>
+
+        <div style="width: 950px">
+            <h2>Trades for {{ selected_date }}{% if selected_account %} — {{ selected_account }}{% endif %}</h2>
+
+            <p><a href="{{ daily_pnl_url }}{% if selected_account %}?a={{ selected_account }}{% endif %}">← Back to Daily PnL</a></p>
+
+            <div class="text-right" style="margin: 8px 0 16px; font-weight: bold;">
+                PnL for Day: {{ day_pnl }}
+            </div>
+            <h3>Prices</h3>
+            {% include 'table.html' with table_id="TABLE_prices" data=prices_data headings=prices_headings formats=prices_formats %}
+
+            <div style="margin-top: 16px;"></div>
+            <h3>Opening Positions</h3>
+            {% include 'table.html' with table_id="TABLE_open_positions" data=openpos_data headings=openpos_headings formats=openpos_formats %}
+
+            <div style="margin-top: 16px;"></div>
+            <h3>Trades</h3>
+            {% include 'table.html' with table_id="TABLE_daily_trades" data=data headings=headings formats=formats %}
+
+            </div>
+        </div>
+    </div>
+{% endblock content %}

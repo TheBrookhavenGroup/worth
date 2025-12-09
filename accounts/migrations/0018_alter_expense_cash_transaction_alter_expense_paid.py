@@ -5,20 +5,29 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('accounts', '0017_alter_expense_paid'),
+        ("accounts", "0017_alter_expense_paid"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='expense',
-            name='cash_transaction',
-            field=models.ForeignKey(blank=True, help_text='Cash record where either paid from directly or reimbursed.', null=True, on_delete=django.db.models.deletion.CASCADE, to='accounts.cashrecord'),
+            model_name="expense",
+            name="cash_transaction",
+            field=models.ForeignKey(
+                blank=True,
+                help_text="Cash record where either paid from directly or reimbursed.",
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                to="accounts.cashrecord",
+            ),
         ),
         migrations.AlterField(
-            model_name='expense',
-            name='paid',
-            field=models.DateField(blank=True, help_text='May have date different from cash transaction.', null=True),
+            model_name="expense",
+            name="paid",
+            field=models.DateField(
+                blank=True,
+                help_text="May have date different from cash transaction.",
+                null=True,
+            ),
         ),
     ]
