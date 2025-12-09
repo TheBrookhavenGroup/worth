@@ -1,4 +1,5 @@
 from datetime import datetime, date, timedelta
+import json
 
 from plotly.offline import plot
 import plotly.graph_objs as go
@@ -223,8 +224,23 @@ class RealizedGainView(LoginRequiredMixin, TemplateView):
 
         realized, formatter = total_realized_gains(year)
 
-        context["h"], context["realized"], _ = df_to_jqtable(df=realized, formatter=formatter)
-        context["f"] = formatter
+        # Build the table rows with the provided row formatter
+        h, data, _ = df_to_jqtable(df=realized, formatter=formatter)
+        context["h"] = h
+        context["realized"] = data
+
+        # Right-justify only the Realized column (index 2); left-align others
+        context["f"] = json.dumps(
+            {
+                "columnDefs": [
+                    {"targets": [0, 1], "className": "dt-body-left"},
+                    {"targets": [2], "className": "dt-body-right"},
+                ],
+                "ordering": False,
+                "pageLength": 100,
+            }
+        )
+
         context["realizedcsvurl"] = reverse("analytics:realizedcsv", args=[year])
 
         return context
@@ -292,9 +308,25 @@ class DailyPnLView(LoginRequiredMixin, TemplateView):
             return link_html, a, cround(pnl)
 
         # Only include the desired columns in the table view
+        # Base DataTables formats from utility
         context["h"], context["data"], context["formats"] = df_to_jqtable(
             df=df[["d", "a", "pnl"]], formatter=formatter
         )
+        # Make the Account column more compact on this page by truncating long text
+        try:
+            _fmt = json.loads(context["formats"]) if context.get("formats") else {}
+        except Exception:
+            _fmt = {}
+        # Ensure columnDefs exists and add truncate class + preferred widths
+        _defs = _fmt.get("columnDefs") or []
+        # Date column width (index 0)
+        _defs.append({"targets": [0], "width": "110px"})
+        # Account column: make compact and truncated
+        _defs.append({"targets": [1], "className": "truncate", "width": "160px"})
+        # PnL column: keep tight so it doesn't expand the table
+        _defs.append({"targets": [2], "width": "100px"})
+        _fmt["columnDefs"] = _defs
+        context["formats"] = json.dumps(_fmt)
         context["headings"] = nice_headings(context["h"])
         # Total PnL across the displayed rows
         total = float(df["pnl"].sum()) if not df.empty else 0.0

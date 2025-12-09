@@ -1,4 +1,41 @@
-<table id="{{ table_id }}" class="display border">
+<style>
+/* Tighten vertical spacing for tables rendered via this template */
+table.compact {
+    border-collapse: collapse; /* eliminate space between cell borders */
+    border-spacing: 0;         /* safety for non-collapsed layouts */
+    table-layout: fixed;       /* enforce column widths; prevents expansion */
+    /* Let compact tables hug their content instead of stretching to container */
+    width: auto !important;
+}
+/* Stronger override against DataTables default width rules */
+table.compact.dataTable,
+table.dataTable.compact,
+table.display.compact {
+    width: auto !important;
+}
+table.compact th,
+table.compact td {
+    padding: 2px 6px;          /* reduce space above/below each line */
+    line-height: 1.1;          /* compact line height */
+    white-space: nowrap;       /* keep columns narrow by avoiding wraps */
+    overflow: hidden;          /* prevent content from expanding cells */
+    text-overflow: ellipsis;   /* show ellipsis for overflowed content */
+}
+table.compact thead th {
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
+
+/* Optional: apply to specific cells/columns to cap width with ellipsis */
+table.compact th.truncate,
+table.compact td.truncate {
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+</style>
+
+<table id="{{ table_id }}" class="display border compact">
     <thead>
         <tr>
             {% for h in headings %}
@@ -30,6 +67,9 @@
 
 <script type="text/javascript" defer="defer">
 $(document).ready(function() {
-    $("table[id={{ table_id }}]").DataTable( eval({{ formats | safe }}));
+    var __userOpts = undefined;
+    try { __userOpts = eval({{ formats | safe }}); } catch(e) { __userOpts = {}; }
+    var __opts = $.extend({ autoWidth: false }, __userOpts || {});
+    $("table[id={{ table_id }}]").DataTable(__opts);
 });
 </script>
