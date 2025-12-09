@@ -109,25 +109,12 @@ def trades_pnl(df, d=None):
         d = our_now().date()
 
     if df.empty:
-        pnl = pd.DataFrame(
-            columns=[
-                "a",
-                "t",
-                "qp",
-                "qpr",
-                "q",
-                "cs",
-                "c",
-                "e",
-                "price",
-                "pnl",
-                "value",
-            ]
-        )
+        pnl = pd.DataFrame(columns=['a', 't', 'qp', 'qpr', 'q', 'cs',
+                                    'c', 'e', 'price', 'pnl', 'value'])
     else:
         df["qp"] = -df.q * df.p
 
-        reinvested_recs = df[df.r == True]
+        reinvested_recs = df[df.r]
         df["qpr"] = reinvested_recs.qp - reinvested_recs.c
 
         pnl = pd.pivot_table(

@@ -19,11 +19,10 @@ def tbg_ticker2ticker(ticker):
     symbol, mo, yr = symbol[:-3], symbol[-3:-2], symbol[-2:]
 
     try:
-        m = Market.objects.get(symbol=symbol)
+        Market.objects.get(symbol=symbol)
     except Market.DoesNotExist:
-        m = Market.objects.get_or_create(
-            symbol=symbol, name=symbol, ib_exchange="CME", yahoo_exchange="CME"
-        )[0]
+        Market.objects.get_or_create(symbol=symbol, name=symbol,
+                                     ib_exchange="CME", yahoo_exchange="CME")[0]
 
     yr = int(yr)
     if yr < 25:
@@ -70,11 +69,8 @@ def insert(ti, d, o, h, l, c, v=0, oi=0):
         print(f"No ticker for {ti}")
     else:
         try:
-            bar = TBGDailyBar.objects.update_or_create(
-                ticker=ticker,
-                d=d,
-                defaults={"o": o, "h": h, "l": l, "c": c, "v": v, "oi": oi},
-            )
+            TBGDailyBar.objects.update_or_create(ticker=ticker, d=d,
+                defaults={"o": o, "h": h, "l": l, "c": c, "v": v, "oi": oi})
         except IntegrityError as e:
             print(e)
             print(f"Could not add {ti} {d} {o} {h} {l} {c} {oi}")

@@ -1,0 +1,13 @@
+line-length = 99
+target-version = "py311"
+extend-exclude = [
+  "migrations",
+  "node_modules",
+  "static",
+  ".tox",
+  ".git",
+]
+
+[lint]
+# Ignore ambiguous variable name to match project preference
+ignore = ["E741"]
