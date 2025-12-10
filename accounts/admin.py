@@ -6,7 +6,7 @@ from django.contrib import messages
 from django.forms import ModelForm, ModelChoiceField
 from django.urls import reverse
 from django.utils.html import format_html
-from .models import Account, Receivable, CashRecord, Expense, Vendor
+from .models import Account, Receivable, CashRecord, Expense, Vendor, TradeSize
 from tbgutils.dt import our_now
 from analytics.cash import cash_sums
 
@@ -292,3 +292,16 @@ class ExpenseAdmin(admin.ModelAdmin):
             return "Unassigned"
 
     cash_transaction_link.short_description = "Cash Transaction"
+
+
+@admin.register(TradeSize)
+class TradeSizeAdmin(admin.ModelAdmin):
+    date_hierarchy = "d"
+    list_display = (
+        "a",
+        "d",
+        "size",
+    )
+    list_filter = ("a",)
+    search_fields = ("a__name",)
+    ordering = ("a", "-d")

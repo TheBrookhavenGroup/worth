@@ -418,17 +418,23 @@ class DailyTradesView(LoginRequiredMixin, TemplateView):
             context["h"] = headings
             context["data"] = []
             # Disable search/paging/info by default for empty tables too
-            context["formats"] = json.dumps({"searching": False, "paging": False, "info": False, "dom": "t"})
+            context["formats"] = json.dumps(
+                {"searching": False, "paging": False, "info": False, "dom": "t"}
+            )
             # No trades -> no prices table either
             context["prices_headings"] = nice_headings(["ticker", "prev_close", "close"])
             context["prices_h"] = ["ticker", "prev_close", "close"]
             context["prices_data"] = []
-            context["prices_formats"] = json.dumps({"searching": False, "paging": False, "info": False, "dom": "t"})
+            context["prices_formats"] = json.dumps(
+                {"searching": False, "paging": False, "info": False, "dom": "t"}
+            )
             # Opening positions (none)
             context["openpos_headings"] = nice_headings(["ticker", "open_pos"])
             context["openpos_h"] = ["ticker", "open_pos"]
             context["openpos_data"] = []
-            context["openpos_formats"] = json.dumps({"searching": False, "paging": False, "info": False, "dom": "t"})
+            context["openpos_formats"] = json.dumps(
+                {"searching": False, "paging": False, "info": False, "dom": "t"}
+            )
         else:
             # Filter to the selected trading day, and prepare display columns
             dff = df[df["d"] == d].copy()
@@ -504,7 +510,9 @@ class DailyTradesView(LoginRequiredMixin, TemplateView):
                             _fmt_px = json.loads(context.get("prices_formats") or "{}")
                         except Exception:
                             _fmt_px = {}
-                        _fmt_px.update({"searching": False, "paging": False, "info": False, "dom": "t"})
+                        _fmt_px.update(
+                            {"searching": False, "paging": False, "info": False, "dom": "t"}
+                        )
                         context["prices_formats"] = json.dumps(_fmt_px)
                         context["prices_headings"] = nice_headings(context["prices_h"])
                     else:
@@ -513,18 +521,24 @@ class DailyTradesView(LoginRequiredMixin, TemplateView):
                         )
                         context["prices_h"] = ["ticker", "prev_close", "close"]
                         context["prices_data"] = []
-                        context["prices_formats"] = json.dumps({"searching": False, "paging": False, "info": False, "dom": "t"})
+                        context["prices_formats"] = json.dumps(
+                            {"searching": False, "paging": False, "info": False, "dom": "t"}
+                        )
                 else:
                     context["prices_headings"] = nice_headings(["ticker", "prev_close", "close"])
                     context["prices_h"] = ["ticker", "prev_close", "close"]
                     context["prices_data"] = []
-                    context["prices_formats"] = json.dumps({"searching": False, "paging": False, "info": False, "dom": "t"})
+                    context["prices_formats"] = json.dumps(
+                        {"searching": False, "paging": False, "info": False, "dom": "t"}
+                    )
             except Exception:
                 # Fallback to empty prices table on any error
                 context["prices_headings"] = nice_headings(["ticker", "prev_close", "close"])
                 context["prices_h"] = ["ticker", "prev_close", "close"]
                 context["prices_data"] = []
-                context["prices_formats"] = json.dumps({"searching": False, "paging": False, "info": False, "dom": "t"})
+                context["prices_formats"] = json.dumps(
+                    {"searching": False, "paging": False, "info": False, "dom": "t"}
+                )
 
             # (legacy prices building removed; now sourced from pos_df above)
 
@@ -565,19 +579,25 @@ class DailyTradesView(LoginRequiredMixin, TemplateView):
                         _fmt_op = json.loads(context.get("openpos_formats") or "{}")
                     except Exception:
                         _fmt_op = {}
-                    _fmt_op.update({"searching": False, "paging": False, "info": False, "dom": "t"})
+                    _fmt_op.update(
+                        {"searching": False, "paging": False, "info": False, "dom": "t"}
+                    )
                     context["openpos_formats"] = json.dumps(_fmt_op)
                     context["openpos_headings"] = nice_headings(context["openpos_h"])
                 else:
                     context["openpos_headings"] = nice_headings(["ticker", "open_pos"])
                     context["openpos_h"] = ["ticker", "open_pos"]
                     context["openpos_data"] = []
-                    context["openpos_formats"] = json.dumps({"searching": False, "paging": False, "info": False, "dom": "t"})
+                    context["openpos_formats"] = json.dumps(
+                        {"searching": False, "paging": False, "info": False, "dom": "t"}
+                    )
             else:
                 context["openpos_headings"] = nice_headings(["ticker", "open_pos"])
                 context["openpos_h"] = ["ticker", "open_pos"]
                 context["openpos_data"] = []
-                context["openpos_formats"] = json.dumps({"searching": False, "paging": False, "info": False, "dom": "t"})
+                context["openpos_formats"] = json.dumps(
+                    {"searching": False, "paging": False, "info": False, "dom": "t"}
+                )
 
         context["title"] = "Trades for Day"
         context["selected_account"] = account or ""
