@@ -594,6 +594,26 @@ def daily_pnl(a=None, start=None, end=None):
                     pos_df.loc[need_close, "close"] = mapped.loc[need_close].combine_first(
                         pos_df.loc[need_close, "close"]
                     )
+
+                # Last-chance per-row fill for any remaining rows still missing/zero
+                # (defensive alignment with the Prices table shown in Daily Trades view)
+                remaining = pos_df[need_close]
+                remaining_mask = remaining["close"].isna() | (
+                    pd.to_numeric(remaining["close"], errors="coerce").fillna(0.0) <= 0.0
+                )
+                if remaining_mask.any():
+                    for idx, row in remaining.loc[remaining_mask].iterrows():
+                        t_obj = t_map.get(row["ticker"]) if 't_map' in locals() else None
+                        try:
+                            if t_obj is None:
+                                t_obj = Ticker.objects.filter(ticker=row["ticker"]).first()
+                            if t_obj is not None:
+                                p = get_price(t_obj, d=row["d"])
+                                if p is not None and float(p) > 0:
+                                    pos_df.at[idx, "close"] = float(p)
+                        except Exception:
+                            # keep as missing if any error
+                            pass
     except Exception:
         # Continue even if price fetch fails
         pass
@@ -652,6 +672,24 @@ def daily_pnl(a=None, start=None, end=None):
                     pos_df.loc[need_prev, "prev_close"] = mapped_prev.loc[need_prev].combine_first(
                         pos_df.loc[need_prev, "prev_close"]
                     )
+
+                # Last-chance per-row fill for any remaining prev_close still missing/zero
+                remaining_prev = pos_df[need_prev]
+                remaining_prev_mask = remaining_prev["prev_close"].isna() | (
+                    pd.to_numeric(remaining_prev["prev_close"], errors="coerce").fillna(0.0) <= 0.0
+                )
+                if remaining_prev_mask.any():
+                    for idx, row in remaining_prev.loc[remaining_prev_mask].iterrows():
+                        t_obj = t_map_prev.get(row["ticker"]) if 't_map_prev' in locals() else None
+                        try:
+                            if t_obj is None:
+                                t_obj = Ticker.objects.filter(ticker=row["ticker"]).first()
+                            if t_obj is not None and pd.notna(row.get("d_prev")):
+                                p = get_price(t_obj, d=row["d_prev"])
+                                if p is not None and float(p) > 0:
+                                    pos_df.at[idx, "prev_close"] = float(p)
+                        except Exception:
+                            pass
         except Exception:
             pass
 

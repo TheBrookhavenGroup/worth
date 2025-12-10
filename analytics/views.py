@@ -326,6 +326,12 @@ class DailyPnLView(LoginRequiredMixin, TemplateView):
         # PnL column: keep tight so it doesn't expand the table
         _defs.append({"targets": [2], "width": "100px"})
         _fmt["columnDefs"] = _defs
+        # Remove search box and pagination controls on Daily PnL table
+        _fmt["searching"] = False
+        _fmt["paging"] = False
+        _fmt["info"] = False
+        # Only render the table (no length, filter, or pagination elements)
+        _fmt["dom"] = "t"
         context["formats"] = json.dumps(_fmt)
         context["headings"] = nice_headings(context["h"])
         # Total PnL across the displayed rows
@@ -413,17 +419,18 @@ class DailyTradesView(LoginRequiredMixin, TemplateView):
             context["headings"] = nice_headings(headings)
             context["h"] = headings
             context["data"] = []
-            context["formats"] = "{}"
+            # Disable search/paging/info by default for empty tables too
+            context["formats"] = json.dumps({"searching": False, "paging": False, "info": False, "dom": "t"})
             # No trades -> no prices table either
             context["prices_headings"] = nice_headings(["ticker", "prev_close", "close"])
             context["prices_h"] = ["ticker", "prev_close", "close"]
             context["prices_data"] = []
-            context["prices_formats"] = "{}"
+            context["prices_formats"] = json.dumps({"searching": False, "paging": False, "info": False, "dom": "t"})
             # Opening positions (none)
             context["openpos_headings"] = nice_headings(["ticker", "open_pos"])
             context["openpos_h"] = ["ticker", "open_pos"]
             context["openpos_data"] = []
-            context["openpos_formats"] = "{}"
+            context["openpos_formats"] = json.dumps({"searching": False, "paging": False, "info": False, "dom": "t"})
         else:
             # Filter to the selected trading day, and prepare display columns
             dff = df[df["d"] == d].copy()
@@ -455,6 +462,13 @@ class DailyTradesView(LoginRequiredMixin, TemplateView):
             context["h"], context["data"], context["formats"] = df_to_jqtable(
                 df=show, formatter=formatter
             )
+            # Disable DataTables controls for the trades table
+            try:
+                _fmt_trades = json.loads(context.get("formats") or "{}")
+            except Exception:
+                _fmt_trades = {}
+            _fmt_trades.update({"searching": False, "paging": False, "info": False, "dom": "t"})
+            context["formats"] = json.dumps(_fmt_trades)
             context["headings"] = nice_headings(context["h"])
 
             # --- Prices table using pos_df from daily_pnl ---
@@ -474,6 +488,68 @@ class DailyTradesView(LoginRequiredMixin, TemplateView):
                         .rename(columns={"ticker": "t"})
                     )
 
+                    # Ensure synthetic "close" for the selected day uses get_price()
+                    # just like the Daily PnL view, even when DailyPrice is missing/zero
+                    try:
+                        if not px.empty:
+                            # Identify missing or zero values
+                            import numpy as _np
+                            import pandas as _pd
+                            from tbgutils.dt import prior_business_day as _prior_bd
+
+                            _close_missing = px["close"].isna() | (
+                                _pd.to_numeric(px["close"], errors="coerce").fillna(0.0) == 0.0
+                            )
+
+                            _prev_missing = px["prev_close"].isna() | (
+                                _pd.to_numeric(px["prev_close"], errors="coerce").fillna(0.0) == 0.0
+                            )
+
+                            if _close_missing.any() or _prev_missing.any():
+                                _tickers = sorted(set(px.loc[_close_missing | _prev_missing, "t"]))
+                                if _tickers:
+                                    _t_map = {t.ticker: t for t in Ticker.objects.filter(ticker__in=_tickers)}
+
+                                    # Fill current day synthetic close
+                                    if _close_missing.any():
+                                        _fill = {}
+                                        for _tk in _tickers:
+                                            _tobj = _t_map.get(_tk)
+                                            if not _tobj:
+                                                continue
+                                            try:
+                                                _p = get_price(_tobj, d=d)
+                                                if _p is not None and float(_p) > 0:
+                                                    _fill[_tk] = float(_p)
+                                            except Exception:
+                                                pass
+                                        if _fill:
+                                            px.loc[_close_missing, "close"] = px.loc[_close_missing, "t"].map(_fill).combine_first(
+                                                px.loc[_close_missing, "close"]
+                                            )
+
+                                    # Fill previous close when missing by using prior business day
+                                    if _prev_missing.any():
+                                        _d_prev = _prior_bd(d)
+                                        _fill_prev = {}
+                                        for _tk in _tickers:
+                                            _tobj = _t_map.get(_tk)
+                                            if not _tobj:
+                                                continue
+                                            try:
+                                                _p = get_price(_tobj, d=_d_prev)
+                                                if _p is not None and float(_p) > 0:
+                                                    _fill_prev[_tk] = float(_p)
+                                            except Exception:
+                                                pass
+                                        if _fill_prev:
+                                            px.loc[_prev_missing, "prev_close"] = px.loc[_prev_missing, "t"].map(_fill_prev).combine_first(
+                                                px.loc[_prev_missing, "prev_close"]
+                                            )
+                    except Exception:
+                        # If anything goes wrong, leave px as-is
+                        pass
+
                     def px_formatter(t, prev_close, close):
                         prev_fmt = "" if pd.isna(prev_close) else (cround(float(prev_close)))
                         cur_fmt = "" if pd.isna(close) else cround(float(close))
@@ -487,6 +563,13 @@ class DailyTradesView(LoginRequiredMixin, TemplateView):
                         ) = df_to_jqtable(
                             df=px[["t", "prev_close", "close"]], formatter=px_formatter
                         )
+                        # Remove search/pagination from prices table
+                        try:
+                            _fmt_px = json.loads(context.get("prices_formats") or "{}")
+                        except Exception:
+                            _fmt_px = {}
+                        _fmt_px.update({"searching": False, "paging": False, "info": False, "dom": "t"})
+                        context["prices_formats"] = json.dumps(_fmt_px)
                         context["prices_headings"] = nice_headings(context["prices_h"])
                     else:
                         context["prices_headings"] = nice_headings(
@@ -494,18 +577,18 @@ class DailyTradesView(LoginRequiredMixin, TemplateView):
                         )
                         context["prices_h"] = ["ticker", "prev_close", "close"]
                         context["prices_data"] = []
-                        context["prices_formats"] = "{}"
+                        context["prices_formats"] = json.dumps({"searching": False, "paging": False, "info": False, "dom": "t"})
                 else:
                     context["prices_headings"] = nice_headings(["ticker", "prev_close", "close"])
                     context["prices_h"] = ["ticker", "prev_close", "close"]
                     context["prices_data"] = []
-                    context["prices_formats"] = "{}"
+                    context["prices_formats"] = json.dumps({"searching": False, "paging": False, "info": False, "dom": "t"})
             except Exception:
                 # Fallback to empty prices table on any error
                 context["prices_headings"] = nice_headings(["ticker", "prev_close", "close"])
                 context["prices_h"] = ["ticker", "prev_close", "close"]
                 context["prices_data"] = []
-                context["prices_formats"] = "{}"
+                context["prices_formats"] = json.dumps({"searching": False, "paging": False, "info": False, "dom": "t"})
 
             # (legacy prices building removed; now sourced from pos_df above)
 
@@ -541,17 +624,24 @@ class DailyTradesView(LoginRequiredMixin, TemplateView):
                         context["openpos_data"],
                         context["openpos_formats"],
                     ) = df_to_jqtable(df=pos_open[["ticker", "open_pos"]], formatter=pos_fmt)
+                    # Disable DataTables controls for the Open Positions table
+                    try:
+                        _fmt_op = json.loads(context.get("openpos_formats") or "{}")
+                    except Exception:
+                        _fmt_op = {}
+                    _fmt_op.update({"searching": False, "paging": False, "info": False, "dom": "t"})
+                    context["openpos_formats"] = json.dumps(_fmt_op)
                     context["openpos_headings"] = nice_headings(context["openpos_h"])
                 else:
                     context["openpos_headings"] = nice_headings(["ticker", "open_pos"])
                     context["openpos_h"] = ["ticker", "open_pos"]
                     context["openpos_data"] = []
-                    context["openpos_formats"] = "{}"
+                    context["openpos_formats"] = json.dumps({"searching": False, "paging": False, "info": False, "dom": "t"})
             else:
                 context["openpos_headings"] = nice_headings(["ticker", "open_pos"])
                 context["openpos_h"] = ["ticker", "open_pos"]
                 context["openpos_data"] = []
-                context["openpos_formats"] = "{}"
+                context["openpos_formats"] = json.dumps({"searching": False, "paging": False, "info": False, "dom": "t"})
 
         context["title"] = "Trades for Day"
         context["selected_account"] = account or ""

@@ -22,7 +22,7 @@
 
             <p><a href="{{ daily_pnl_url }}{% if selected_account %}?a={{ selected_account }}{% endif %}">← Back to Daily PnL</a></p>
 
-            <div class="text-right" style="margin: 8px 0 16px; font-weight: bold;">
+            <div class="text-left" style="margin: 8px 0 16px; font-weight: bold;">
                 PnL for Day: {{ day_pnl }}
             </div>
             <h3>Prices</h3>
@@ -36,7 +36,6 @@
             <h3>Trades</h3>
             {% include 'table.html' with table_id="TABLE_daily_trades" data=data headings=headings formats=formats %}
 
-            </div>
         </div>
     </div>
 {% endblock content %}

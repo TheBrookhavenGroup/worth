@@ -4,14 +4,19 @@ table.compact {
     border-collapse: collapse; /* eliminate space between cell borders */
     border-spacing: 0;         /* safety for non-collapsed layouts */
     table-layout: fixed;       /* enforce column widths; prevents expansion */
-    /* Let compact tables hug their content instead of stretching to container */
+    /* Keep table width hugging content; do not stretch */
     width: auto !important;
+    /* Remove outside horizontal space so the table sits flush under headings */
+    margin-left: 0 !important;
+    margin-right: 0 !important;
 }
-/* Stronger override against DataTables default width rules */
+/* Override DataTables defaults that center tables with auto margins */
 table.compact.dataTable,
 table.dataTable.compact,
 table.display.compact {
     width: auto !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
 }
 table.compact th,
 table.compact td {
