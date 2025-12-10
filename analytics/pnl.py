@@ -390,10 +390,11 @@ def daily_pnl(a=None, start=None, end=None):
     Build a daily PnL dataframe per account and include ALL business days in
     the requested range, even if there were no trades that day.
 
-    Returns (pnl_df, pos_df)
+    Returns (pnl_df, pos_df, trades_df)
     - pnl_df: DataFrame with columns ['d','a','pnl']
     - pos_df: DataFrame with columns
-    ['d','a','ticker','opening_pos','closing_pos','close','d_prev','prev_close']
+      ['d','a','ticker','opening_pos','closing_pos','close','d_prev','prev_close']
+    - trades_df: DataFrame of bucketed trades (as returned by trades.models.bucketed_trades)
     """
     # All trades (bucketed to trading day) for the specified account
     trades_all = bucketed_trades(a=a)
@@ -418,7 +419,10 @@ def daily_pnl(a=None, start=None, end=None):
                     "prev_close",
                 ]
             )  # noqa: E501
-            return empty_pnl, empty_pos
+            empty_trades = pd.DataFrame(columns=[
+                "d", "dt", "a", "t", "q", "p", "c", "r"
+            ])
+            return empty_pnl, empty_pos, empty_trades
     elif start is None:
         start = end
     elif end is None:
@@ -440,7 +444,10 @@ def daily_pnl(a=None, start=None, end=None):
                 "prev_close",
             ]
         )  # noqa: E501
-        return empty_pnl, empty_pos
+        empty_trades = pd.DataFrame(columns=[
+            "d", "dt", "a", "t", "q", "p", "c", "r"
+        ])
+        return empty_pnl, empty_pos, empty_trades
 
     # If there are no trades but an account was specified, still emit zero rows
     if trades_all is None or len(trades_all) == 0:
@@ -459,7 +466,10 @@ def daily_pnl(a=None, start=None, end=None):
                     "prev_close",
                 ]
             )  # noqa: E501
-            return empty_pnl, empty_pos
+            empty_trades = pd.DataFrame(columns=[
+                "d", "dt", "a", "t", "q", "p", "c", "r"
+            ])
+            return empty_pnl, empty_pos, empty_trades
         base = pd.MultiIndex.from_product([dates_full, accounts], names=["d", "a"]).to_frame(
             index=False
         )  # noqa: E501
@@ -476,7 +486,10 @@ def daily_pnl(a=None, start=None, end=None):
                 "prev_close",
             ]
         )  # noqa: E501
-        return base[["d", "a", "pnl"]], empty_pos
+        empty_trades = pd.DataFrame(columns=[
+            "d", "dt", "a", "t", "q", "p", "c", "r"
+        ])
+        return base[["d", "a", "pnl"]], empty_pos, empty_trades
 
     trades_all = trades_all[trades_all["d"] <= end].copy()
 
@@ -496,7 +509,10 @@ def daily_pnl(a=None, start=None, end=None):
                 "prev_close",
             ]
         )  # noqa: E501
-        return empty_pnl, empty_pos
+        empty_trades = pd.DataFrame(columns=[
+            "d", "dt", "a", "t", "q", "p", "c", "r"
+        ])
+        return empty_pnl, empty_pos, empty_trades
 
     # Net traded quantity per (d,a,t)
     dq = (
@@ -731,14 +747,17 @@ def daily_pnl(a=None, start=None, end=None):
     else:
         close_df = pd.DataFrame(columns=open_syn_cols).head(0)
 
-    # Real trades in range only
+    # Real trades in range only (also build a trades_df with full columns for callers)
     real_cols = ["d", "a", "t", "cs", "q", "p", "c"]
     if trades_all is not None and len(trades_all):
-        real_df = trades_all[trades_all["d"].isin(dates_full)][
-            ["d", "a", "t", "cs", "q", "p", "c"]
-        ].copy()
+        in_range_mask = trades_all["d"].isin(dates_full)
+        real_df = trades_all.loc[in_range_mask, ["d", "a", "t", "cs", "q", "p", "c"]].copy()
+        # Expose the original bucketed trades with time/flags for the range
+        trade_cols = [col for col in ["d", "dt", "a", "t", "q", "p", "c", "r"] if col in trades_all.columns]
+        trades_df = trades_all.loc[in_range_mask, trade_cols].copy()
     else:
         real_df = pd.DataFrame(columns=real_cols).head(0)
+        trades_df = pd.DataFrame(columns=["d", "dt", "a", "t", "q", "p", "c", "r"]).head(0)
 
     # Combine all lines
     lines = [df for df in (open_df, close_df, real_df) if len(df)]
@@ -767,5 +786,5 @@ def daily_pnl(a=None, start=None, end=None):
     pnl_full = base.merge(pnl_df, on=["d", "a"], how="left").fillna({"pnl": 0.0})
     pnl_full.sort_values(["d", "a"], inplace=True)
     pnl_full.reset_index(drop=True, inplace=True)
-    # Return both PnL and the enriched positions dataframe
-    return pnl_full[["d", "a", "pnl"]], pos_df
+    # Return PnL, enriched positions dataframe, and bucketed trades in range
+    return pnl_full[["d", "a", "pnl"]], pos_df, trades_df

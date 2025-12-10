@@ -32,47 +32,51 @@
             }
             </style>
 
-            <form method="get" class="form-inline" style="margin-bottom: 16px;">
-                <label for="a">Account:&nbsp;</label>
-                <select id="a" name="a">
-                    <option value="" {% if not selected_account %}selected{% endif %}>(All Accounts)</option>
-                    {% for acct in accounts %}
-                        <option value="{{ acct.name }}" {% if selected_account == acct.name %}selected{% endif %}>{{ acct.name }}</option>
-                    {% endfor %}
-                </select>
-
-                <span style="margin-left: 16px;"></span>
-
-                <!-- Quick ranges -->
-                <div class="btn-group btn-group-sm" role="group" aria-label="Quick ranges">
-                    {% with base_q='?a='|add:selected_account %}
-                        <a class="btn btn-outline-secondary {% if selected_range == 'current month' or selected_range == 'current_month' or selected_range == 'cm' %}active{% endif %}"
-                           href="{{ request.path }}{{ base_q }}&range=current_month">Current Month</a>
-                        <a class="btn btn-outline-secondary {% if selected_range == 'last month' or selected_range == 'last_month' or selected_range == 'lm' %}active{% endif %}"
-                           href="{{ request.path }}{{ base_q }}&range=last_month">Last Month</a>
-                        <a class="btn btn-outline-secondary {% if selected_range == 'current year' or selected_range == 'current_year' or selected_range == 'cy' %}active{% endif %}"
-                           href="{{ request.path }}{{ base_q }}&range=current_year">Current Year</a>
-                    {% endwith %}
+            <form method="get" style="margin-bottom: 16px;">
+                <!-- Account selection (first row) -->
+                <div class="form-group" style="display: block; margin-bottom: 8px;">
+                    <label for="a">Account:&nbsp;</label>
+                    <select id="a" name="a">
+                        <option value="" {% if not selected_account %}selected{% endif %}>(All Accounts)</option>
+                        {% for acct in accounts %}
+                            <option value="{{ acct.name }}" {% if selected_account == acct.name %}selected{% endif %}>{{ acct.name }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
 
-                <span style="margin-left: 16px;"></span>
+                <!-- Quick ranges (second row, beneath Account) -->
+                <div style="display: block; margin: 4px 0 8px;">
+                    <div class="btn-group btn-group-sm" role="group" aria-label="Quick ranges">
+                        {% with base_q='?a='|add:selected_account %}
+                            <a class="btn btn-outline-secondary {% if selected_range == 'current month' or selected_range == 'current_month' or selected_range == 'cm' %}active{% endif %}"
+                               href="{{ request.path }}{{ base_q }}&range=current_month">Current Month</a>
+                            <a class="btn btn-outline-secondary {% if selected_range == 'last month' or selected_range == 'last_month' or selected_range == 'lm' %}active{% endif %}"
+                               href="{{ request.path }}{{ base_q }}&range=last_month">Last Month</a>
+                            <a class="btn btn-outline-secondary {% if selected_range == 'current year' or selected_range == 'current_year' or selected_range == 'cy' %}active{% endif %}"
+                               href="{{ request.path }}{{ base_q }}&range=current_year">Current Year</a>
+                        {% endwith %}
+                    </div>
+                </div>
 
-                <label for="start">Start:&nbsp;</label>
-                <input id="start" type="date" name="start" value="{{ selected_start }}" />
+                <!-- Date range + submit (third row) -->
+                <div style="display: block; margin-top: 4px;">
+                    <label for="start">Start:&nbsp;</label>
+                    <input id="start" type="date" name="start" value="{{ selected_start }}" />
 
-                <span style="margin-left: 8px;"></span>
+                    <span style="margin-left: 8px;"></span>
 
-                <label for="end">End:&nbsp;</label>
-                <input id="end" type="date" name="end" value="{{ selected_end }}" />
+                    <label for="end">End:&nbsp;</label>
+                    <input id="end" type="date" name="end" value="{{ selected_end }}" />
 
-                <span style="margin-left: 12px;"></span>
+                    <span style="margin-left: 12px;"></span>
 
-                <button type="submit" class="btn btn-primary btn-sm">Update</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Update</button>
+                </div>
             </form>
 
             {% include 'table.html' with table_id="TABLE_daily_pnl" data=data headings=headings formats=formats %}
 
-            <div class="text-right" style="margin-top: 8px; font-weight: bold;">
+            <div class="text-left" style="margin-top: 8px; font-weight: bold;">
                 Total PnL: {{ total_pnl }}
             </div>
         </div>

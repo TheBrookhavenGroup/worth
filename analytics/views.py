@@ -286,8 +286,8 @@ class DailyPnLView(LoginRequiredMixin, TemplateView):
         if start is None:
             start = end - timedelta(days=30)
 
-        # Build dataframe of daily PnL (ignore positions here)
-        df, _pos = daily_pnl(a=account, start=start, end=end)
+        # Build dataframe of daily PnL (ignore positions/trades here)
+        df, _pos, _trades = daily_pnl(a=account, start=start, end=end)
 
         # If viewing all accounts, roll up PnL by day across accounts
         if not account:
@@ -398,7 +398,7 @@ class DailyTradesView(LoginRequiredMixin, TemplateView):
 
         # Compute Daily PnL for the selected day (and optional account)
         try:
-            d_pnl_df, pos_df = daily_pnl(a=account, start=d, end=d)
+            d_pnl_df, pos_df, trades_df = daily_pnl(a=account, start=d, end=d)
             if d_pnl_df.empty:
                 day_pnl_val = 0.0
             else:
@@ -408,12 +408,10 @@ class DailyTradesView(LoginRequiredMixin, TemplateView):
                     day_pnl_val = float(d_pnl_df["pnl"].sum())
         except Exception:
             day_pnl_val = 0.0
+            trades_df = pd.DataFrame()
         context["day_pnl"] = cround(day_pnl_val)
-
-        # Load trades bucketed by trading day (uses Market.t_close per ticker)
-        from trades.models import bucketed_trades
-
-        df = bucketed_trades(a=account)
+        # Use trades returned by daily_pnl (already bucketed)
+        df = trades_df
         if df.empty:
             headings = ["time", "a", "t", "q", "p", "commission", "reinvest"]
             context["headings"] = nice_headings(headings)
@@ -487,68 +485,6 @@ class DailyTradesView(LoginRequiredMixin, TemplateView):
                         .sort_values("ticker")
                         .rename(columns={"ticker": "t"})
                     )
-
-                    # Ensure synthetic "close" for the selected day uses get_price()
-                    # just like the Daily PnL view, even when DailyPrice is missing/zero
-                    try:
-                        if not px.empty:
-                            # Identify missing or zero values
-                            import numpy as _np
-                            import pandas as _pd
-                            from tbgutils.dt import prior_business_day as _prior_bd
-
-                            _close_missing = px["close"].isna() | (
-                                _pd.to_numeric(px["close"], errors="coerce").fillna(0.0) == 0.0
-                            )
-
-                            _prev_missing = px["prev_close"].isna() | (
-                                _pd.to_numeric(px["prev_close"], errors="coerce").fillna(0.0) == 0.0
-                            )
-
-                            if _close_missing.any() or _prev_missing.any():
-                                _tickers = sorted(set(px.loc[_close_missing | _prev_missing, "t"]))
-                                if _tickers:
-                                    _t_map = {t.ticker: t for t in Ticker.objects.filter(ticker__in=_tickers)}
-
-                                    # Fill current day synthetic close
-                                    if _close_missing.any():
-                                        _fill = {}
-                                        for _tk in _tickers:
-                                            _tobj = _t_map.get(_tk)
-                                            if not _tobj:
-                                                continue
-                                            try:
-                                                _p = get_price(_tobj, d=d)
-                                                if _p is not None and float(_p) > 0:
-                                                    _fill[_tk] = float(_p)
-                                            except Exception:
-                                                pass
-                                        if _fill:
-                                            px.loc[_close_missing, "close"] = px.loc[_close_missing, "t"].map(_fill).combine_first(
-                                                px.loc[_close_missing, "close"]
-                                            )
-
-                                    # Fill previous close when missing by using prior business day
-                                    if _prev_missing.any():
-                                        _d_prev = _prior_bd(d)
-                                        _fill_prev = {}
-                                        for _tk in _tickers:
-                                            _tobj = _t_map.get(_tk)
-                                            if not _tobj:
-                                                continue
-                                            try:
-                                                _p = get_price(_tobj, d=_d_prev)
-                                                if _p is not None and float(_p) > 0:
-                                                    _fill_prev[_tk] = float(_p)
-                                            except Exception:
-                                                pass
-                                        if _fill_prev:
-                                            px.loc[_prev_missing, "prev_close"] = px.loc[_prev_missing, "t"].map(_fill_prev).combine_first(
-                                                px.loc[_prev_missing, "prev_close"]
-                                            )
-                    except Exception:
-                        # If anything goes wrong, leave px as-is
-                        pass
 
                     def px_formatter(t, prev_close, close):
                         prev_fmt = "" if pd.isna(prev_close) else (cround(float(prev_close)))
