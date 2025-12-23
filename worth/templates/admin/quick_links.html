@@ -29,10 +29,10 @@
                         <th><a href="{% url 'analytics:realized' %}">Taxable This Year</a></th>
                         <th><a href="{% url 'analytics:pnlifclosed' %}">PnL If Closed</a>
                             <p style="text-indent: -10px">
-                            <a href="{% url 'analytics:performance' %}">Performance Table</a>
-                            <p style="text-indent: -10px">
-                            <a href="{% url 'analytics:daily_pnl' %}?a=MarcIB&range=current_month">Daily PnL</a>
-                        </p></th>
+                                <a href="{% url 'analytics:daily_pnl' %}?a=MarcIB&range=current_month">Daily PnL</a><br/>
+                                <a href="{% url 'analytics:performance' %}">Performance</a>
+                            </p>
+                        </th>
                     </tr>
                     <tr>
                         <th><a href="{% url 'analytics:pnl' %}">PnL</a></th>
@@ -41,7 +41,6 @@
                         <th><a href="{% url 'analytics:pnl' %}?d=2">PnL 2 Months Ago</a></th>
                     </tr>
                 </table>
-            <td></td>
             </th>
     </tr>
   </table>

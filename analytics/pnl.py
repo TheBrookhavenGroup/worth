@@ -419,9 +419,7 @@ def daily_pnl(a=None, start=None, end=None):
                     "prev_close",
                 ]
             )  # noqa: E501
-            empty_trades = pd.DataFrame(columns=[
-                "d", "dt", "a", "t", "q", "p", "c", "r"
-            ])
+            empty_trades = pd.DataFrame(columns=["d", "dt", "a", "t", "q", "p", "c", "r"])
             return empty_pnl, empty_pos, empty_trades
     elif start is None:
         start = end
@@ -444,9 +442,7 @@ def daily_pnl(a=None, start=None, end=None):
                 "prev_close",
             ]
         )  # noqa: E501
-        empty_trades = pd.DataFrame(columns=[
-            "d", "dt", "a", "t", "q", "p", "c", "r"
-        ])
+        empty_trades = pd.DataFrame(columns=["d", "dt", "a", "t", "q", "p", "c", "r"])
         return empty_pnl, empty_pos, empty_trades
 
     # If there are no trades but an account was specified, still emit zero rows
@@ -466,9 +462,7 @@ def daily_pnl(a=None, start=None, end=None):
                     "prev_close",
                 ]
             )  # noqa: E501
-            empty_trades = pd.DataFrame(columns=[
-                "d", "dt", "a", "t", "q", "p", "c", "r"
-            ])
+            empty_trades = pd.DataFrame(columns=["d", "dt", "a", "t", "q", "p", "c", "r"])
             return empty_pnl, empty_pos, empty_trades
         base = pd.MultiIndex.from_product([dates_full, accounts], names=["d", "a"]).to_frame(
             index=False
@@ -486,9 +480,7 @@ def daily_pnl(a=None, start=None, end=None):
                 "prev_close",
             ]
         )  # noqa: E501
-        empty_trades = pd.DataFrame(columns=[
-            "d", "dt", "a", "t", "q", "p", "c", "r"
-        ])
+        empty_trades = pd.DataFrame(columns=["d", "dt", "a", "t", "q", "p", "c", "r"])
         return base[["d", "a", "pnl"]], empty_pos, empty_trades
 
     trades_all = trades_all[trades_all["d"] <= end].copy()
@@ -509,9 +501,7 @@ def daily_pnl(a=None, start=None, end=None):
                 "prev_close",
             ]
         )  # noqa: E501
-        empty_trades = pd.DataFrame(columns=[
-            "d", "dt", "a", "t", "q", "p", "c", "r"
-        ])
+        empty_trades = pd.DataFrame(columns=["d", "dt", "a", "t", "q", "p", "c", "r"])
         return empty_pnl, empty_pos, empty_trades
 
     # Net traded quantity per (d,a,t)
@@ -619,7 +609,7 @@ def daily_pnl(a=None, start=None, end=None):
                 )
                 if remaining_mask.any():
                     for idx, row in remaining.loc[remaining_mask].iterrows():
-                        t_obj = t_map.get(row["ticker"]) if 't_map' in locals() else None
+                        t_obj = t_map.get(row["ticker"]) if "t_map" in locals() else None
                         try:
                             if t_obj is None:
                                 t_obj = Ticker.objects.filter(ticker=row["ticker"]).first()
@@ -696,7 +686,7 @@ def daily_pnl(a=None, start=None, end=None):
                 )
                 if remaining_prev_mask.any():
                     for idx, row in remaining_prev.loc[remaining_prev_mask].iterrows():
-                        t_obj = t_map_prev.get(row["ticker"]) if 't_map_prev' in locals() else None
+                        t_obj = t_map_prev.get(row["ticker"]) if "t_map_prev" in locals() else None
                         try:
                             if t_obj is None:
                                 t_obj = Ticker.objects.filter(ticker=row["ticker"]).first()
@@ -753,7 +743,9 @@ def daily_pnl(a=None, start=None, end=None):
         in_range_mask = trades_all["d"].isin(dates_full)
         real_df = trades_all.loc[in_range_mask, ["d", "a", "t", "cs", "q", "p", "c"]].copy()
         # Expose the original bucketed trades with time/flags for the range
-        trade_cols = [col for col in ["d", "dt", "a", "t", "q", "p", "c", "r"] if col in trades_all.columns]
+        trade_cols = [
+            col for col in ["d", "dt", "a", "t", "q", "p", "c", "r"] if col in trades_all.columns
+        ]
         trades_df = trades_all.loc[in_range_mask, trade_cols].copy()
     else:
         real_df = pd.DataFrame(columns=real_cols).head(0)

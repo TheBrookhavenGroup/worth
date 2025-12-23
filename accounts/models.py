@@ -229,3 +229,15 @@ def get_expenses_df(year=None):
     if year is not None:
         qs = qs.filter(paid__year=year)
     return Expense.qs_to_df(qs)
+
+
+class TradeSize(models.Model):
+    a = models.ForeignKey(Account, on_delete=models.CASCADE)
+    d = models.DateField()
+    size = models.FloatField()
+
+    class Meta:
+        unique_together = (("a", "d"),)
+
+    def __str__(self):
+        return f"{self.a} {self.d} {self.size}"
