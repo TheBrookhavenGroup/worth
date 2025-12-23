@@ -11,7 +11,7 @@ from django.urls import reverse
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from analytics.pnl import pnl_summary, pnl_if_closed, ticker_pnl, performance, daily_pnl
-from analytics.risk import daily_returns, sharpe
+from analytics.risk import daily_returns, sharpe, volatility, total_return, annualized_return
 from analytics.utils import total_realized_gains, income, expenses
 from analytics.models import PPMResult
 from analytics.forms import PnLForm
@@ -868,26 +868,45 @@ class PerformanceView(LoginRequiredMixin, TemplateView):
                 # If anything goes wrong, still render table without cumulative return
                 pass
 
-        # Compute Sharpe ratio from the returns dataframe and show above table
+        # Compute risk/performance metrics from the returns dataframe and show above table
         try:
             sh = sharpe(df)
-            # If Series (multiple accounts), format as comma-separated list
-            if isinstance(sh, pd.Series):
-                sharpe_display = ", ".join(
-                    [f"{idx}: {val:.2f}" if pd.notna(val) else f"{idx}: —" for idx, val in sh.items()]
-                )
-            else:
-                sharpe_display = ("—" if pd.isna(sh) else f"{sh:.2f}")
+            tr = total_return(df)
+            ar = annualized_return(df)
+            vol = volatility(df)
+
+            def format_metric(val, as_pct=False):
+                if pd.isna(val):
+                    return "—"
+                if as_pct:
+                    return f"{val * 100:.2f}%"
+                return f"{val:.2f}"
+
+            def format_display(m, as_pct=False):
+                if isinstance(m, pd.Series):
+                    return ", ".join([f"{idx}: {format_metric(val, as_pct)}" for idx, val in m.items()])
+                return format_metric(m, as_pct)
+
+            sharpe_display = format_display(sh)
+            tr_display = format_display(tr, as_pct=True)
+            ar_display = format_display(ar, as_pct=True)
+            vol_display = format_display(vol, as_pct=True)
         except Exception:
-            sharpe_display = "—"
+            sharpe_display = tr_display = ar_display = vol_display = "—"
+
         # Place it in the context's generic header slot shown above the table
-        context["d"] = f"Sharpe: {sharpe_display}"
+        context["d"] = (
+            f"Sharpe: {sharpe_display} | Total Return: {tr_display} | "
+            f"Annualized: {ar_display} | Volatility: {vol_display}"
+        )
 
         # Format columns:
         # - pnl: 2 decimals
         # - ts: 0 decimals
         # - r: percentage string (2 decimals)
         # - cr: cumulative return percentage string (2 decimals)
+        daily_trades_url = reverse("analytics:daily_trades")
+
         def formatter(d, a, pnl, ts, r, cr=None):
             def fmt(val, fmt_str):
                 if pd.isna(val):
@@ -897,7 +916,12 @@ class PerformanceView(LoginRequiredMixin, TemplateView):
                 except Exception:
                     return val
 
-            d_str = f"{d}"  # date as YYYY-MM-DD by default
+            d_str = f"{d:%Y-%m-%d}"
+            href = f"{daily_trades_url}?d={d_str}"
+            if a and a != "(All Accounts)":
+                href += f"&a={a}"
+            link_html = f'<a href="{href}" target="_blank">{d_str}</a>'
+
             pnl_str = fmt(pnl, ",.2f")
             ts_str = fmt(ts, ",.0f")
             # Display returns as percentages
@@ -913,8 +937,8 @@ class PerformanceView(LoginRequiredMixin, TemplateView):
             # If the incoming dataframe doesn't have 'cr', formatter may be called with only 5 args
             # In that case, cr will be None and we omit it by returning 5-tuple
             if cr is None and "cr" not in df.columns:
-                return d_str, a, pnl_str, ts_str, r_str
-            return d_str, a, pnl_str, ts_str, r_str, cr_str
+                return link_html, a, pnl_str, ts_str, r_str
+            return link_html, a, pnl_str, ts_str, r_str, cr_str
 
         headings, data, _formats = df_to_jqtable(df=df, formatter=formatter)
         context["headings1"] = headings

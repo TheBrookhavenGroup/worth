@@ -131,3 +131,87 @@ def sharpe(df: pd.DataFrame, rf_daily: float = 0.0, periods_per_year: int = 252)
         result = sharpe_from_series(x[ret_col])
 
     return result
+
+
+def volatility(df: pd.DataFrame, periods_per_year: int = 252) -> pd.Series | float:
+    """
+    Compute annualized volatility from a DataFrame returned by ``daily_returns()``.
+    """
+    if df is None or df.empty:
+        return float("nan")
+
+    ret_col = "ret" if "ret" in df.columns else ("r" if "r" in df.columns else None)
+    if ret_col is None:
+        return float("nan")
+
+    x = df[[c for c in [ret_col, "a"] if c in df.columns]].copy()
+    x[ret_col] = pd.to_numeric(x[ret_col], errors="coerce")
+    x = x.dropna(subset=[ret_col])
+
+    if x.empty:
+        return float("nan")
+
+    def vol_from_series(s: pd.Series) -> float:
+        s = pd.to_numeric(s, errors="coerce").dropna()
+        if s.empty:
+            return float("nan")
+        return s.std(ddof=1) * (periods_per_year ** 0.5)
+
+    if "a" in x.columns and x["a"].nunique() > 1:
+        return x.groupby("a")[ret_col].apply(vol_from_series)
+    return vol_from_series(x[ret_col])
+
+
+def total_return(df: pd.DataFrame) -> pd.Series | float:
+    """
+    Compute total return from a DataFrame returned by ``daily_returns()``.
+    """
+    if df is None or df.empty:
+        return float("nan")
+
+    ret_col = "ret" if "ret" in df.columns else ("r" if "r" in df.columns else None)
+    if ret_col is None:
+        return float("nan")
+
+    x = df[[c for c in [ret_col, "a"] if c in df.columns]].copy()
+    x[ret_col] = pd.to_numeric(x[ret_col], errors="coerce")
+    x = x.dropna(subset=[ret_col])
+
+    if x.empty:
+        return float("nan")
+
+    def tr_from_series(s: pd.Series) -> float:
+        return (1 + s).prod() - 1
+
+    if "a" in x.columns and x["a"].nunique() > 1:
+        return x.groupby("a")[ret_col].apply(tr_from_series)
+    return tr_from_series(x[ret_col])
+
+
+def annualized_return(df: pd.DataFrame, periods_per_year: int = 252) -> pd.Series | float:
+    """
+    Compute annualized return from a DataFrame returned by ``daily_returns()``.
+    """
+    if df is None or df.empty:
+        return float("nan")
+
+    ret_col = "ret" if "ret" in df.columns else ("r" if "r" in df.columns else None)
+    if ret_col is None:
+        return float("nan")
+
+    x = df[[c for c in [ret_col, "a"] if c in df.columns]].copy()
+    x[ret_col] = pd.to_numeric(x[ret_col], errors="coerce")
+    x = x.dropna(subset=[ret_col])
+
+    if x.empty:
+        return float("nan")
+
+    def ann_from_series(s: pd.Series) -> float:
+        if s.empty:
+            return float("nan")
+        tr = (1 + s).prod() - 1
+        return (1 + tr) ** (periods_per_year / len(s)) - 1
+
+    if "a" in x.columns and x["a"].nunique() > 1:
+        return x.groupby("a")[ret_col].apply(ann_from_series)
+    return ann_from_series(x[ret_col])
