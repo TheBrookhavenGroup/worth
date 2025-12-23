@@ -1,32 +1,10 @@
-{% extends "admin/base.html" %}
-
-{% block branding %}
-<h1 id="site-name"><a href="{% url 'admin:index' %}">Worth</a></h1>
-{% endblock %}
-
-{% load humanize %}
-
-{% block title %}{{ title }}{% endblock title %}
-
-{% block page_style %}
-    <style>
-        body {background-color: lightyellow;}
-        .center {
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        p {text-align: center;}
-        font Verdana, Arial, Helvetica, sans-serif;
-    </style>
-{% endblock page_style %}
+{% extends "base.html" %}
 
 {% block content %}
-    {% include "admin/quick_links.html" with show_changelinks=True %}
     <form method="post">
     {% csrf_token %}
         {{ form.as_p }}
-        <input type="submit" value="Submit">
+        <input type="submit" value="Submit" class="btn btn-primary btn-sm">
     </form>
 
 {% endblock content %}
