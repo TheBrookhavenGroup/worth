@@ -23,9 +23,9 @@ dependencies = [
     "moneycounter",
     "django-easy-audit>=1.3.7",
     "plotly",
+    "ruff",
 ]
 
 [tool.setuptools]
 packages = ["worth", "trades", "markets", "accounts", "analytics"]
 include-package-data = true
-

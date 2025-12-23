@@ -79,7 +79,9 @@ def daily_returns(a=None, start=None, end=None):
     return merged[["d", "a", "pnl", "ts", "ret"]]
 
 
-def sharpe(df: pd.DataFrame, rf_daily: float = 0.0, periods_per_year: int = 252) -> pd.Series | float:
+def sharpe(
+    df: pd.DataFrame, rf_daily: float = 0.0, periods_per_year: int = 252
+) -> pd.Series | float:
     """
     Compute the Sharpe ratio from a DataFrame returned by ``daily_returns()``.
 
@@ -122,8 +124,7 @@ def sharpe(df: pd.DataFrame, rf_daily: float = 0.0, periods_per_year: int = 252)
         vol = s.std(ddof=1)
         if vol == 0 or pd.isna(vol):
             return float("nan")
-        return (excess.mean() / vol) * (periods_per_year ** 0.5)
-
+        return (excess.mean() / vol) * (periods_per_year**0.5)
 
     if "a" in x.columns and x["a"].nunique() > 1:
         result = x.groupby("a")[ret_col].apply(sharpe_from_series)
@@ -155,7 +156,7 @@ def volatility(df: pd.DataFrame, periods_per_year: int = 252) -> pd.Series | flo
         s = pd.to_numeric(s, errors="coerce").dropna()
         if s.empty:
             return float("nan")
-        return s.std(ddof=1) * (periods_per_year ** 0.5)
+        return s.std(ddof=1) * (periods_per_year**0.5)
 
     if "a" in x.columns and x["a"].nunique() > 1:
         return x.groupby("a")[ret_col].apply(vol_from_series)

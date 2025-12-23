@@ -10,7 +10,7 @@ from django.views.generic import TemplateView, FormView
 from django.urls import reverse
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
-from analytics.pnl import pnl_summary, pnl_if_closed, ticker_pnl, performance, daily_pnl
+from analytics.pnl import pnl_summary, pnl_if_closed, ticker_pnl, daily_pnl
 from analytics.risk import daily_returns, sharpe, volatility, total_return, annualized_return
 from analytics.utils import total_realized_gains, income, expenses
 from analytics.models import PPMResult
@@ -465,7 +465,9 @@ class DailyTradesView(LoginRequiredMixin, TemplateView):
                         context["prices_formats"] = json.dumps(_fmt_px)
                         context["prices_headings"] = nice_headings(context["prices_h"])
                     else:
-                        context["prices_headings"] = nice_headings(["ticker", "prev_close", "close"])
+                        context["prices_headings"] = nice_headings(
+                            ["ticker", "prev_close", "close"]
+                        )
                         context["prices_h"] = ["ticker", "prev_close", "close"]
                         context["prices_data"] = []
                         context["prices_formats"] = json.dumps(
@@ -474,7 +476,11 @@ class DailyTradesView(LoginRequiredMixin, TemplateView):
 
                     # Opening positions table directly from pos_df opening_pos
                     op = pos_day[pos_day["opening_pos"].fillna(0) != 0][["ticker", "opening_pos"]]
-                    op = op.rename(columns={"opening_pos": "open_pos"}).drop_duplicates(subset=["ticker"]).sort_values("ticker")
+                    op = (
+                        op.rename(columns={"opening_pos": "open_pos"})
+                        .drop_duplicates(subset=["ticker"])
+                        .sort_values("ticker")
+                    )
 
                     def pos_fmt(ticker, open_pos):
                         try:
@@ -535,8 +541,14 @@ class DailyTradesView(LoginRequiredMixin, TemplateView):
 
             # Add an explanatory note when PnL exists but no trades present
             try:
-                if day_pnl_val and abs(float(day_pnl_val)) > 0 and (trades_df is None or trades_df.empty):
-                    context["d"] = "PnL from mark-to-market on open positions (no trades on this day)."
+                if (
+                    day_pnl_val
+                    and abs(float(day_pnl_val)) > 0
+                    and (trades_df is None or trades_df.empty)
+                ):
+                    context["d"] = (
+                        "PnL from mark-to-market on open positions (no trades on this day)."
+                    )
             except Exception:
                 pass
         else:
@@ -671,7 +683,9 @@ class DailyTradesView(LoginRequiredMixin, TemplateView):
                             context["openpos_h"],
                             context["openpos_data"],
                             context["openpos_formats"],
-                        ) = df_to_jqtable(df=pos_open_df[["ticker", "open_pos"]], formatter=pos_fmt)
+                        ) = df_to_jqtable(
+                            df=pos_open_df[["ticker", "open_pos"]], formatter=pos_fmt
+                        )
                         try:
                             _fmt_op = json.loads(context.get("openpos_formats") or "{}")
                         except Exception:
@@ -861,7 +875,9 @@ class PerformanceView(LoginRequiredMixin, TemplateView):
                 df = df.sort_values(["a", "d"]) if "a" in df.columns else df.sort_values(["d"])  # type: ignore[arg-type]
                 r_numeric = pd.to_numeric(df["r"], errors="coerce").fillna(0.0)
                 if "a" in df.columns and df["a"].nunique() > 1:
-                    df["cr"] = r_numeric.groupby(df["a"]).transform(lambda s: (1 + s).cumprod() - 1)
+                    df["cr"] = r_numeric.groupby(df["a"]).transform(
+                        lambda s: (1 + s).cumprod() - 1
+                    )
                 else:
                     df["cr"] = (1 + r_numeric).cumprod() - 1
             except Exception:
@@ -884,7 +900,9 @@ class PerformanceView(LoginRequiredMixin, TemplateView):
 
             def format_display(m, as_pct=False):
                 if isinstance(m, pd.Series):
-                    return ", ".join([f"{idx}: {format_metric(val, as_pct)}" for idx, val in m.items()])
+                    return ", ".join(
+                        [f"{idx}: {format_metric(val, as_pct)}" for idx, val in m.items()]
+                    )
                 return format_metric(m, as_pct)
 
             sharpe_display = format_display(sh)
@@ -926,12 +944,12 @@ class PerformanceView(LoginRequiredMixin, TemplateView):
             ts_str = fmt(ts, ",.0f")
             # Display returns as percentages
             try:
-                r_str = ("" if pd.isna(r) else f"{r * 100:.2f}%")
+                r_str = "" if pd.isna(r) else f"{r * 100:.2f}%"
             except Exception:
                 r_str = r
             # Cumulative return formatting (optional)
             try:
-                cr_str = ("" if cr is None or pd.isna(cr) else f"{cr * 100:.2f}%")
+                cr_str = "" if cr is None or pd.isna(cr) else f"{cr * 100:.2f}%"
             except Exception:
                 cr_str = cr
             # If the incoming dataframe doesn't have 'cr', formatter may be called with only 5 args

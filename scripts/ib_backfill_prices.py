@@ -36,7 +36,7 @@ def main():
     contract.currency = "USD"
     contract.lastTradeDateOrContractMonth = "202403"  # Mar 2024
     contract.tradingClass = "ES"
-    contract.multiplier = 50can
+    contract.multiplier = 50
 
     # Request Historical Daily Bars
     app.reqHistoricalData(
