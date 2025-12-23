@@ -1,47 +1,44 @@
 
-<div>
-  <table>
-      {% if not exclude_quick_links_caption %}
-          <caption>
-              <a href="{{ app.app_url }}" class="section" >Quick Links</a>
-          </caption>
-      {% endif %}
-      {% load admin_urls %}
-      <tr>
-            <th scope="row">
-                <table class="table">
-                    <tr>
-                        <th><a href="{% url 'accounts:accounts' %}">Accounts</a></th>
-                        <th><a href="{% url 'accounts:cash_transfer' %}">Cash Transfer</a></th>
-                        <th><a href="/admin/accounts/cashrecord">Cash Admin</a></th>
-                        <th><a href="{% url 'analytics:value_chart' %}">Value Chart</a></th>
-                    </tr>
-                    <tr>
-                        <th><a href="{% url 'analytics:getibtrades' %}">Get IB Trades</a>
-                            <p style="text-indent: -10px">
-                            <a href="{% url 'accounts:get_ib_statements' %}">Get IB Statements</a>
-                        </p></th>
-                        <th><a href="{% url 'accounts:receivables' %}">Receivables</a>
-                        <p style="text-indent: -10px">
-                        </p>
-                        <a href="{% url 'analytics:incomeexpense' %}">Income/Expense</a>
-                        </th>
-                        <th><a href="{% url 'analytics:realized' %}">Taxable This Year</a></th>
-                        <th><a href="{% url 'analytics:pnlifclosed' %}">PnL If Closed</a>
-                            <p style="text-indent: -10px">
-                                <a href="{% url 'analytics:daily_pnl' %}?a=MarcIB&range=current_month">Daily PnL</a><br/>
-                                <a href="{% url 'analytics:performance' %}">Performance</a>
-                            </p>
-                        </th>
-                    </tr>
-                    <tr>
-                        <th><a href="{% url 'analytics:pnl' %}">PnL</a></th>
-                        <th><a href="{% url 'analytics:pnl' %}?days=lbd">PnL LBD</a></th>
-                        <th><a href="{% url 'analytics:pnl' %}?d=1">PnL Last Month</a></th>
-                        <th><a href="{% url 'analytics:pnl' %}?d=2">PnL 2 Months Ago</a></th>
-                    </tr>
-                </table>
-            </th>
-    </tr>
-  </table>
-</div>
+<nav class="navbar navbar-dark bg-dark">
+  <div class="dropdown">
+    <button class="navbar-toggler" type="button" id="hamburgerMenu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="dropdown-menu" aria-labelledby="hamburgerMenu">
+
+      <div class="dropdown-divider"></div>
+      <h6 class="dropdown-header">PnL</h6>
+      <a class="dropdown-item" href="{% url 'analytics:pnl' %}">PnL</a>
+      <a class="dropdown-item" href="{% url 'analytics:pnl' %}?days=lbd">PnL LBD</a>
+      <a class="dropdown-item" href="{% url 'analytics:pnl' %}?d=1">PnL Last Month</a>
+      <a class="dropdown-item" href="{% url 'analytics:pnl' %}?d=2">PnL 2 Months Ago</a>
+
+      <div class="dropdown-divider"></div>
+      <h6 class="dropdown-header">Account</h6>
+      <a class="dropdown-item" href="{% url 'accounts:accounts' %}">Accounts</a>
+      <a class="dropdown-item" href="/admin/accounts/cashrecord/">Cash Admin</a>
+      <a class="dropdown-item" href="{% url 'accounts:cash_transfer' %}">Cash Transfer</a>
+
+      <div class="dropdown-divider"></div>
+      <h6 class="dropdown-header">IB Actions</h6>
+      <a class="dropdown-item" href="{% url 'analytics:getibtrades' %}">Get IB Trades</a>
+      <a class="dropdown-item" href="{% url 'accounts:get_ib_statements' %}">Get IB Statements</a>
+
+      <div class="dropdown-divider"></div>
+      <h6 class="dropdown-header">Analytics</h6>
+      <a class="dropdown-item" href="{% url 'analytics:daily_pnl' %}?a=MarcIB&range=current_month">Daily PnL</a>
+      <a class="dropdown-item" href="{% url 'analytics:performance' %}">Performance</a>
+      <a class="dropdown-item" href="{% url 'analytics:value_chart' %}">Value Chart</a>
+
+      <div class="dropdown-divider"></div>
+      <h6 class="dropdown-header">Annual Analysis</h6>
+      <a class="dropdown-item" href="{% url 'analytics:pnlifclosed' %}">PnL If Closed</a>
+      <a class="dropdown-item" href="{% url 'accounts:receivables' %}">Receivables</a>
+      <a class="dropdown-item" href="{% url 'analytics:incomeexpense' %}">Income/Expense</a>
+      <a class="dropdown-item" href="{% url 'analytics:realized' %}">Taxable This Year</a>
+
+      <div class="dropdown-divider"></div>
+      <a class="dropdown-item" href="/admin/">Admin Home</a>
+    </div>
+  </div>
+</nav>

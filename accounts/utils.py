@@ -2,6 +2,8 @@ from datetime import date
 import json
 from cachetools.func import ttl_cache
 from django.utils.safestring import mark_safe
+from django.contrib.humanize.templatetags.humanize import intcomma
+from django.template.defaultfilters import floatformat
 from .models import Account, Receivable
 
 
@@ -52,9 +54,9 @@ def get_receivables(y=None):
     total = 0
     data = []
     for i in Receivable.objects.filter(received__year=y).order_by("client").all():
-        data.append([i.client, i.received, i.invoice, i.amt])
+        data.append([i.client, i.received, i.invoice, intcomma(floatformat(i.amt, 2))])
         total += i.amt
 
-    data.append(["Total", "", "", total])
+    data.append(["Total", "", "", intcomma(floatformat(total, 2))])
 
     return headings, data, formats

@@ -1,32 +1,12 @@
-{% extends "admin/base.html" %}
-
-{% block branding %}
-<h1 id="site-name"><a href="{% url 'admin:index' %}">Worth</a></h1>
-{% endblock %}
-
-{% load humanize %}
-
-{% block title %}{{ title }}{% endblock title %}
-
-{% block page_style %}
-    <style>
-        body {background-color: lightyellow; font-family: Verdana, Arial, Helvetica, sans-serif;}
-        .center {
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        p {text-align: center;}
-    </style>
-{% endblock page_style %}
+{% extends "base.html" %}
 
 {% block content %}
-
     <form method="post" id="accounts-form">
     {% csrf_token %}
         {{ form.as_p }}
         <p>
-            <button type="button" id="clear-checkboxes">Clear all checkboxes</button>
+            <button type="button" id="clear-checkboxes" class="btn btn-secondary btn-sm">Clear all checkboxes</button>
+            <button type="submit" class="btn btn-primary btn-sm">Save</button>
         </p>
     </form>
 
