@@ -22,7 +22,7 @@ def nice_headings(h):
     return [get_nicer_heading(i) for i in h]
 
 
-def df_to_jqtable(df, formatter=lambda x: x):
+def df_to_jqtable(df, formatter=lambda *x: x):
     headings = list(df.columns)
     data = [formatter(*[df[c].iloc[i] for c in headings]) for i in range(len(df))]
 

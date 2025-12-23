@@ -11,6 +11,7 @@ from django.urls import reverse
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from analytics.pnl import pnl_summary, pnl_if_closed, ticker_pnl, performance, daily_pnl
+from analytics.risk import daily_returns, sharpe
 from analytics.utils import total_realized_gains, income, expenses
 from analytics.models import PPMResult
 from analytics.forms import PnLForm
@@ -421,20 +422,123 @@ class DailyTradesView(LoginRequiredMixin, TemplateView):
             context["formats"] = json.dumps(
                 {"searching": False, "paging": False, "info": False, "dom": "t"}
             )
-            # No trades -> no prices table either
-            context["prices_headings"] = nice_headings(["ticker", "prev_close", "close"])
-            context["prices_h"] = ["ticker", "prev_close", "close"]
-            context["prices_data"] = []
-            context["prices_formats"] = json.dumps(
-                {"searching": False, "paging": False, "info": False, "dom": "t"}
-            )
-            # Opening positions (none)
-            context["openpos_headings"] = nice_headings(["ticker", "open_pos"])
-            context["openpos_h"] = ["ticker", "open_pos"]
-            context["openpos_data"] = []
-            context["openpos_formats"] = json.dumps(
-                {"searching": False, "paging": False, "info": False, "dom": "t"}
-            )
+
+            # Build Prices and Opening Positions from pos_df even when there are no trades
+            try:
+                if pos_df is not None and not pos_df.empty:
+                    pos_day = pos_df[pos_df["d"] == d]
+                    if account:
+                        pos_day = pos_day[pos_day["a"] == account]
+
+                    # Prices table: include any tickers with non-zero opening or closing positions
+                    pos_for_prices = pos_day[
+                        (pos_day["opening_pos"].fillna(0) != 0)
+                        | (pos_day["closing_pos"].fillna(0) != 0)
+                    ]
+                    px = (
+                        pos_for_prices[["ticker", "prev_close", "close"]]
+                        .drop_duplicates(subset=["ticker"])
+                        .sort_values("ticker")
+                        .rename(columns={"ticker": "t"})
+                    )
+
+                    def px_formatter(t, prev_close, close):
+                        prev_fmt = "" if pd.isna(prev_close) else (cround(float(prev_close)))
+                        cur_fmt = "" if pd.isna(close) else cround(float(close))
+                        return t, prev_fmt, cur_fmt
+
+                    if not px.empty:
+                        (
+                            context["prices_h"],
+                            context["prices_data"],
+                            context["prices_formats"],
+                        ) = df_to_jqtable(
+                            df=px[["t", "prev_close", "close"]], formatter=px_formatter
+                        )
+                        try:
+                            _fmt_px = json.loads(context.get("prices_formats") or "{}")
+                        except Exception:
+                            _fmt_px = {}
+                        _fmt_px.update(
+                            {"searching": False, "paging": False, "info": False, "dom": "t"}
+                        )
+                        context["prices_formats"] = json.dumps(_fmt_px)
+                        context["prices_headings"] = nice_headings(context["prices_h"])
+                    else:
+                        context["prices_headings"] = nice_headings(["ticker", "prev_close", "close"])
+                        context["prices_h"] = ["ticker", "prev_close", "close"]
+                        context["prices_data"] = []
+                        context["prices_formats"] = json.dumps(
+                            {"searching": False, "paging": False, "info": False, "dom": "t"}
+                        )
+
+                    # Opening positions table directly from pos_df opening_pos
+                    op = pos_day[pos_day["opening_pos"].fillna(0) != 0][["ticker", "opening_pos"]]
+                    op = op.rename(columns={"opening_pos": "open_pos"}).drop_duplicates(subset=["ticker"]).sort_values("ticker")
+
+                    def pos_fmt(ticker, open_pos):
+                        try:
+                            return ticker, int(round(float(open_pos)))
+                        except Exception:
+                            return ticker, open_pos
+
+                    if not op.empty:
+                        (
+                            context["openpos_h"],
+                            context["openpos_data"],
+                            context["openpos_formats"],
+                        ) = df_to_jqtable(df=op[["ticker", "open_pos"]], formatter=pos_fmt)
+                        try:
+                            _fmt_op = json.loads(context.get("openpos_formats") or "{}")
+                        except Exception:
+                            _fmt_op = {}
+                        _fmt_op.update(
+                            {"searching": False, "paging": False, "info": False, "dom": "t"}
+                        )
+                        context["openpos_formats"] = json.dumps(_fmt_op)
+                        context["openpos_headings"] = nice_headings(context["openpos_h"])
+                    else:
+                        context["openpos_headings"] = nice_headings(["ticker", "open_pos"])
+                        context["openpos_h"] = ["ticker", "open_pos"]
+                        context["openpos_data"] = []
+                        context["openpos_formats"] = json.dumps(
+                            {"searching": False, "paging": False, "info": False, "dom": "t"}
+                        )
+                else:
+                    # No pos_df available
+                    context["prices_headings"] = nice_headings(["ticker", "prev_close", "close"])
+                    context["prices_h"] = ["ticker", "prev_close", "close"]
+                    context["prices_data"] = []
+                    context["prices_formats"] = json.dumps(
+                        {"searching": False, "paging": False, "info": False, "dom": "t"}
+                    )
+                    context["openpos_headings"] = nice_headings(["ticker", "open_pos"])
+                    context["openpos_h"] = ["ticker", "open_pos"]
+                    context["openpos_data"] = []
+                    context["openpos_formats"] = json.dumps(
+                        {"searching": False, "paging": False, "info": False, "dom": "t"}
+                    )
+            except Exception:
+                # Fallback to empty tables on any error
+                context["prices_headings"] = nice_headings(["ticker", "prev_close", "close"])
+                context["prices_h"] = ["ticker", "prev_close", "close"]
+                context["prices_data"] = []
+                context["prices_formats"] = json.dumps(
+                    {"searching": False, "paging": False, "info": False, "dom": "t"}
+                )
+                context["openpos_headings"] = nice_headings(["ticker", "open_pos"])
+                context["openpos_h"] = ["ticker", "open_pos"]
+                context["openpos_data"] = []
+                context["openpos_formats"] = json.dumps(
+                    {"searching": False, "paging": False, "info": False, "dom": "t"}
+                )
+
+            # Add an explanatory note when PnL exists but no trades present
+            try:
+                if day_pnl_val and abs(float(day_pnl_val)) > 0 and (trades_df is None or trades_df.empty):
+                    context["d"] = "PnL from mark-to-market on open positions (no trades on this day)."
+            except Exception:
+                pass
         else:
             # Filter to the selected trading day, and prepare display columns
             dff = df[df["d"] == d].copy()
@@ -481,12 +585,13 @@ class DailyTradesView(LoginRequiredMixin, TemplateView):
                     pos_day = pos_df[pos_df["d"] == d]
                     if account:
                         pos_day = pos_day[pos_day["a"] == account]
-                    # Limit to tickers traded that day for a tighter view
-                    tickers_today = sorted(set(dff["t"].dropna().tolist()))
-                    if tickers_today:
-                        pos_day = pos_day[pos_day["ticker"].isin(tickers_today)]
+                    # Include any tickers with positions regardless of whether traded that day
+                    pos_for_prices = pos_day[
+                        (pos_day["opening_pos"].fillna(0) != 0)
+                        | (pos_day["closing_pos"].fillna(0) != 0)
+                    ]
                     px = (
-                        pos_day[["ticker", "prev_close", "close"]]
+                        pos_for_prices[["ticker", "prev_close", "close"]]
                         .drop_duplicates(subset=["ticker"])
                         .sort_values("ticker")
                         .rename(columns={"ticker": "t"})
@@ -542,25 +647,17 @@ class DailyTradesView(LoginRequiredMixin, TemplateView):
 
             # (legacy prices building removed; now sourced from pos_df above)
 
-            # --- Opening positions at start of the selected day ---
-            # Compute cumulative position for all prior trading days
-            # for tickers traded that day
-            tickers_today = sorted(set(dff["t"].dropna().tolist()))
-            if tickers_today:
-                df_before = df[df["d"] < d]
-                if not df_before.empty:
-                    # Net position per ticker at day open (sum of quantities)
-                    pos_open = (
-                        df_before[df_before["t"].isin(tickers_today)]
-                        .groupby(["a", "t"], as_index=False)["q"]
-                        .sum()
-                    )
-                    # If account filter provided, grouping still includes it;
-                    # select only active account row
+            # --- Opening positions at start of the selected day (from pos_df) ---
+            try:
+                if pos_df is not None and not pos_df.empty:
+                    pos_day2 = pos_df[pos_df["d"] == d]
                     if account:
-                        pos_open = pos_open[pos_open["a"] == account]
-                    pos_open = pos_open[["t", "q"]].rename(
-                        columns={"t": "ticker", "q": "open_pos"}
+                        pos_day2 = pos_day2[pos_day2["a"] == account]
+                    pos_open_df = (
+                        pos_day2[pos_day2["opening_pos"].fillna(0) != 0][["ticker", "opening_pos"]]
+                        .rename(columns={"opening_pos": "open_pos"})
+                        .drop_duplicates(subset=["ticker"])
+                        .sort_values("ticker")
                     )
 
                     def pos_fmt(ticker, open_pos):
@@ -569,21 +666,28 @@ class DailyTradesView(LoginRequiredMixin, TemplateView):
                         except Exception:
                             return ticker, open_pos
 
-                    (
-                        context["openpos_h"],
-                        context["openpos_data"],
-                        context["openpos_formats"],
-                    ) = df_to_jqtable(df=pos_open[["ticker", "open_pos"]], formatter=pos_fmt)
-                    # Disable DataTables controls for the Open Positions table
-                    try:
-                        _fmt_op = json.loads(context.get("openpos_formats") or "{}")
-                    except Exception:
-                        _fmt_op = {}
-                    _fmt_op.update(
-                        {"searching": False, "paging": False, "info": False, "dom": "t"}
-                    )
-                    context["openpos_formats"] = json.dumps(_fmt_op)
-                    context["openpos_headings"] = nice_headings(context["openpos_h"])
+                    if not pos_open_df.empty:
+                        (
+                            context["openpos_h"],
+                            context["openpos_data"],
+                            context["openpos_formats"],
+                        ) = df_to_jqtable(df=pos_open_df[["ticker", "open_pos"]], formatter=pos_fmt)
+                        try:
+                            _fmt_op = json.loads(context.get("openpos_formats") or "{}")
+                        except Exception:
+                            _fmt_op = {}
+                        _fmt_op.update(
+                            {"searching": False, "paging": False, "info": False, "dom": "t"}
+                        )
+                        context["openpos_formats"] = json.dumps(_fmt_op)
+                        context["openpos_headings"] = nice_headings(context["openpos_h"])
+                    else:
+                        context["openpos_headings"] = nice_headings(["ticker", "open_pos"])
+                        context["openpos_h"] = ["ticker", "open_pos"]
+                        context["openpos_data"] = []
+                        context["openpos_formats"] = json.dumps(
+                            {"searching": False, "paging": False, "info": False, "dom": "t"}
+                        )
                 else:
                     context["openpos_headings"] = nice_headings(["ticker", "open_pos"])
                     context["openpos_h"] = ["ticker", "open_pos"]
@@ -591,7 +695,7 @@ class DailyTradesView(LoginRequiredMixin, TemplateView):
                     context["openpos_formats"] = json.dumps(
                         {"searching": False, "paging": False, "info": False, "dom": "t"}
                     )
-            else:
+            except Exception:
                 context["openpos_headings"] = nice_headings(["ticker", "open_pos"])
                 context["openpos_h"] = ["ticker", "open_pos"]
                 context["openpos_data"] = []
@@ -741,6 +845,90 @@ class PerformanceView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["headings1"], context["data1"], context["formats"] = performance()
-        context["title"] = "Performance"
+        # Default account is MarcIB; allow override via query string ?a=
+        request = self.request
+        account = request.GET.get("a", "MarcIB") if request else "MarcIB"
+
+        df = daily_returns(a=account)
+        # Change heading 'ret' -> 'r' for display
+        if "ret" in df.columns:
+            df = df.rename(columns={"ret": "r"})
+
+        # Add cumulative return per account as 'cr'
+        # Ensure proper sorting and numeric dtype for returns
+        if not df.empty and "r" in df.columns:
+            try:
+                df = df.sort_values(["a", "d"]) if "a" in df.columns else df.sort_values(["d"])  # type: ignore[arg-type]
+                r_numeric = pd.to_numeric(df["r"], errors="coerce").fillna(0.0)
+                if "a" in df.columns and df["a"].nunique() > 1:
+                    df["cr"] = r_numeric.groupby(df["a"]).transform(lambda s: (1 + s).cumprod() - 1)
+                else:
+                    df["cr"] = (1 + r_numeric).cumprod() - 1
+            except Exception:
+                # If anything goes wrong, still render table without cumulative return
+                pass
+
+        # Compute Sharpe ratio from the returns dataframe and show above table
+        try:
+            sh = sharpe(df)
+            # If Series (multiple accounts), format as comma-separated list
+            if isinstance(sh, pd.Series):
+                sharpe_display = ", ".join(
+                    [f"{idx}: {val:.2f}" if pd.notna(val) else f"{idx}: —" for idx, val in sh.items()]
+                )
+            else:
+                sharpe_display = ("—" if pd.isna(sh) else f"{sh:.2f}")
+        except Exception:
+            sharpe_display = "—"
+        # Place it in the context's generic header slot shown above the table
+        context["d"] = f"Sharpe: {sharpe_display}"
+
+        # Format columns:
+        # - pnl: 2 decimals
+        # - ts: 0 decimals
+        # - r: percentage string (2 decimals)
+        # - cr: cumulative return percentage string (2 decimals)
+        def formatter(d, a, pnl, ts, r, cr=None):
+            def fmt(val, fmt_str):
+                if pd.isna(val):
+                    return ""
+                try:
+                    return format(val, fmt_str)
+                except Exception:
+                    return val
+
+            d_str = f"{d}"  # date as YYYY-MM-DD by default
+            pnl_str = fmt(pnl, ",.2f")
+            ts_str = fmt(ts, ",.0f")
+            # Display returns as percentages
+            try:
+                r_str = ("" if pd.isna(r) else f"{r * 100:.2f}%")
+            except Exception:
+                r_str = r
+            # Cumulative return formatting (optional)
+            try:
+                cr_str = ("" if cr is None or pd.isna(cr) else f"{cr * 100:.2f}%")
+            except Exception:
+                cr_str = cr
+            # If the incoming dataframe doesn't have 'cr', formatter may be called with only 5 args
+            # In that case, cr will be None and we omit it by returning 5-tuple
+            if cr is None and "cr" not in df.columns:
+                return d_str, a, pnl_str, ts_str, r_str
+            return d_str, a, pnl_str, ts_str, r_str, cr_str
+
+        headings, data, _formats = df_to_jqtable(df=df, formatter=formatter)
+        context["headings1"] = headings
+        context["data1"] = data
+        # Remove the search box for this table
+        context["formats"] = json.dumps(
+            {
+                "columnDefs": [
+                    {"targets": [i for i in range(1, len(headings))], "className": "dt-body-right"}
+                ],
+                "ordering": True,
+                "pageLength": 100,
+                "searching": False,
+            }
+        )
+        context["title"] = f"Performance ({account})"
         return context
