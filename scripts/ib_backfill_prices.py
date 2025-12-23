@@ -2,7 +2,7 @@ from ibapi.client import EClient
 from ibapi.wrapper import EWrapper
 from ibapi.contract import Contract
 import pandas as pd
-import time
+
 
 class IBApp(EWrapper, EClient):
     def __init__(self):
@@ -10,18 +10,21 @@ class IBApp(EWrapper, EClient):
         self.data = []
 
     def historicalData(self, reqId, bar):
-        self.data.append({
-            "date": bar.date,
-            "open": bar.open,
-            "high": bar.high,
-            "low": bar.low,
-            "close": bar.close,
-            "volume": bar.volume
-        })
+        self.data.append(
+            {
+                "date": bar.date,
+                "open": bar.open,
+                "high": bar.high,
+                "low": bar.low,
+                "close": bar.close,
+                "volume": bar.volume,
+            }
+        )
 
     def historicalDataEnd(self, reqId, start, end):
         print("Historical data download complete")
         self.disconnect()
+
 
 def main():
     app = IBApp()
@@ -43,13 +46,13 @@ def main():
         reqId=1,
         contract=contract,
         endDateTime="20250101 23:59:59",  # Must be >= your desired end date
-        durationStr="1 M",                # 1 month of data
+        durationStr="1 M",  # 1 month of data
         barSizeSetting="1 day",
         whatToShow="TRADES",
         useRTH=1,
         formatDate=1,
         keepUpToDate=False,
-        chartOptions=[]
+        chartOptions=[],
     )
 
     app.run()
@@ -59,6 +62,7 @@ def main():
     df = df[(df["date"] >= "2024-01-01") & (df["date"] <= "2024-01-31")]
     df.to_csv("ESH2024_Jan2024_IBKR.csv", index=False)
     print(df)
+
 
 if __name__ == "__main__":
     main()
