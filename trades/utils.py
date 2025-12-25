@@ -176,7 +176,7 @@ def pnl_asof(d=None, a=None, only_non_qualified=False, active_f=True, cleared=Fa
         cash_adj.rename(columns={"pnl": "q"}, inplace="True")
     else:
         cash_adj = pd.merge(futures_cash, non_futures_cash, how="outer", on="a")
-        cash_adj.fillna(0, inplace=True)
+        cash_adj = cash_adj.fillna(0)
         cash_adj["q"] = cash_adj.cash_flow + cash_adj.pnl
         cash_adj.drop(["cash_flow", "pnl"], axis=1, inplace=True)
 
@@ -184,7 +184,7 @@ def pnl_asof(d=None, a=None, only_non_qualified=False, active_f=True, cleared=Fa
     # if empty: cash = pd.DataFrame(columns=['a', 'q'])
     # concat with axis=1 is an outer join
     cash = pd.merge(cash, cash_adj, on="a", how="outer")
-    cash.fillna(0, inplace=True)
+    cash = cash.fillna(0)
     cash.q_x = cash.q_x + cash.q_y
     cash.drop(["q_y"], axis=1, inplace=True)
     cash.rename(columns={"q_x": "q"}, inplace=True)

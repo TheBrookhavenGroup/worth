@@ -1,7 +1,11 @@
 import os
 from pathlib import Path
 import configparser
+import pandas as pd
+
 from tbgutils import dt as mc_dt
+
+pd.set_option("future.no_silent_downcasting", True)
 
 config_file = "/Users/ms/.worth"
 if os.path.exists(config_file):
@@ -117,7 +121,7 @@ WSGI_APPLICATION = "worth.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "worth",
+        "NAME": POSTGRES_DB,
         "HOST": "127.0.0.1",
         "PORT": 5432,
         "USER": POSTGRES_USER,

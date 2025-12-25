@@ -33,9 +33,14 @@ class CashTransferForm(Form):
         widget=DateInput(attrs={"type": "date"}),
         initial=date.today(),
     )
-    from_account = ModelChoiceField(queryset=Account.objects.filter(active_f=True).all())
-    to_account = ModelChoiceField(queryset=Account.objects.filter(active_f=True).all())
+    from_account = ModelChoiceField(queryset=None)
+    to_account = ModelChoiceField(queryset=None)
     amt = DecimalField(max_digits=10, decimal_places=2, min_value=0.01)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["from_account"].queryset = Account.objects.filter(active_f=True).all()
+        self.fields["to_account"].queryset = Account.objects.filter(active_f=True).all()
 
 
 class DifferenceForm(Form):
