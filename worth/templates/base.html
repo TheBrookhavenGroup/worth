@@ -28,12 +28,15 @@
     body, table {
         font-family: "Inter", "Roboto", "Open Sans", sans-serif;
     }
+    .navbar-toggler {
+        padding: 2px 5px;
+    }
     </style>
 </head>
 
 <body>
 <div style="display: flex; align-items: center; margin-bottom: 20px;">
-    {% include "admin/quick_links.html" %}
+    {% include "admin/quick_links.html" with navbar_color_class="navbar-light" %}
     <h1 style="margin: 0 0 0 10px;">{{ title }}</h1>
 </div>
 
