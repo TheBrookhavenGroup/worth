@@ -958,19 +958,66 @@ class PerformanceView(LoginRequiredMixin, TemplateView):
                 return link_html, a, pnl_str, ts_str, r_str
             return link_html, a, pnl_str, ts_str, r_str, cr_str
 
-        headings, data, _formats = df_to_jqtable(df=df, formatter=formatter)
+        headings, data, formats1 = df_to_jqtable(df=df, formatter=formatter)
+        # Remove the search box for this table
+        f1 = json.loads(formats1)
+        f1["searching"] = False
         context["headings1"] = headings
         context["data1"] = data
-        # Remove the search box for this table
-        context["formats"] = json.dumps(
-            {
-                "columnDefs": [
-                    {"targets": [i for i in range(1, len(headings))], "className": "dt-body-right"}
-                ],
-                "ordering": True,
-                "pageLength": 100,
-                "searching": False,
-            }
-        )
+        context["formats1"] = json.dumps(f1)
+
+        # Add YTD returns table
+        if not df.empty and "r" in df.columns:
+            try:
+                ytd_df = df.copy()
+                ytd_df["year"] = pd.to_datetime(ytd_df["d"]).dt.year
+                ytd_df["r"] = pd.to_numeric(ytd_df["r"], errors="coerce").fillna(0.0)
+
+                if "a" in ytd_df.columns and ytd_df["a"].nunique() > 1:
+                    ytd_res = (
+                        ytd_df.groupby(["a", "year"])["r"]
+                        .apply(lambda s: (1 + s).prod() - 1)
+                        .reset_index()
+                    )
+                    ytd_res = ytd_res.pivot(index="year", columns="a", values="r")
+                    ytd_res = ytd_res.sort_index(ascending=False)
+                    ytd_headings = ["Year"] + list(ytd_res.columns)
+                    ytd_data = []
+                    for year, row in ytd_res.iterrows():
+                        ytd_data.append(
+                            [int(year)] + [f"{v * 100:.2f}%" if pd.notna(v) else "—" for v in row]
+                        )
+                else:
+                    ytd_res = (
+                        ytd_df.groupby("year")["r"]
+                        .apply(lambda s: (1 + s).prod() - 1)
+                        .reset_index()
+                    )
+                    ytd_res = ytd_res.sort_values("year", ascending=False)
+                    ytd_headings = ["Year", "Return"]
+                    ytd_data = [
+                        [int(row["year"]), f"{row['r'] * 100:.2f}%"]
+                        for _, row in ytd_res.iterrows()
+                    ]
+
+                context["headings2"] = ytd_headings
+                context["data2"] = ytd_data
+                context["formats2"] = json.dumps(
+                    {
+                        "columnDefs": [
+                            {
+                                "targets": [i for i in range(1, len(ytd_headings))],
+                                "className": "dt-body-right",
+                            }
+                        ],
+                        "ordering": True,
+                        "searching": False,
+                        "paging": False,
+                        "info": False,
+                    }
+                )
+            except Exception:
+                pass
+
         context["title"] = f"Performance ({account})"
         return context

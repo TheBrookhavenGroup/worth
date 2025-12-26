@@ -15,10 +15,17 @@
 
         <div style="width: 850px">
             {%  block d %}
-                <p><div class="text-center"><strong>{{ d }}</strong></div></p>
+                <div class="text-center"><strong>{{ d }}</strong></div>
             {% endblock %}
 
-            {% include 'table.html' with table_id="table_id1" data=data1 headings=headings1 %}
+            {% if data2 %}
+                <div style="width: 400px">
+                    {% include 'table.html' with table_id="table_id2" data=data2 headings=headings2 formats=formats2 %}
+                </div>
+                <br>
+            {% endif %}
+
+            {% include 'table.html' with table_id="table_id1" data=data1 headings=headings1 formats=formats1 %}
         </div>
     </div>
 {% endblock content %}
