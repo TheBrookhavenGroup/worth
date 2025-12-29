@@ -16,6 +16,7 @@ from analytics.utils import total_realized_gains, income, expenses
 from analytics.models import PPMResult
 from analytics.forms import PnLForm
 from trades.ib_flex import get_trades
+from trades.models import copy_trades_df
 from trades.utils import weighted_average_price
 from tbgutils.dt import lbd_prior_month, our_now, prior_business_day
 from tbgutils.str import is_near_zero, cround
@@ -93,9 +94,11 @@ class PnLView(LoginRequiredMixin, MyFormView):
             context["formats"],
             total_worth,
             total_today,
+            total_pnl,
         ) = pnl_summary(d=d, a=account, active_f=active_f)
         context["total_worth"] = total_worth
         context["total_today"] = total_today
+        context["total_pnl"] = total_pnl
         return context
 
     def form_valid(self, form):
@@ -139,11 +142,39 @@ class TickerView(LoginRequiredMixin, TemplateView):
                 cs = ticker.market.cs
                 price = get_price(ticker)
                 context["price"] = price
-                context["capital"] = cs * pos * price
+                context["value"] = cs * pos * price
                 context["realizable_pnl"] = cs * pos * (price - wap)
-                context["total_pnl"] = ticker_pnl(ticker)
             except IndexError:
                 context["msg"] = "Could not get a price for this ticker."
+
+        try:
+            context["total_pnl"] = ticker_pnl(ticker, active_f=False)
+        except (IndexError, Exception):
+            pass
+
+        df = copy_trades_df(t=ticker_symbol, active_f=False)
+        if not df.empty:
+            df = df.sort_values("dt")
+            df["pos"] = df["q"].cumsum()
+            df["value"] = df["q"] * df["p"] * df["cs"]
+
+            df = df[["dt", "a", "q", "p", "value", "pos"]]
+
+            def trade_formatter(dt, a, q, p, v, pos):
+                return [
+                    dt.strftime("%Y-%m-%d %H:%M"),
+                    a,
+                    cround(q),
+                    cround(p),
+                    cround(v),
+                    cround(pos),
+                ]
+
+            context["trades_headings"], context["trades_data"], context["trades_formats"] = (
+                df_to_jqtable(df, formatter=trade_formatter)
+            )
+
+            context["trades_headings"] = ["Date", "Account", "Q", "P", "Value", "Pos"]
 
         return context
 

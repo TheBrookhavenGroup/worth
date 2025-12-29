@@ -205,6 +205,7 @@ def pnl(d=None, a=None, active_f=True):
     today_total = result.Today.sum()
     mtd_total = result.MTD.sum()
     ytd_total = result.YTD.sum()
+    pnl_total = result.PnL.sum()
 
     result = pd.concat([result, cash])
     result.reset_index(inplace=True, drop=True)
@@ -226,15 +227,15 @@ def pnl(d=None, a=None, active_f=True):
         today_total,
         mtd_total,
         ytd_total,
-        0,
+        pnl_total,
     ]
     result.loc[len(result) + 1] = ["ALL COH", "", "", "", coh, "", "", "", ""]
 
-    return result, total_worth, today_total, cash_balance
+    return result, total_worth, today_total, pnl_total
 
 
 def pnl_summary(d=None, a=None, active_f=True):
-    result, total_worth, total_today, _ = pnl(d=d, a=a, active_f=active_f)
+    result, total_worth, total_today, total_pnl = pnl(d=d, a=a, active_f=active_f)
 
     today = date.today()
 
@@ -246,7 +247,7 @@ def pnl_summary(d=None, a=None, active_f=True):
 
     headings, data, formats = df_to_jqtable(df=result, formatter=format_rec)
 
-    return headings, data, formats, total_worth, total_today
+    return headings, data, formats, total_worth, total_today, total_pnl
 
 
 def format_if_closed(a, t, q=0, wap=0, cs=1, price=0, value=0, pnl=0):
@@ -289,19 +290,27 @@ def pnl_if_closed(a=None):
     return df, format_if_closed
 
 
-def ticker_pnl(t):
+def ticker_pnl(t, active_f=True):
     """
     What is the total pnl earned for the given ticker?
     :param t:
+    :param active_f:
     :return:
     """
 
-    df = copy_trades_df(t=t)
+    df = copy_trades_df(t=t, active_f=active_f)
+    if df.empty:
+        return 0.0
+
     g1 = df.groupby(["a", "t"])[["cs", "q", "p"]]
-    ticker, g = [(t, g) for (_, t), g in g1][0]
-    price = get_price(ticker)
-    pnl = pnl_calc(g, price)
-    return pnl
+    # Sum up pnl for all accounts
+    total_pnl = 0.0
+    for (_, ticker_symbol), g in g1:
+        ticker = get_ticker(ticker_symbol)
+        price = get_price(ticker)
+        total_pnl += pnl_calc(g, price)
+
+    return total_pnl
 
 
 def performance():

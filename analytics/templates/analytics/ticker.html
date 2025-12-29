@@ -13,19 +13,28 @@
             margin-right: auto;
         }
         p {text-align: center;}
-        font Verdana, Arial, Helvetica, sans-serif;
     </style>
 {% endblock page_style %}
 
+{% block extrahead %}
+    {{ block.super }}
+    {% include 'jquery_table.html' %}
+{% endblock %}
+
 {% block content %}
 
-    <p>
+    <div>
         {% if description %}
             {{ description }} <br>
             {{ tickeradmin }} <br>
         {% endif %}
         <table class="table">
         <tbody>
+        {% if total_pnl %}
+            <tr>
+                <td>Total PnL</td><td>{{ total_pnl|floatformat:2|intcomma }}</td>
+            </tr>
+        {% endif %}
         {% if pos %}
             <tr>
                 <td>Position:</td><td>{{ pos|floatformat:2|intcomma }} </td>
@@ -34,7 +43,7 @@
                 <td>Weighted Average Price:</td><td>{{ wap|floatformat:2|intcomma }} </td>
             </tr>
             <tr>
-                <td>Capital:</td><td>{{ capital|floatformat:2|intcomma }}</td>
+                <td>Value:</td><td>{{ value|floatformat:2|intcomma }}</td>
             </tr>
         {% endif %}
 
@@ -42,12 +51,11 @@
             <tr>
                 <td>Price</td><td>{{ price|floatformat:2|intcomma }} <a href="{% url 'analytics:ticker_chart' ticker %}">[View Price Chart]</a></td>
             </tr>
-            <tr>
-                <td>Total PnL</td><td>{{ total_pnl|floatformat:2|intcomma }}</td>
-            </tr>
+            {% if realizable_pnl %}
             <tr>
                 <td>Realizable PnL</td><td>{{ realizable_pnl|floatformat:2|intcomma }} if we close position today.</td>
             </tr>
+            {% endif %}
         {% endif %}
         </tbody>
         </table>
@@ -56,6 +64,11 @@
             {{ msg }}
             </p>
         {% endif %}
-    </p>
 
+        {% if trades_data %}
+            <div style="width: 850px">
+                {% include 'table.html' with table_id="trades_table" data=trades_data headings=trades_headings formats=trades_formats %}
+            </div>
+        {% endif %}
+    </div>
 {% endblock content %}
