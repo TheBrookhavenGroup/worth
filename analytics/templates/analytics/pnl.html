@@ -33,16 +33,26 @@
 
         <div style="width: 850px">
             {%  block d %}
-                <p><div class="text-center"><strong>{{ d }}</strong></div></p>
+                <div class="text-center"><strong>{{ d }}</strong></div>
             {% endblock %}
 
-            <p>
-            <div class="text-center">
-            <strong>
-                ${{ total_worth|floatformat:0|intcomma }} {{ total_today|floatformat:0|intcomma }}
-            </strong>
-            </div>
-            </p>
+            <table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
+                <thead>
+                    <tr>
+                        <th>Worth</th>
+                        <th>Today</th>
+                        <th>PnL</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="text-center" style="font-weight: bold;">
+                        <td>${{ total_worth|floatformat:0|intcomma }}</td>
+                        <td>{{ total_today|floatformat:0|intcomma }}</td>
+                        <td>{{ total_pnl|floatformat:0|intcomma }}</td>
+                    </tr>
+                </tbody>
+            </table>
+            <br>
 
             {% include 'table.html' with table_id="table_id1" data=data1 headings=headings1 %}
         </div>
