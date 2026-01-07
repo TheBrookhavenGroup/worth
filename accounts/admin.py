@@ -48,8 +48,9 @@ def clear_qualified_flag(modeladmin, request, qs):
 
 @admin.register(Account)
 class AccountAdmin(admin.ModelAdmin):
-    list_display = ("name",)
+    list_display = ("name", "owner", "broker", "broker_account", "description")
     list_filter = ("active_f", "qualified_f", ActiveAccountFilter)
+    search_fields = ("name", "owner", "broker", "broker_account", "description")
     actions = [set_qualified_flag, clear_qualified_flag]
 
 
@@ -195,6 +196,7 @@ class CashRecordAdmin(admin.ModelAdmin):
 @admin.register(Vendor)
 class VendorAdmin(admin.ModelAdmin):
     list_display = ("name", "description", "url")
+    search_fields = ("name", "description")
     ordering = ("name",)
 
 
