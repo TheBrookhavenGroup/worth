@@ -780,8 +780,8 @@ class IncomeExpenseView(LoginRequiredMixin, TemplateView):
         expense_df, expense_fmt = expenses(year)
         income_df, income_fmt = income(year)
 
-        total_expenses = expense_df["amt"].iloc[-1]
-        total_income = income_df["amt"].iloc[-1]
+        total_expenses = expense_df["amt"].iloc[-1] if not expense_df.empty else 0.0
+        total_income = income_df["amt"].iloc[-1] if not income_df.empty else 0.0
         net_profit = total_income - total_expenses
 
         context["e_h"], context["expense"], _ = df_to_jqtable(df=expense_df, formatter=formatter)
