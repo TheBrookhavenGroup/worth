@@ -62,54 +62,54 @@
       <div class="dropdown-submenu">
         <a class="dropdown-item dropdown-toggle" href="#">PnL</a>
         <div class="dropdown-menu">
-          <a class="dropdown-item" href="{% url 'analytics:pnl' %}">PnL</a>
-          <a class="dropdown-item" href="{% url 'analytics:pnl' %}?days=lbd">PnL LBD</a>
-          <a class="dropdown-item" href="{% url 'analytics:pnl' %}?d=1">PnL Last Month</a>
-          <a class="dropdown-item" href="{% url 'analytics:pnl' %}?d=2">PnL 2 Months Ago</a>
+          <a class="dropdown-item" target="_blank" href="{% url 'analytics:pnl' %}">PnL</a>
+          <a class="dropdown-item" target="_blank" href="{% url 'analytics:pnl' %}?days=lbd">PnL LBD</a>
+          <a class="dropdown-item" target="_blank" href="{% url 'analytics:pnl' %}?d=1">PnL Last Month</a>
+          <a class="dropdown-item" target="_blank" href="{% url 'analytics:pnl' %}?d=2">PnL 2 Months Ago</a>
         </div>
       </div>
 
       <div class="dropdown-submenu">
         <a class="dropdown-item dropdown-toggle" href="#">Account</a>
         <div class="dropdown-menu">
-          <a class="dropdown-item" href="{% url 'accounts:accounts' %}">Accounts</a>
-          <a class="dropdown-item" href="/admin/accounts/cashrecord/">Cash Admin</a>
-          <a class="dropdown-item" href="{% url 'accounts:cash_transfer' %}">Cash Transfer</a>
-          <a class="dropdown-item" href="/admin/accounts/expense/">Expenses Admin</a>
-          <a class="dropdown-item" href="/admin/accounts/receivable/">Receivable Admin</a>
+          <a class="dropdown-item" target="_blank" href="{% url 'accounts:accounts' %}">Accounts</a>
+          <a class="dropdown-item" target="_blank" href="/admin/accounts/cashrecord/">Cash Admin</a>
+          <a class="dropdown-item" target="_blank" href="{% url 'accounts:cash_transfer' %}">Cash Transfer</a>
+          <a class="dropdown-item" target="_blank" href="/admin/accounts/expense/">Expenses Admin</a>
+          <a class="dropdown-item" target="_blank" href="/admin/accounts/receivable/">Receivable Admin</a>
         </div>
       </div>
 
       <div class="dropdown-submenu">
         <a class="dropdown-item dropdown-toggle" href="#">Trading</a>
         <div class="dropdown-menu">
-          <a class="dropdown-item" href="{% url 'analytics:getibtrades' %}">Get IB Trades</a>
-          <a class="dropdown-item" href="{% url 'accounts:get_ib_statements' %}">Get IB Statements</a>
-          <a class="dropdown-item" href="/admin/trades/trade/">Trades Admin</a>
+          <a class="dropdown-item" target="_blank" href="{% url 'analytics:getibtrades' %}">Get IB Trades</a>
+          <a class="dropdown-item" target="_blank" href="{% url 'accounts:get_ib_statements' %}">Get IB Statements</a>
+          <a class="dropdown-item" target="_blank" href="/admin/trades/trade/">Trades Admin</a>
         </div>
       </div>
 
       <div class="dropdown-submenu">
         <a class="dropdown-item dropdown-toggle" href="#">Analytics</a>
         <div class="dropdown-menu">
-          <a class="dropdown-item" href="{% url 'analytics:daily_pnl' %}?a=MarcIB&range=current_month">Daily PnL</a>
-          <a class="dropdown-item" href="{% url 'analytics:performance' %}">Performance</a>
-          <a class="dropdown-item" href="{% url 'analytics:value_chart' %}">Value Chart</a>
+          <a class="dropdown-item" target="_blank" href="{% url 'analytics:daily_pnl' %}?a=MarcIB&range=current_month">Daily PnL</a>
+          <a class="dropdown-item" target="_blank" href="{% url 'analytics:performance' %}">Performance</a>
+          <a class="dropdown-item" target="_blank" href="{% url 'analytics:value_chart' %}">Value Chart</a>
         </div>
       </div>
 
       <div class="dropdown-submenu">
         <a class="dropdown-item dropdown-toggle" href="#">Annual Analysis</a>
         <div class="dropdown-menu">
-          <a class="dropdown-item" href="{% url 'analytics:pnlifclosed' %}">PnL If Closed</a>
-          <a class="dropdown-item" href="{% url 'accounts:receivables' %}">Receivables</a>
-          <a class="dropdown-item" href="{% url 'analytics:incomeexpense' %}">Income/Expense</a>
-          <a class="dropdown-item" href="{% url 'analytics:realized' %}">Taxable This Year</a>
+          <a class="dropdown-item" target="_blank" href="{% url 'analytics:pnlifclosed' %}">PnL If Closed</a>
+          <a class="dropdown-item" target="_blank" href="{% url 'accounts:receivables' %}">Receivables</a>
+          <a class="dropdown-item" target="_blank" href="{% url 'analytics:incomeexpense' %}">Income/Expense</a>
+          <a class="dropdown-item" target="_blank" href="{% url 'analytics:realized' %}">Taxable This Year</a>
         </div>
       </div>
 
       <div class="dropdown-divider"></div>
-      <a class="dropdown-item" href="/admin/">Admin Home</a>
+      <a class="dropdown-item" target="_blank" href="/admin/">Admin Home</a>
     </div>
   </div>
 </nav>
