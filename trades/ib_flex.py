@@ -19,6 +19,7 @@ def get_trades(report_id=daily):
                 {"targets": [1], "className": "dt-body-left"},
                 {"targets": [2, 3, 4], "className": "dt-body-right"},
             ],
+            "searching": False,
             # 'ordering': False
         }
     )

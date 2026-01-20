@@ -113,7 +113,7 @@ class GetIBTradesView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["headings1"], context["data1"], context["formats"] = get_trades()
+        context["headings1"], context["data1"], context["formats1"] = get_trades()
         context["title"] = "IB Futures Trades"
         return context
 
@@ -269,7 +269,9 @@ class RealizedGainView(LoginRequiredMixin, TemplateView):
                     {"targets": [2], "className": "dt-body-right"},
                 ],
                 "ordering": False,
-                "pageLength": 100,
+                "paging": False,
+                "info": False,
+                "dom": "t",
             }
         )
 

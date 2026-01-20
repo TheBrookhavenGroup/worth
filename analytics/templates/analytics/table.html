@@ -20,12 +20,14 @@
 
             {% if data2 %}
                 <div style="width: 400px">
-                    {% include 'table.html' with table_id="table_id2" data=data2 headings=headings2 formats=formats2 %}
+                    {% firstof formats2 formats "{}" as table2_formats %}
+                    {% include 'table.html' with table_id="table_id2" data=data2 headings=headings2 formats=table2_formats %}
                 </div>
                 <br>
             {% endif %}
 
-            {% include 'table.html' with table_id="table_id1" data=data1 headings=headings1 formats=formats1 %}
+            {% firstof formats1 formats "{}" as table1_formats %}
+            {% include 'table.html' with table_id="table_id1" data=data1 headings=headings1 formats=table1_formats %}
         </div>
     </div>
 {% endblock content %}

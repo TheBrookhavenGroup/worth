@@ -71,7 +71,10 @@ def income(year):
                 {"targets": [1], "className": "dt-body-right"},
             ],
             "ordering": False,
-            "pageLength": 100,
+            "searching": False,
+            "paging": False,
+            "info": False,
+            "dom": "t",
         }
     )
 
@@ -109,7 +112,10 @@ def expenses(year):
                 {"targets": [2], "className": "dt-body-right"},
             ],
             "ordering": False,
-            "pageLength": 100,
+            "searching": False,
+            "paging": False,
+            "info": False,
+            "dom": "t",
         }
     )
 
