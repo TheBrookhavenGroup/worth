@@ -5,6 +5,9 @@ import pandas as pd
 
 from tbgutils import dt as mc_dt
 
+# Disable admin auth when True.
+NOADMINPW = True
+
 pd.set_option("future.no_silent_downcasting", True)
 
 config_file = "/Users/ms/.worth"
@@ -51,7 +54,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 ALLOWED_HOSTS = ["127.0.0.1"]
 
 INSTALLED_APPS = [
-    "worth.apps.AdminConfig",
+    "worth.apps.ALLAdminConfig",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
