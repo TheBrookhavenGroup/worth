@@ -1,5 +1,5 @@
 import datetime
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from tbgutils.dt import our_localize, next_business_day
 from accounts.models import Account, CashRecord
 from markets.models import Market, Ticker
@@ -290,6 +290,7 @@ def make_lifo_trades():
     Trade.objects.create(dt=dt, account=a, ticker=t, q=-20, p=300, reinvest=False)
 
 
+@override_settings(FIFO=True)
 class TradesTests(TestCase):
     def setUp(self):
         make_trades()

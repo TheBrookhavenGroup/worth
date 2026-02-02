@@ -1,6 +1,6 @@
 import json
+import asyncio
 from django.conf import settings
-from ib_insync.flexreport import FlexReport, FlexError
 from tbgutils.dt import dt2dt, set_tz
 from accounts.models import Account
 from trades.models import Trade
@@ -12,6 +12,18 @@ last30days = "905412"
 
 
 def get_trades(report_id=daily):
+    # eventkit (ib_insync dependency) expects a main-thread event loop at import time
+    # on newer Python versions. Ensure one exists before importing ib_insync.
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        try:
+            asyncio.get_event_loop()
+        except RuntimeError:
+            asyncio.set_event_loop(asyncio.new_event_loop())
+
+    from ib_insync.flexreport import FlexReport, FlexError
+
     formats = json.dumps(
         {
             "columnDefs": [

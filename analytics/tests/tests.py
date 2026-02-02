@@ -7,7 +7,7 @@ from analytics.pnl import pnl, pnl_if_closed
 from markets.utils import get_price
 
 
-@override_settings(USE_PRICE_FEED=False)
+@override_settings(USE_PRICE_FEED=False, FIFO=True)
 class PnLTests(TestCase):
     def setUp(self):
         make_trades()
@@ -18,13 +18,13 @@ class PnLTests(TestCase):
 
         def get_pnl(ticker):
             try:
-                p = df[df.Ticker == ticker].iloc[0][-1]
+                p = df[df.Ticker == ticker].iloc[0, -1]
             except IndexError:
                 p = 0
             return p
 
-        coh = df[df.Account == "ALL COH"].iloc[0][4]
-        cash = df[df.Ticker == "CASH"].iloc[0][4]
+        coh = df[df.Account == "ALL COH"].iloc[0, 4]
+        cash = df[df.Ticker == "CASH"].iloc[0, 4]
         msft = get_pnl("MSFT")
         amzn = get_pnl("AMZN")
         aapl = get_pnl("AAPL")
@@ -70,7 +70,7 @@ class PnLTests(TestCase):
         self.assertAlmostEqual(24660.0, cash_today)
 
 
-@override_settings(USE_PRICE_FEED=False)
+@override_settings(USE_PRICE_FEED=False, FIFO=True)
 class PnLSplitTests(TestCase):
     def setUp(self):
         self.aapl_ticker, self.msft_ticker = make_trades_split()
@@ -81,7 +81,7 @@ class PnLSplitTests(TestCase):
         x.append((-pos, price))
         expected_pnl = -sum([i * j for i, j in x])
 
-        pnl = df[df.Ticker == str(ticker)].iloc[0][-1]
+        pnl = df[df.Ticker == str(ticker)].iloc[0, -1]
         self.assertAlmostEqual(expected_pnl, pnl)
 
     def test_split(self):
@@ -99,7 +99,7 @@ class PnLSplitTests(TestCase):
         self.check_pnl(self.msft_ticker, df, x)
 
 
-@override_settings(USE_PRICE_FEED=False)
+@override_settings(USE_PRICE_FEED=False, FIFO=True)
 class PnLIfClosedTests(TestCase):
     def setUp(self):
         make_trades()
