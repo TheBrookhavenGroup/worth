@@ -11,8 +11,6 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddConstraint(
             model_name="dailybar",
-            constraint=models.UniqueConstraint(
-                fields=("ticker", "d"), name="unique_daily_bar"
-            ),
+            constraint=models.UniqueConstraint(fields=("ticker", "d"), name="unique_daily_bar"),
         ),
     ]

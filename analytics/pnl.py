@@ -360,7 +360,9 @@ def performance():
 def add_close_to_pos(pos_df):
     # If no positions, return as-is with an empty 'close' column
     if pos_df is None or len(pos_df) == 0:
-        empty = pd.DataFrame(columns=["d", "ticker", "opening_pos", "closing_pos", "close"])  # noqa: E501
+        empty = pd.DataFrame(
+            columns=["d", "ticker", "opening_pos", "closing_pos", "close"]
+        )  # noqa: E501
         return empty
 
     # Fetch closing prices for each (d, ticker) present in pos_df
@@ -372,7 +374,9 @@ def add_close_to_pos(pos_df):
             "ticker__ticker", "d", "c"
         )
         prices = (
-            pd.DataFrame.from_records(list(price_qs), columns=["ticker", "d", "close"])  # noqa: E501
+            pd.DataFrame.from_records(
+                list(price_qs), columns=["ticker", "d", "close"]
+            )  # noqa: E501
             if price_qs
             else pd.DataFrame(columns=["ticker", "d", "close"])  # noqa: E501
         )
