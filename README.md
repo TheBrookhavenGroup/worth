@@ -20,3 +20,8 @@ The Stack will grow with added functionality as needed, it is better not to add 
 
 ## PGP
 One of my brokers allows me to download monthly statements via ftp.  They recently required those files to be PGP encrypted.  I have added some automation for this so that it is painless to get those statements and decrypt them.  However, from time to time some manual work may be needed and the notes I have [here](pgp.md) could be useful.
+
+## Scripts
+
+The `scripts/tax_manifest.py` script cannot be run from a PyCharm shell because it is sandboxed.
+It can be run from a shell outside PyCharm by giving the full path to the script.

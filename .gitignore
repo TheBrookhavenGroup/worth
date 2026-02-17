@@ -22,3 +22,8 @@ PKG-INFO
 SOURCES.txt
 top_level.txt
 dependency_links.txt
+
+build/
+dist/
+*.egg-info/
+*.dist-info/
