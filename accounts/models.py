@@ -33,11 +33,20 @@ def get_bofa_account():
 
 
 def get_tbg_account():
-    return Account.objects.get(name="TBG")
+    account, _ = Account.objects.get_or_create(
+        name="TBG",
+        defaults={
+            "owner": "TBG",
+            "broker": "Internal",
+            "broker_account": "TBG",
+            "description": "Auto-created default account",
+        },
+    )
+    return account
 
 
 def get_tbg_account_id():
-    return Account.objects.only("id").get(name="TBG").id
+    return get_tbg_account().id
 
 
 class Receivable(models.Model):
