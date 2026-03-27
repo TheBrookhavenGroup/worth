@@ -229,9 +229,9 @@ def duplicate_expense(modeladmin, request, qs):
 
 def book_expense(modeladmin, request, qs):
     d = our_now().date()
-    a = Account.objects.get(name="TBG")
     for rec in qs:
         description = f"{rec.vendor} - {rec.description}"
+        a = rec.account
         if rec.paid is None:
             rec.paid = d
             rec.save()
