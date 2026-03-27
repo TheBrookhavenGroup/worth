@@ -65,21 +65,19 @@ def duplicate_receivable(modeladmin, request, qs):
 
 
 def receivable2cash(modeladmin, request, qs):
-    d = our_now().date()
-    a = Account.objects.get(name="TBG")
     for rec in qs:
         description = f"{rec.client} - {rec.invoice}"
+        if rec.received is None:
+            rec.received = our_now().date()
+            rec.save()
         new_rec = CashRecord(
             d=rec.received,
             description=description,
-            account=a,
+            account=rec.account,
             category="DE",
             amt=rec.amt,
         )
         new_rec.save()
-
-        rec.received = d
-        rec.save()
 
 
 class ReceivableNotReceivedFilter(SimpleListFilter):

@@ -32,7 +32,25 @@ def get_bofa_account():
     return Account.objects.get(name="BofA")
 
 
+def get_tbg_account():
+    account, _ = Account.objects.get_or_create(
+        name="TBG",
+        defaults={
+            "owner": "TBG",
+            "broker": "Internal",
+            "broker_account": "TBG",
+            "description": "Auto-created default account",
+        },
+    )
+    return account
+
+
+def get_tbg_account_id():
+    return get_tbg_account().id
+
+
 class Receivable(models.Model):
+    account = models.ForeignKey(Account, on_delete=models.CASCADE, default=get_tbg_account_id)
     invoiced = models.DateField(default=date.today)
     expected = models.DateField(blank=True, null=True)
     received = models.DateField(blank=True, null=True)
@@ -184,10 +202,6 @@ def copy_cash_df(d=None, a=None, pivot=False, active_f=True, cleared=False):
     df = get_cash_df(d=d, a=a, pivot=pivot, active_f=active_f, cleared=cleared)
     df = df.copy(deep=True)
     return df
-
-
-def get_tbg_account():
-    return Account.objects.get(name="TBG")
 
 
 class Expense(models.Model):
