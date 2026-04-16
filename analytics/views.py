@@ -10,7 +10,7 @@ from django.views.generic import TemplateView, FormView
 from django.urls import reverse
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
-from analytics.pnl import pnl_summary, pnl_if_closed, ticker_pnl, daily_pnl
+from analytics.pnl import pnl, pnl_summary, pnl_if_closed, ticker_pnl, daily_pnl, format_rec
 from analytics.risk import daily_returns, sharpe, volatility, total_return, annualized_return
 from analytics.utils import total_realized_gains, income, expenses
 from analytics.models import PPMResult
@@ -45,6 +45,67 @@ class PnLView(LoginRequiredMixin, MyFormView):
     title = "PnL"
     account = None
     days = None
+
+    @staticmethod
+    def _build_account_rollups(result):
+        if result is None or result.empty:
+            return []
+
+        details = result[~result["Account"].isin(["TOTAL", "ALL COH"])].copy()
+        if details.empty:
+            return []
+
+        summary = (
+            details.groupby("Account", as_index=False)[["Value", "Today", "MTD", "YTD", "PnL"]]
+            .sum()
+            .sort_values("Value", ascending=False)
+        )
+
+        rollups = []
+        for account in summary["Account"].tolist():
+            account_details = details[details["Account"] == account].copy()
+            account_details.sort_values(["Value", "Ticker"], ascending=[False, True], inplace=True)
+
+            rows = []
+            for _, rec in account_details.iterrows():
+                formatted = format_rec(
+                    rec["Account"],
+                    rec["Ticker"],
+                    rec["Pos"],
+                    rec["Price"],
+                    rec["Value"],
+                    rec["Today"],
+                    rec["MTD"],
+                    rec["YTD"],
+                    rec["PnL"],
+                )
+                rows.append(
+                    {
+                        "ticker": formatted[1],
+                        "pos": formatted[2],
+                        "price": formatted[3],
+                        "value": formatted[4],
+                        "today": formatted[5],
+                        "mtd": formatted[6],
+                        "ytd": formatted[7],
+                        "pnl": formatted[8],
+                    }
+                )
+
+            totals = summary[summary["Account"] == account].iloc[0]
+            rollups.append(
+                {
+                    "account": account,
+                    "value": totals["Value"],
+                    "today": totals["Today"],
+                    "mtd": totals["MTD"],
+                    "ytd": totals["YTD"],
+                    "pnl": totals["PnL"],
+                    "rows": rows,
+                }
+            )
+
+        return rollups
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -88,17 +149,16 @@ class PnLView(LoginRequiredMixin, MyFormView):
                 d = our_now().date()
 
         context["d"] = d
-        (
-            context["headings1"],
-            context["data1"],
-            context["formats"],
-            total_worth,
-            total_today,
-            total_pnl,
-        ) = pnl_summary(d=d, a=account, active_f=active_f)
+        result, total_worth, total_today, total_pnl = pnl(d=d, a=account, active_f=active_f)
+        context["account_rollups"] = self._build_account_rollups(result)
         context["total_worth"] = total_worth
         context["total_today"] = total_today
         context["total_pnl"] = total_pnl
+
+        # Keep legacy table context available for compatibility/fallback.
+        context["headings1"], context["data1"], context["formats"] = df_to_jqtable(
+            df=result, formatter=format_rec
+        )
         return context
 
     def form_valid(self, form):

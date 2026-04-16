@@ -54,7 +54,88 @@
             </table>
             <br>
 
-            {% include 'table.html' with table_id="table_id1" data=data1 headings=headings1 %}
+            {% if account_rollups %}
+                <table class="table table-sm" style="width: auto !important; margin-left: auto; margin-right: auto;">
+                    <thead>
+                        <tr>
+                            <th>Account</th>
+                            <th class="text-right">Value</th>
+                            <th class="text-right">Today</th>
+                            <th class="text-right">MTD</th>
+                            <th class="text-right">YTD</th>
+                            <th class="text-right">PnL</th>
+                            <th class="text-center">Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for rollup in account_rollups %}
+                            <tr class="text-nowrap">
+                                <td><strong>{{ rollup.account }}</strong></td>
+                                <td class="text-right">{{ rollup.value|floatformat:0|intcomma }}</td>
+                                <td class="text-right">{{ rollup.today|floatformat:0|intcomma }}</td>
+                                <td class="text-right">{{ rollup.mtd|floatformat:0|intcomma }}</td>
+                                <td class="text-right">{{ rollup.ytd|floatformat:0|intcomma }}</td>
+                                <td class="text-right">{{ rollup.pnl|floatformat:0|intcomma }}</td>
+                                <td class="text-center">
+                                    <button type="button"
+                                            class="btn btn-sm btn-outline-secondary toggle-account-details"
+                                            data-target="acct-detail-{{ forloop.counter }}">Expand</button>
+                                </td>
+                            </tr>
+                            <tr id="acct-detail-{{ forloop.counter }}" class="account-detail-row" style="display: none;">
+                                <td colspan="7">
+                                    <table class="table table-sm table-bordered mb-2">
+                                        <thead>
+                                            <tr>
+                                                <th>Ticker</th>
+                                                <th class="text-right">Pos</th>
+                                                <th class="text-right">Price</th>
+                                                <th class="text-right">Value</th>
+                                                <th class="text-right">Today</th>
+                                                <th class="text-right">MTD</th>
+                                                <th class="text-right">YTD</th>
+                                                <th class="text-right">PnL</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for row in rollup.rows %}
+                                                <tr class="text-nowrap">
+                                                    <td>{{ row.ticker|safe }}</td>
+                                                    <td class="text-right">{{ row.pos }}</td>
+                                                    <td class="text-right">{{ row.price }}</td>
+                                                    <td class="text-right">{{ row.value }}</td>
+                                                    <td class="text-right">{{ row.today }}</td>
+                                                    <td class="text-right">{{ row.mtd }}</td>
+                                                    <td class="text-right">{{ row.ytd }}</td>
+                                                    <td class="text-right">{{ row.pnl }}</td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                {% include 'table.html' with table_id="table_id1" data=data1 headings=headings1 %}
+            {% endif %}
         </div>
     </div>
+    <script type="text/javascript">
+    document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll(".toggle-account-details").forEach(function (btn) {
+            btn.addEventListener("click", function () {
+                var targetId = btn.getAttribute("data-target");
+                var detailRow = document.getElementById(targetId);
+                if (!detailRow) {
+                    return;
+                }
+                var isOpen = detailRow.style.display !== "none";
+                detailRow.style.display = isOpen ? "none" : "";
+                btn.textContent = isOpen ? "Expand" : "Collapse";
+            });
+        });
+    });
+    </script>
 {% endblock content %}
