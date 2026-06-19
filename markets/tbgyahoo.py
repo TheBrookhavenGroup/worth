@@ -50,6 +50,7 @@ def yahooHistory(ticker):
             interval="1d",
             auto_adjust=False,
             prepost=True,  # Include pre-market and after-hours data
+            repair=True,
         )
 
         if df.empty:
@@ -72,7 +73,7 @@ def yahooHistory(ticker):
                 if any([pd.isna(i) for i in row.values]):
                     continue
 
-                date = index.date()
+                bar_date = index.date()
                 open_price = scale(row["Open"][yahoo_ticker])
                 high_price = scale(row["High"][yahoo_ticker])
                 low_price = scale(row["Low"][yahoo_ticker])
@@ -86,7 +87,7 @@ def yahooHistory(ticker):
 
                 result.append(
                     (
-                        date,
+                        bar_date,
                         open_price,
                         high_price,
                         low_price,
