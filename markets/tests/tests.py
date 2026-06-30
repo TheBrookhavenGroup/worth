@@ -1,10 +1,8 @@
 from datetime import date
-from types import SimpleNamespace
-
 from markets.tbgyahoo import yahooHistory, yahooQuotes
-from markets.models import Ticker
+from markets.models import Market, Ticker
 from trades.tests import make_trades
-from django.test import SimpleTestCase, TestCase, tag
+from django.test import TestCase, tag
 from tbgutils.dt import next_business_day
 import yfinance as yf
 
@@ -67,12 +65,17 @@ class YahooTests(TestCase):
             self.assertTrue(price > 1e-4)
 
 
-class YahooHistoryTests(SimpleTestCase):
+class YahooHistoryTests(TestCase):
     def test_yahoo_history_returns_aapl_price_for_june_18_2026(self):
-        ticker = SimpleNamespace(
-            yahoo_ticker="AAPL",
-            market=SimpleNamespace(yahoo_price_factor=1, pprec=2),
+        market = Market.objects.create(
+            symbol="STOCK",
+            name="Equity",
+            ib_exchange="STOCK",
+            yahoo_exchange="STOCK",
+            yahoo_price_factor=1,
+            pprec=2,
         )
+        ticker = Ticker.objects.create(ticker="AAPL", market=market)
 
         result = yahooHistory(ticker)
 

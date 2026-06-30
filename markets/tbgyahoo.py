@@ -50,7 +50,7 @@ def yahooHistory(ticker):
             interval="1d",
             auto_adjust=False,
             prepost=True,  # Include pre-market and after-hours data
-            repair=not ticker.market.is_futures,
+            repair=not ticker.is_futures,
         )
 
         if df.empty:
