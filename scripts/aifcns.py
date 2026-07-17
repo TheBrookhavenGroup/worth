@@ -3,14 +3,16 @@
 from __future__ import annotations
 
 import argparse
-import configparser
 import os
+import sys
 from dataclasses import dataclass
-from datetime import date
 from decimal import Decimal
 from pathlib import Path
 
-import psycopg2
+import django
+from django.db.models import Case, DecimalField, ExpressionWrapper, F, Sum, Value, When
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 
 @dataclass(frozen=True)
@@ -27,32 +29,9 @@ class AccountPerformance:
         return Decimal("100") * self.pnl / self.purchase_cost
 
 
-def _credentials_path() -> Path:
-    primary = Path("~/.worth").expanduser()
-    if primary.exists():
-        return primary
-
-    fallback = Path("/root/dotfiles/secrets/worth/.worth")
-    if fallback.exists():
-        return fallback
-
-    raise FileNotFoundError("Worth credentials not found at ~/.worth or the Codex fallback")
-
-
-def _connection():
-    config = configparser.ConfigParser()
-    config.read(_credentials_path())
-    if "POSTGRES" not in config:
-        raise RuntimeError("Worth credentials have no [POSTGRES] section")
-
-    postgres = config["POSTGRES"]
-    return psycopg2.connect(
-        host=os.environ.get("PGHOST", "host.docker.internal"),
-        port=os.environ.get("PGPORT", "5432"),
-        user=postgres["USER"],
-        password=postgres["PASS"],
-        dbname=postgres["DB"],
-    )
+def _setup_django() -> None:
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "worth.settings")
+    django.setup()
 
 
 def _money(value: Decimal) -> str:
@@ -68,83 +47,66 @@ def analyze(ticker: str) -> str:
     """Return a Markdown performance report for a ticker.
 
     The report uses the newest stored close and includes active and closed
-    accounts. Database work is performed in a read-only transaction.
+    accounts. Database work is performed through the Django ORM.
     """
     ticker = ticker.strip().upper()
     if not ticker:
         raise ValueError("A ticker is required")
 
-    with _connection() as connection:
-        connection.set_session(readonly=True)
-        with connection.cursor() as cursor:
-            cursor.execute(
-                """
-                SELECT t.id, m.symbol
-                FROM markets_ticker AS t
-                JOIN markets_market AS m ON m.id = t.market_id
-                WHERE UPPER(t.ticker) = %s
-                ORDER BY m.symbol, t.id
-                """,
-                (ticker,),
-            )
-            matches = cursor.fetchall()
-            if not matches:
-                raise LookupError(f"Ticker {ticker} is absent from the database")
-            if len(matches) > 1:
-                markets = ", ".join(str(row[1]) for row in matches)
-                raise LookupError(f"Ticker {ticker} is ambiguous across markets: {markets}")
+    _setup_django()
 
-            ticker_id = matches[0][0]
-            cursor.execute(
-                """
-                SELECT d, c
-                FROM markets_dailyprice
-                WHERE ticker_id = %s
-                ORDER BY d DESC
-                LIMIT 1
-                """,
-                (ticker_id,),
-            )
-            price_row: tuple[date, Decimal] | None = cursor.fetchone()
-            if price_row is None:
-                raise LookupError(f"Ticker {ticker} has no stored closing price")
-            price_date, latest_price = price_row
+    from markets.models import DailyPrice, Ticker
+    from trades.models import Trade
 
-            cursor.execute(
-                """
-                SELECT
-                    a.name,
-                    a.active_f,
-                    m.cs * (
-                        SUM(-tr.q * tr.p) + SUM(tr.q) * %s
-                    ) - SUM(tr.commission) AS pnl,
-                    SUM(
-                        CASE WHEN tr.q > 0
-                        THEN tr.q * tr.p + tr.commission
-                        ELSE 0
-                        END
-                    ) AS purchase_cost
-                FROM trades_trade AS tr
-                JOIN accounts_account AS a ON a.id = tr.account_id
-                JOIN markets_ticker AS t ON t.id = tr.ticker_id
-                JOIN markets_market AS m ON m.id = t.market_id
-                WHERE tr.ticker_id = %s
-                GROUP BY a.id, a.name, a.active_f, m.cs
-                ORDER BY a.name
-                """,
-                (latest_price, ticker_id),
-            )
-            rows = cursor.fetchall()
+    matches = list(
+        Ticker.objects.filter(ticker__iexact=ticker)
+        .select_related("market")
+        .order_by("market__symbol")
+    )
+    if not matches:
+        raise LookupError(f"Ticker {ticker} is absent from the database")
+    if len(matches) > 1:
+        markets = ", ".join(match.market.symbol for match in matches)
+        raise LookupError(f"Ticker {ticker} is ambiguous across markets: {markets}")
+
+    ticker_record = matches[0]
+    price_record = DailyPrice.objects.filter(ticker=ticker_record).order_by("-d").first()
+    if price_record is None:
+        raise LookupError(f"Ticker {ticker} has no stored closing price")
+
+    latest_price = Decimal(str(price_record.c))
+    price_date = price_record.d
+    decimal_field = DecimalField(max_digits=40, decimal_places=10)
+    trade_value = ExpressionWrapper(F("q") * F("p"), output_field=decimal_field)
+    rows = list(
+        Trade.objects.filter(ticker=ticker_record)
+        .values("account__name", "account__active_f")
+        .annotate(
+            traded_value=Sum(trade_value),
+            quantity=Sum("q"),
+            commissions=Sum("commission"),
+            purchase_cost=Sum(
+                Case(
+                    When(q__gt=0, then=trade_value + F("commission")),
+                    default=Value(Decimal("0")),
+                    output_field=decimal_field,
+                )
+            ),
+        )
+        .order_by("account__name")
+    )
 
     if not rows:
         raise LookupError(f"Ticker {ticker} has no trades")
 
+    contract_multiplier = Decimal(str(ticker_record.market.cs))
     accounts = [
         AccountPerformance(
-            account=row[0],
-            active=row[1],
-            pnl=Decimal(row[2]),
-            purchase_cost=Decimal(row[3]),
+            account=row["account__name"],
+            active=row["account__active_f"],
+            pnl=contract_multiplier * (-row["traded_value"] + row["quantity"] * latest_price)
+            - row["commissions"],
+            purchase_cost=row["purchase_cost"],
         )
         for row in rows
     ]

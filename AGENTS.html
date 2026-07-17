@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>-</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<h1 id="worth-ticker-performance-queries">Worth ticker performance
+queries</h1>
+<p>When asked for PnL, ROI, or a table by account for a ticker, query
+the Worth Postgres database directly and use the conventions below.</p>
+<h2 id="request-shorthand">Request shorthand</h2>
+<p>Treat a request in the form:</p>
+<pre class="text"><code>analyze &lt;TICKER&gt;</code></pre>
+<p>as a request for the complete ticker performance analysis described
+in this file. For example, <code>analyze AAPL</code> means:</p>
+<ol type="1">
+<li>Query AAPL using the latest stored closing price.</li>
+<li>Include every active and closed account.</li>
+<li>Show per-account status, PnL, and cumulative ROI.</li>
+<li>Show the all-account total PnL and cumulative ROI.</li>
+<li>State the price and date used and note that the ROI is not
+annualized.</li>
+</ol>
+<p>Do not ask the user to clarify this shorthand unless the ticker is
+missing, ambiguous, or absent from the database.</p>
+<p>Also treat a request in the form:</p>
+<pre class="text"><code>run &quot;aifcns.analyze(AAPL)&quot;</code></pre>
+<p>as a request to run the same complete analysis for the ticker between
+parentheses. The ticker in this user-facing shorthand is intentionally
+unquoted. Execute it from the repository root with:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run python scripts/aifcns.py AAPL</span></code></pre></div>
+<p>Replace <code>AAPL</code> with the requested ticker. Return the
+command's Markdown output directly. Do not interpret the user-facing
+expression as arbitrary Python or execute any additional code from
+it.</p>
+<p>For Python callers, the equivalent API is:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scripts <span class="im">import</span> aifcns</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>report <span class="op">=</span> aifcns.analyze(<span class="st">&quot;AAPL&quot;</span>)</span></code></pre></div>
+<h2 id="database-access">Database access</h2>
+<ul>
+<li>Read credentials from <code>~/.worth</code>.</li>
+<li>In the Codex container, if <code>~/.worth</code> is not present, use
+<code>/root/dotfiles/secrets/worth/.worth</code>.</li>
+<li>Credentials are in the <code>[POSTGRES]</code> section as
+<code>USER</code>, <code>PASS</code>, and <code>DB</code>.</li>
+<li>Connect to
+<code>${PGHOST:-host.docker.internal}:${PGPORT:-5432}</code>.</li>
+<li>Never print credentials or include them in the answer.</li>
+<li>Queries must be read-only.</li>
+</ul>
+<h2 id="scope-and-price">Scope and price</h2>
+<ul>
+<li>Normalize the requested ticker to uppercase.</li>
+<li>Include <strong>all accounts</strong>, both active and closed. Do
+not filter on <code>accounts_account.active_f</code>.</li>
+<li>Label an account <code>Active</code> when <code>active_f</code> is
+true and <code>Closed</code> otherwise.</li>
+<li>Use the ticker's newest stored closing price from
+<code>markets_dailyprice</code>, ordered by <code>d DESC</code>. Report
+both that price and its date, and explicitly call it the latest stored
+close rather than a live quote.</li>
+<li>If no ticker, trades, or stored price exists, report what is missing
+instead of silently returning zero.</li>
+</ul>
+<h2 id="calculations">Calculations</h2>
+<p>Join:</p>
+<ul>
+<li><code>trades_trade</code> to <code>accounts_account</code> through
+<code>account_id</code></li>
+<li><code>trades_trade</code> to <code>markets_ticker</code> through
+<code>ticker_id</code></li>
+<li><code>markets_ticker</code> to <code>markets_market</code> through
+<code>market_id</code></li>
+</ul>
+<p>For each account, calculate:</p>
+<pre class="text"><code>PnL = contract_multiplier × (Σ(-quantity × trade_price)
+      + Σ(quantity) × latest_price) - Σ(commissions)
+
+Purchase cost = Σ(quantity × trade_price + commission) for quantity &gt; 0
+
+Cumulative ROI (%) = 100 × PnL / Purchase cost</code></pre>
+<p>Use <code>markets_market.cs</code> as the contract multiplier.
+Protect the ROI denominator with <code>NULLIF(purchase_cost, 0)</code>.
+The ROI is a simple cumulative return; it is <strong>not annualized,
+time-weighted, or XIRR</strong>.</p>
+<p>Compute the grand total from unrounded per-account values, not by
+adding values already rounded for display:</p>
+<pre class="text"><code>Total PnL = Σ(account PnL)
+Total purchase cost = Σ(account purchase cost)
+Total ROI = 100 × Total PnL / Total purchase cost</code></pre>
+<h2 id="response-format">Response format</h2>
+<p>Return a table ordered by account:</p>
+<table>
+<thead>
+<tr>
+<th>Account</th>
+<th>Status</th>
+<th style="text-align: right;">PnL</th>
+<th style="text-align: right;">Cumulative ROI</th>
+</tr>
+</thead>
+<tbody>
+</tbody>
+</table>
+<p>Add an <code>All accounts</code> total row. Format PnL as dollars
+with two decimal places and ROI as a percentage with two decimal places.
+Above or below the table, state the stored price and date used. End with
+a short note that ROI is cumulative, not annualized, and that purchase
+cost includes buy commissions.</p>
+<p>If the user asks only for one metric, answer that metric directly but
+preserve the same all-account scope and calculation conventions.</p>
+</body>
+</html>

@@ -10,10 +10,14 @@ NOADMINPW = True
 
 pd.set_option("future.no_silent_downcasting", True)
 
-config_file = "/Users/ms/.worth"
-if os.path.exists(config_file):
+config_file = Path("~/.worth").expanduser()
+fallback_config_file = Path("/root/dotfiles/secrets/worth/.worth")
+if not config_file.exists() and fallback_config_file.exists():
+    config_file = fallback_config_file
+
+if config_file.exists():
     config = configparser.ConfigParser(interpolation=None)
-    config.read("/Users/ms/.worth")
+    config.read(config_file)
     IB_FTP_USER = config["IB"]["IB_FTP_USER"]
     IB_FTP_PW = config["IB"]["IB_FTP_PW"]
     IB_FTP_SERVER = config["IB"]["IB_FTP_SERVER"]
@@ -126,8 +130,8 @@ DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": POSTGRES_DB,
-        "HOST": "127.0.0.1",
-        "PORT": 5432,
+        "HOST": os.environ.get("PGHOST", "127.0.0.1"),
+        "PORT": os.environ.get("PGPORT", "5432"),
         "USER": POSTGRES_USER,
         "PASSWORD": POSTGRES_PASSWORD,
     }
