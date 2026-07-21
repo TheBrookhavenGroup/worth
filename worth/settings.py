@@ -11,7 +11,7 @@ NOADMINPW = True
 pd.set_option("future.no_silent_downcasting", True)
 
 config_file = Path("~/.worth").expanduser()
-fallback_config_file = Path("/root/dotfiles/secrets/worth/.worth")
+fallback_config_file = Path("/root/dev/tbg/dotfiles/secrets/worth/.worth")
 if not config_file.exists() and Path.home() == Path("/root") and fallback_config_file.exists():
     config_file = fallback_config_file
 
