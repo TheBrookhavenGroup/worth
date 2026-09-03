@@ -26,6 +26,7 @@ dependencies = [
     "black",
     "pandas-stubs~=3.0.0",
     "ruff",
+    "scikit-learn>=1.9.0",
 ]
 
 #[project.scripts]
