@@ -47,6 +47,7 @@ def current_cash_report(account=None):
         a.id: {
             "account": a.name,
             "status": "Active" if a.active_f else "Closed",
+            "qualified": a.qualified_f,
             "uninvested": zero,
             "holdings": zero,
         }
@@ -114,6 +115,7 @@ def current_cash_report(account=None):
             holdings.append(
                 {
                     "account": balance["account"],
+                    "qualification": "Qualified" if balance["qualified"] else "Non-qualified",
                     "ticker": ticker.ticker,
                     "quantity": f"{quantity:,.2f}",
                     "price": money(decimal(price)) if price is not None else "Unavailable",
@@ -126,7 +128,16 @@ def current_cash_report(account=None):
 
     rows = []
     totals = {"uninvested": zero, "holdings": zero, "total": zero}
+    groups = {
+        qualified: {
+            "label": "Qualified" if qualified else "Non-qualified",
+            "rows": [],
+            "totals": dict(totals),
+        }
+        for qualified in (True, False)
+    }
     for balance in balances.values():
+        group = groups[balance["qualified"]]
         balance["total"] = (
             balance["uninvested"] + balance["holdings"]
             if balance["uninvested"] is not None and balance["holdings"] is not None
@@ -137,13 +148,22 @@ def current_cash_report(account=None):
             totals[field] = (
                 None if value is None or totals[field] is None else totals[field] + value
             )
+            subtotal = group["totals"][field]
+            group["totals"][field] = (
+                None if value is None or subtotal is None else subtotal + value
+            )
         if any(
             balance[field] is None or abs(balance[field]) >= Decimal("0.005") for field in totals
         ):
-            rows.append({**balance, **{field: money(balance[field]) for field in totals}})
+            row = {**balance, **{field: money(balance[field]) for field in totals}}
+            rows.append(row)
+            group["rows"].append(row)
+    for group in groups.values():
+        group["totals"] = {field: money(value) for field, value in group["totals"].items()}
     return {
         "as_of": now,
         "rows": rows,
+        "cash_groups": list(groups.values()),
         "holdings": holdings,
         "warnings": warnings,
         "totals": {field: money(value) for field, value in totals.items()},

@@ -349,7 +349,6 @@ class CashReportView(LoginRequiredMixin, TemplateView):
         account = self.request.GET.get("a") or None
         context.update(current_cash_report(account))
         context["title"] = "Cash Report"
-        context["accounts"] = Account.objects.order_by("name")
         context["selected_account"] = account or ""
         return context
 
