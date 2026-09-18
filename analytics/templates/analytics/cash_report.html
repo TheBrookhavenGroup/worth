@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h2>Cash Report</h2>
+    <p>As of {{ as_of|date:"Y-m-d H:i T" }}. Includes active and closed accounts; zero balances are omitted.</p>
+    {% for warning in warnings %}<div class="alert alert-warning">{{ warning }}</div>{% endfor %}
+    <div class="table-responsive">
+        <table class="table table-striped table-sm">
+            <thead><tr><th scope="col">Account</th><th scope="col" class="text-right">Uninvested cash</th><th scope="col" class="text-right">CASH holdings</th><th scope="col" class="text-right">Total cash</th></tr></thead>
+            {% for group in cash_groups %}
+            <tbody>
+                <tr class="table-secondary"><th scope="rowgroup" colspan="4">{{ group.label }} accounts</th></tr>
+                {% for row in group.rows %}
+                <tr><td>{{ row.account }}</td><td class="text-right">{{ row.uninvested }}</td><td class="text-right">{{ row.holdings }}</td><td class="text-right">{{ row.total }}</td></tr>
+                {% empty %}<tr><td colspan="4">No current cash positions.</td></tr>{% endfor %}
+                <tr class="font-weight-bold"><th scope="row">{{ group.label }} subtotal</th><td class="text-right">{{ group.totals.uninvested }}</td><td class="text-right">{{ group.totals.holdings }}</td><td class="text-right">{{ group.totals.total }}</td></tr>
+            </tbody>
+            {% endfor %}
+            <tfoot><tr class="font-weight-bold"><th scope="row">{% if selected_account %}Selected account{% else %}All accounts{% endif %}</th><td class="text-right">{{ totals.uninvested }}</td><td class="text-right">{{ totals.holdings }}</td><td class="text-right">{{ totals.total }}</td></tr></tfoot>
+        </table>
+    </div>
+    <p class="text-muted">Total cash includes uninvested cash plus the value of tickers in the CASH market, including reinvested shares. Ignored cash records are excluded. Prices use fixed prices or latest stored closes, rather than live quotes. Futures gains and losses are included in uninvested cash.</p>
+</div>
+{% endblock content %}
