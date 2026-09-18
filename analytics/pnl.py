@@ -2,14 +2,15 @@ import numpy as np
 import pandas as pd
 from datetime import date
 from collections import OrderedDict
+from decimal import Decimal
 import json
+from django.db.models import DecimalField, ExpressionWrapper, F, Sum
 from tbgutils.str import cround, is_near_zero
 from worth.utils import df_to_jqtable
 from tbgutils.dt import our_now, lbd_prior_month, prior_business_day
-from moneycounter.pnl import pnl_calc
 from markets.models import get_ticker, NOT_FUTURES_EXCHANGES, DailyPrice, Ticker
 from analytics.models import PPMResult
-from trades.models import copy_trades_df, bucketed_trades
+from trades.models import Trade, copy_trades_df, bucketed_trades
 from trades.utils import pnl_asof, open_position_pnl
 from markets.utils import ticker_url, get_price
 from accounts.utils import get_account_url
@@ -290,27 +291,32 @@ def pnl_if_closed(a=None):
     return df, format_if_closed
 
 
-def ticker_pnl(t, active_f=True):
+def ticker_pnl(t, active_f=False, price=None):
+    """All-time realized and unrealized PnL, net of commissions.
+
+    Include closed accounts by default and value remaining shares at the
+    latest stored close. No display scaling or rounding affects the result.
     """
-    What is the total pnl earned for the given ticker?
-    :param t:
-    :param active_f:
-    :return:
-    """
-
-    df = copy_trades_df(t=t, active_f=active_f)
-    if df.empty:
-        return 0.0
-
-    g1 = df.groupby(["a", "t"])[["cs", "q", "p"]]
-    # Sum up pnl for all accounts
-    total_pnl = 0.0
-    for (_, ticker_symbol), g in g1:
-        ticker = get_ticker(ticker_symbol)
-        price = get_price(ticker)
-        total_pnl += pnl_calc(g, price)
-
-    return total_pnl
+    ticker = t if isinstance(t, Ticker) else get_ticker(str(t).upper())
+    trades = Trade.objects.filter(ticker=ticker)
+    if active_f:
+        trades = trades.filter(account__active_f=True)
+    value = ExpressionWrapper(
+        F("q") * F("p"), output_field=DecimalField(max_digits=40, decimal_places=10)
+    )
+    totals = trades.aggregate(quantity=Sum("q"), cost=Sum(value), commissions=Sum("commission"))
+    if totals["quantity"] is None:
+        raise LookupError(f"No trades recorded for {ticker.ticker}.")
+    if price is None:
+        close = DailyPrice.objects.filter(ticker=ticker).order_by("-d").first()
+        if close is None:
+            raise LookupError(f"No stored closing price for {ticker.ticker}.")
+        price = close.c
+    return (
+        Decimal(str(ticker.market.cs))
+        * (-totals["cost"] + totals["quantity"] * Decimal(str(price)))
+        - totals["commissions"]
+    )
 
 
 def performance():

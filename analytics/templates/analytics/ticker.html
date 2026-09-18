@@ -30,17 +30,15 @@
         {% endif %}
         <table class="table">
         <tbody>
-        {% if total_pnl %}
-            <tr>
-                <td>Total PnL</td><td>{{ total_pnl|floatformat:2|intcomma }}</td>
-            </tr>
-        {% endif %}
         {% if pos %}
             <tr>
                 <td>Position:</td><td>{{ pos|floatformat:2|intcomma }} </td>
             </tr>
             <tr>
                 <td>Weighted Average Price:</td><td>{{ wap|floatformat:2|intcomma }} </td>
+            </tr>
+            <tr>
+                <td>Basis:</td><td>{{ basis|floatformat:2|intcomma }}</td>
             </tr>
             <tr>
                 <td>Value:</td><td>{{ value|floatformat:2|intcomma }}</td>
@@ -56,6 +54,14 @@
                 <td>Realizable PnL</td><td>{{ realizable_pnl|floatformat:2|intcomma }} if we close position today.</td>
             </tr>
             {% endif %}
+        {% endif %}
+        {% if total_pnl != None %}
+            <tr>
+                <td>Total PnL (all time)</td><td>{{ total_pnl|floatformat:2|intcomma }}</td>
+            </tr>
+        {% endif %}
+        {% if total_pnl_error %}
+            <tr><td>Total PnL (all time)</td><td>{{ total_pnl_error }}</td></tr>
         {% endif %}
         </tbody>
         </table>
