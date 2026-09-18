@@ -14,6 +14,7 @@ from analytics.pnl import pnl, pnl_summary, pnl_if_closed, ticker_pnl, daily_pnl
 from analytics.risk import daily_returns, sharpe, volatility, total_return, annualized_return
 from analytics.utils import total_realized_gains, income, expenses
 from analytics.models import PPMResult
+from analytics.cash import current_cash_report
 from analytics.forms import PnLForm
 from trades.ib_flex import get_trades
 from trades.models import copy_trades_df
@@ -337,6 +338,19 @@ class RealizedGainView(LoginRequiredMixin, TemplateView):
 
         context["realizedcsvurl"] = reverse("analytics:realizedcsv", args=[year])
 
+        return context
+
+
+class CashReportView(LoginRequiredMixin, TemplateView):
+    template_name = "analytics/cash_report.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        account = self.request.GET.get("a") or None
+        context.update(current_cash_report(account))
+        context["title"] = "Cash Report"
+        context["accounts"] = Account.objects.order_by("name")
+        context["selected_account"] = account or ""
         return context
 
 
