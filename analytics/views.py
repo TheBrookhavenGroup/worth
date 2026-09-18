@@ -198,6 +198,7 @@ class TickerView(LoginRequiredMixin, TemplateView):
         else:
             context["pos"] = pos
             context["wap"] = wap
+            context["basis"] = pos * wap
 
             try:
                 cs = ticker.market.cs
@@ -208,10 +209,17 @@ class TickerView(LoginRequiredMixin, TemplateView):
             except IndexError:
                 context["msg"] = "Could not get a price for this ticker."
 
-        try:
-            context["total_pnl"] = ticker_pnl(ticker, active_f=False)
-        except (IndexError, Exception):
-            pass
+        context["total_pnl"] = None
+        close = DailyPrice.objects.filter(ticker=ticker).order_by("-d").first()
+        if close is None:
+            context["total_pnl_error"] = "No stored closing price available for total PnL."
+        else:
+            try:
+                context["total_pnl"] = ticker_pnl(ticker, active_f=False, price=close.c)
+                context["total_pnl_price"] = close.c
+                context["total_pnl_date"] = close.d
+            except LookupError as error:
+                context["total_pnl_error"] = str(error)
 
         df = copy_trades_df(t=ticker_symbol, active_f=False)
         if not df.empty:
