@@ -4,7 +4,7 @@ from datetime import date
 from collections import OrderedDict
 from decimal import Decimal
 import json
-from django.db.models import DecimalField, ExpressionWrapper, F, Sum
+from django.db.models import DecimalField, ExpressionWrapper, F, Q, Sum
 from tbgutils.str import cround, is_near_zero
 from worth.utils import df_to_jqtable
 from tbgutils.dt import our_now, lbd_prior_month, prior_business_day
@@ -14,9 +14,10 @@ from trades.models import Trade, copy_trades_df, bucketed_trades
 from trades.utils import pnl_asof, open_position_pnl
 from markets.utils import ticker_url, get_price
 from accounts.utils import get_account_url
+from accounts.models import CashRecord
 
 
-def format_rec(a, t, pos=0, price=1, value=0, daily=0, mtd=0, ytd=0, pnl=0):
+def format_rec(a, t, pos=0, price=1, value=0, daily=0, mtd=0, ytd=0):
     if a == "TOTAL":
         return [
             a,
@@ -27,11 +28,10 @@ def format_rec(a, t, pos=0, price=1, value=0, daily=0, mtd=0, ytd=0, pnl=0):
             cround(daily, 2),
             cround(mtd, 2),
             cround(ytd, 0),
-            "",
         ]
 
     if a == "ALL COH":
-        return [a, "", "", "", cround(value, 0), "", "", "", ""]
+        return [a, "", "", "", cround(value, 0), "", "", ""]
 
     t = get_ticker(t)
     pprec = t.market.pprec
@@ -55,13 +55,8 @@ def format_rec(a, t, pos=0, price=1, value=0, daily=0, mtd=0, ytd=0, pnl=0):
         daily = f"{cround(daily, 2)}"
     mtd = cround(mtd, 2)
     ytd = cround(ytd, 0)
-    if is_near_zero(pnl):
-        pnl = ""
-    else:
-        pnl = cround(pnl, vprec)
-
     a = get_account_url(a)
-    return [a, t, pos, price, value, daily, mtd, ytd, pnl]
+    return [a, t, pos, price, value, daily, mtd, ytd]
 
 
 def daily_pos(a=None):
@@ -146,7 +141,6 @@ def pnl(d=None, a=None, active_f=True):
                 ("Today", df.pnl - df.pnl_yesterday),
                 ("MTD", df.pnl - df.pnl_month),
                 ("YTD", df.pnl - df.pnl_year),
-                ("PnL", df.pnl),
             )
         )
     )
@@ -171,31 +165,32 @@ def pnl(d=None, a=None, active_f=True):
     except AttributeError:
         cash_balance = 0
 
-    try:
-        q_eod = cash.q_eod
-    except AttributeError:
-        q_eod = 0
-
-    try:
-        q_eom = cash.q_eom
-    except AttributeError:
-        q_eom = 0
-
-    try:
-        q_eoy = cash.q_eoy
-    except AttributeError:
-        q_eoy = 0
-
     cash.reset_index(inplace=True, drop=True)
     cash.rename(columns={"a": "Account"}, inplace=True)
     cash["Ticker"] = "CASH"
     cash["Pos"] = cash_balance
     cash["Price"] = 1.0
     cash["Value"] = cash.Pos
-    cash["Today"] = cash.Pos - q_eod
-    cash["MTD"] = cash.Pos - q_eom
-    cash["YTD"] = cash.Pos - q_eoy
-    cash["PnL"] = 0
+    # Cash performance is recorded dividend and interest income, not balance changes.
+    income = (
+        CashRecord.objects.filter(
+            account__name__in=cash["Account"].tolist(),
+            category__in=(CashRecord.DV, CashRecord.IT),
+            ignored=False,
+            d__lte=d,
+        )
+        .values("account__name")
+        .annotate(
+            today=Sum("amt", filter=Q(d=d)),
+            mtd=Sum("amt", filter=Q(d__gte=d.replace(day=1))),
+            ytd=Sum("amt", filter=Q(d__gte=date(d.year, 1, 1))),
+        )
+    )
+    income = {rec["account__name"]: rec for rec in income}
+    for column, period in (("Today", "today"), ("MTD", "mtd"), ("YTD", "ytd")):
+        cash[column] = cash["Account"].map(
+            lambda account: income.get(account, {}).get(period) or 0
+        )
 
     for col in "q", "q_eod", "q_eom", "q_eoy":
         try:
@@ -203,13 +198,16 @@ def pnl(d=None, a=None, active_f=True):
         except KeyError:
             pass
 
-    today_total = result.Today.sum()
-    mtd_total = result.MTD.sum()
-    ytd_total = result.YTD.sum()
-    pnl_total = result.PnL.sum()
+    today_total = result.Today.sum() + cash.Today.sum()
+    mtd_total = result.MTD.sum() + cash.MTD.sum()
+    ytd_total = result.YTD.sum() + cash.YTD.sum()
 
+    instrument_count = len(result)
     result = pd.concat([result, cash])
     result.reset_index(inplace=True, drop=True)
+    # Identify generated balances without treating CASH-market holdings as balances.
+    # Keep this metadata out of the display columns and positional row format.
+    result.attrs["cash_balance_rows"] = tuple(range(instrument_count, len(result)))
 
     cash_flags = result["Ticker"].apply(lambda x: get_ticker(x).market.is_cash)
     coh = result[cash_flags]
@@ -228,11 +226,11 @@ def pnl(d=None, a=None, active_f=True):
         today_total,
         mtd_total,
         ytd_total,
-        pnl_total,
     ]
-    result.loc[len(result) + 1] = ["ALL COH", "", "", "", coh, "", "", "", ""]
+    result.loc[len(result) + 1] = ["ALL COH", "", "", "", coh, "", "", ""]
 
-    return result, total_worth, today_total, pnl_total
+    # Retain the return shape used by existing callers; all-time PnL is not reported.
+    return result, total_worth, today_total, None
 
 
 def pnl_summary(d=None, a=None, active_f=True):

@@ -56,9 +56,14 @@ class PnLView(LoginRequiredMixin, MyFormView):
         if details.empty:
             return []
 
+        # CASH rows contain only dividends and interest, so they add income once.
+        values = details.groupby("Account")["Value"].sum()
+        performance = details.groupby("Account")[["Today", "MTD", "YTD"]].sum()
         summary = (
-            details.groupby("Account", as_index=False)[["Value", "Today", "MTD", "YTD", "PnL"]]
-            .sum()
+            values.to_frame()
+            .join(performance)
+            .fillna(0)
+            .reset_index()
             .sort_values("Value", ascending=False)
         )
 
@@ -78,7 +83,6 @@ class PnLView(LoginRequiredMixin, MyFormView):
                     rec["Today"],
                     rec["MTD"],
                     rec["YTD"],
-                    rec["PnL"],
                 )
                 rows.append(
                     {
@@ -89,7 +93,6 @@ class PnLView(LoginRequiredMixin, MyFormView):
                         "today": formatted[5],
                         "mtd": formatted[6],
                         "ytd": formatted[7],
-                        "pnl": formatted[8],
                     }
                 )
 
@@ -101,7 +104,6 @@ class PnLView(LoginRequiredMixin, MyFormView):
                     "today": totals["Today"],
                     "mtd": totals["MTD"],
                     "ytd": totals["YTD"],
-                    "pnl": totals["PnL"],
                     "rows": rows,
                 }
             )
@@ -150,11 +152,11 @@ class PnLView(LoginRequiredMixin, MyFormView):
                 d = our_now().date()
 
         context["d"] = d
-        result, total_worth, total_today, total_pnl = pnl(d=d, a=account, active_f=active_f)
+        result, total_worth, total_today, _ = pnl(d=d, a=account, active_f=active_f)
         context["account_rollups"] = self._build_account_rollups(result)
         context["total_worth"] = total_worth
         context["total_today"] = total_today
-        context["total_pnl"] = total_pnl
+        context["total_ytd"] = result.loc[result["Account"] == "TOTAL", "YTD"].iloc[0]
 
         # Keep legacy table context available for compatibility/fallback.
         context["headings1"], context["data1"], context["formats"] = df_to_jqtable(
