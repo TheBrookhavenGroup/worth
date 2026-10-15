@@ -76,12 +76,14 @@ class CashTransferView(LoginRequiredMixin, FormView):
                         d=d,
                         account=from_accnt,
                         amt=-amt,
+                        category=CashRecord.TR,
                         description=f"Transfer to {to_accnt}",
                     )
                     CashRecord.objects.create(
                         d=d,
                         account=to_accnt,
                         amt=amt,
+                        category=CashRecord.TR,
                         description=f"Transfer from {from_accnt}",
                     )
                 messages.add_message(request, messages.INFO, s)
