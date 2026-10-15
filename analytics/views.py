@@ -416,32 +416,30 @@ class DailyPnLView(LoginRequiredMixin, TemplateView):
         # Build base URL for Daily Trades and render the date as a real <a> link
         daily_trades_url = reverse("analytics:daily_trades")
 
-        def formatter(d, a, pnl):
+        def formatter(d, pnl):
             d_str = f"{d:%Y-%m-%d}"
             href = f"{daily_trades_url}?d={d_str}"
             if account:
                 href += f"&a={account}"
             link_html = f'<a href="{href}" target="_blank">{d_str}</a>'
-            return link_html, a, cround(pnl)
+            return link_html, cround(pnl)
 
         # Only include the desired columns in the table view
         # Base DataTables formats from utility
         context["h"], context["data"], context["formats"] = df_to_jqtable(
-            df=df[["d", "a", "pnl"]], formatter=formatter
+            df=df[["d", "pnl"]], formatter=formatter
         )
-        # Make the Account column more compact on this page by truncating long text
+        # Set column widths for this page
         try:
             _fmt = json.loads(context["formats"]) if context.get("formats") else {}
         except Exception:
             _fmt = {}
-        # Ensure columnDefs exists and add truncate class + preferred widths
+        # Ensure columnDefs exists and add preferred widths
         _defs = _fmt.get("columnDefs") or []
         # Date column width (index 0)
         _defs.append({"targets": [0], "width": "110px"})
-        # Account column: make compact and truncated
-        _defs.append({"targets": [1], "className": "truncate", "width": "160px"})
         # PnL column: keep tight so it doesn't expand the table
-        _defs.append({"targets": [2], "width": "100px"})
+        _defs.append({"targets": [1], "width": "100px"})
         _fmt["columnDefs"] = _defs
         # Remove search box and pagination controls on Daily PnL table
         _fmt["searching"] = False
