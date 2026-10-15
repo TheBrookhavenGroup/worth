@@ -1,10 +1,12 @@
 import datetime
+
 import pandas as pd
 from django.test import TestCase, override_settings
-from trades.tests import make_trades, make_trades_split
 
+from accounts.models import Account, CashRecord
 from analytics.pnl import pnl, pnl_if_closed
 from markets.utils import get_price
+from trades.tests import make_trades, make_trades_split
 
 
 @override_settings(USE_PRICE_FEED=False, FIFO=True)
@@ -14,20 +16,20 @@ class PnLTests(TestCase):
 
     @staticmethod
     def results(d=None):
-        df, total, total_today, _ = pnl(d=d)
+        df, total, _, _ = pnl(d=d)
 
-        def get_pnl(ticker):
+        def get_ytd(ticker):
             try:
-                p = df[df.Ticker == ticker].iloc[0, -1]
+                p = df.loc[df.Ticker == ticker, "YTD"].iloc[0]
             except IndexError:
                 p = 0
             return p
 
         coh = df[df.Account == "ALL COH"].iloc[0, 4]
         cash = df[df.Ticker == "CASH"].iloc[0, 4]
-        msft = get_pnl("MSFT")
-        amzn = get_pnl("AMZN")
-        aapl = get_pnl("AAPL")
+        msft = get_ytd("MSFT")
+        amzn = get_ytd("AMZN")
+        aapl = get_ytd("AAPL")
 
         return {
             "TOTAL": total,
@@ -39,7 +41,8 @@ class PnLTests(TestCase):
         }, df
 
     def test_today(self):
-        data, _ = self.results()
+        data, df = self.results(d=datetime.date(2021, 11, 3))
+        self.assertNotIn("PnL", df.columns)
 
         self.assertAlmostEqual(1021456.2, data["TOTAL"])
 
@@ -58,16 +61,40 @@ class PnLTests(TestCase):
 
     def test_sell(self):
         # AAPL was sold on 10/25/2021
-        data, df = self.results(d=datetime.date(2021, 10, 25))
+        account = Account.objects.get(name="MSFidelity")
+        for category, amount in ((CashRecord.DV, 12.0), (CashRecord.IT, 3.0)):
+            CashRecord.objects.create(
+                account=account,
+                d=datetime.date(2021, 10, 25),
+                category=category,
+                amt=amount,
+                description="Cash income",
+            )
+        for category, amount, ignored in (
+            (CashRecord.TR, 1000.0, False),
+            (CashRecord.BF, -2.0, False),
+            (CashRecord.DV, 99.0, True),
+        ):
+            CashRecord.objects.create(
+                account=account,
+                d=datetime.date(2021, 10, 25),
+                category=category,
+                amt=amount,
+                ignored=ignored,
+                description="Excluded from cash income",
+            )
+        _, df = self.results(d=datetime.date(2021, 10, 25))
 
-        aapl_today = list(df[df.Ticker == "AAPL"].Today)[0]
+        aapl_today = df.loc[df.Ticker == "AAPL", "Today"].iloc[0]
         self.assertAlmostEqual(-400, aapl_today)
 
-        total_today = list(df[df.Account == "TOTAL"].Today)[0]
-        self.assertAlmostEqual(3360.0, total_today)
+        total_today = df.loc[df.Account == "TOTAL", "Today"].iloc[0]
+        self.assertAlmostEqual(3375.0, total_today)
 
-        cash_today = list(df[df.Ticker == "CASH"].Today)[0]
-        self.assertAlmostEqual(24660.0, cash_today)
+        cash = df[df.Ticker == "CASH"].iloc[0]
+        self.assertAlmostEqual(15.0, cash.Today)
+        self.assertAlmostEqual(15.0, cash.MTD)
+        self.assertAlmostEqual(15.0, cash.YTD)
 
 
 @override_settings(USE_PRICE_FEED=False, FIFO=True)
@@ -75,28 +102,27 @@ class PnLSplitTests(TestCase):
     def setUp(self):
         self.aapl_ticker, self.msft_ticker = make_trades_split()
 
-    def check_pnl(self, ticker, df, x):
+    def check_position(self, ticker, df, x):
         pos = sum(i[0] for i in x)
         price = get_price(ticker)
-        x.append((-pos, price))
-        expected_pnl = -sum([i * j for i, j in x])
-
-        pnl = df[df.Ticker == str(ticker)].iloc[0, -1]
-        self.assertAlmostEqual(expected_pnl, pnl)
+        row = df[df.Ticker == str(ticker)].iloc[0]
+        self.assertAlmostEqual(pos, row.Pos)
+        self.assertAlmostEqual(price, row.Price)
+        self.assertAlmostEqual(pos * price, row.Value)
 
     def test_split(self):
-        df, total, total_today, _ = pnl(a="MSFidelity")
+        df, *_ = pnl(d=datetime.date(2020, 9, 1), a="MSFidelity")
 
         # Split
         # These are the trades used for testing with zero for price on split
         # shares added.
         x = [(50, 305), (150, 0), (-100, 200)]
-        self.check_pnl(self.aapl_ticker, df, x)
+        self.check_position(self.aapl_ticker, df, x)
 
         # Reverse split
         # In a reverse split the split q is negative
         x = [(150, 125), (-100, 0), (-25, 330)]
-        self.check_pnl(self.msft_ticker, df, x)
+        self.check_position(self.msft_ticker, df, x)
 
 
 @override_settings(USE_PRICE_FEED=False, FIFO=True)
@@ -118,7 +144,7 @@ class PnLIfClosedTests(TestCase):
             }
         )
 
-        df, format_rec = pnl_if_closed()
+        df, _ = pnl_if_closed()
 
         df.sort_values(by=["t"], inplace=True, ignore_index=True)
         expected.sort_values(by=["t"], inplace=True, ignore_index=True)
