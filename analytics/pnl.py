@@ -11,7 +11,7 @@ from tbgutils.dt import our_now, lbd_prior_month, prior_business_day
 from markets.models import get_ticker, NOT_FUTURES_EXCHANGES, DailyPrice, Ticker
 from analytics.models import PPMResult
 from trades.models import Trade, copy_trades_df, bucketed_trades
-from trades.utils import pnl_asof, open_position_pnl
+from trades.utils import pnl_asof, open_position_pnl, wap_df
 from markets.utils import ticker_url, get_price
 from accounts.utils import get_account_url
 from accounts.models import CashRecord
@@ -112,15 +112,37 @@ def pnl(d=None, a=None, active_f=True):
     pnl_eom, cash_eom = pnl_asof(d=lm, a=a, active_f=active_f)
     pnl_eoy, cash_eoy = pnl_asof(d=eoy, a=a, active_f=active_f)
 
-    # The Value of Futures positions is already added to the cash and should
-    # not be added to the total again.
-    total_worth = pnl_total[pnl_total.e.isin(NOT_FUTURES_EXCHANGES)]
+    # Show unrealized futures PnL as position value rather than notional.
+    # pnl_asof includes all futures PnL in cash, so move the unrealized part
+    # out of cash for this table while retaining realized PnL and commissions.
+    pnl_total = pnl_total.copy()
+    cash = cash.copy()
+    futures = ~pnl_total.e.isin(NOT_FUTURES_EXCHANGES)
+    pnl_total.loc[futures, "value"] = 0.0
+    if (futures & pnl_total.q.ne(0)).any():
+        trades = bucketed_trades(d=d, a=a, active_f=active_f)
+        futures_trades = trades[~trades.e.isin(NOT_FUTURES_EXCHANGES)].copy()
+        positions = wap_df(futures_trades.sort_values("dt"))
+        positions = positions.merge(
+            pnl_total.loc[futures, ["a", "t", "price"]],
+            on=["a", "t"],
+            validate="one_to_one",
+        )
+        positions["unrealized"] = (
+            positions.cs * positions.position * (positions.price - positions.wap)
+        )
+        unrealized = positions.set_index(["a", "t"])["unrealized"]
+        pnl_total.loc[futures, "value"] = (
+            pnl_total.loc[futures].set_index(["a", "t"]).index.map(unrealized).fillna(0)
+        )
+        cash["q"] = cash.q - cash.a.map(positions.groupby("a").unrealized.sum()).fillna(0)
+
     try:
         cash_sum = cash.q.sum()
     except AttributeError:
         cash_sum = 0
 
-    total_worth = total_worth.value.sum() + cash_sum
+    total_worth = pnl_total.value.sum() + cash_sum
 
     df = pd.merge(pnl_eod, pnl_eoy, on=["a", "t"], how="outer", suffixes=("_yesterday", "_year"))
     # Note: merge only uses suffixes if both df's have the same column headings.
