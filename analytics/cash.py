@@ -22,7 +22,7 @@ def cash_sums(account_id, d):
 
 
 def current_cash_report(account=None):
-    """Return uninvested cash and CASH-market holdings across all accounts.
+    """Return uninvested cash and CASH-market or fixed-price holdings across all accounts.
 
     Reinvestments affect positions but do not withdraw uninvested cash.
     Futures contribute marked-to-market PnL, following pnl_asof's convention.
@@ -87,7 +87,7 @@ def current_cash_report(account=None):
         .order_by("account__name", "ticker__ticker")
     ):
         ticker = tickers[rec["ticker_id"]]
-        is_cash = ticker.market.is_cash
+        is_cash = ticker.market.is_cash or ticker.fixed_price is not None
         if not is_cash and not ticker.market.is_futures:
             continue
         quantity = rec["quantity"]

@@ -7,7 +7,7 @@
     {% for warning in warnings %}<div class="alert alert-warning">{{ warning }}</div>{% endfor %}
     <div class="table-responsive">
         <table class="table table-striped table-sm">
-            <thead><tr><th scope="col">Account</th><th scope="col" class="text-right">Uninvested cash</th><th scope="col" class="text-right">CASH holdings</th><th scope="col" class="text-right">Total cash</th></tr></thead>
+            <thead><tr><th scope="col">Account</th><th scope="col" class="text-right">Uninvested cash</th><th scope="col" class="text-right">Cash holdings</th><th scope="col" class="text-right">Total cash</th></tr></thead>
             {% for group in cash_groups %}
             <tbody>
                 <tr class="table-secondary"><th scope="rowgroup" colspan="4">{{ group.label }} accounts</th></tr>
@@ -20,6 +20,6 @@
             <tfoot><tr class="font-weight-bold"><th scope="row">{% if selected_account %}Selected account{% else %}All accounts{% endif %}</th><td class="text-right">{{ totals.uninvested }}</td><td class="text-right">{{ totals.holdings }}</td><td class="text-right">{{ totals.total }}</td></tr></tfoot>
         </table>
     </div>
-    <p class="text-muted">Total cash includes uninvested cash plus the value of tickers in the CASH market, including reinvested shares. Ignored cash records are excluded. Prices use fixed prices or latest stored closes, rather than live quotes. Futures gains and losses are included in uninvested cash.</p>
+    <p class="text-muted">Total cash includes uninvested cash plus the value of tickers in the CASH market or with a fixed price set, including reinvested shares. Ignored cash records are excluded. Prices use fixed prices or latest stored closes, rather than live quotes. Futures gains and losses are included in uninvested cash.</p>
 </div>
 {% endblock content %}
