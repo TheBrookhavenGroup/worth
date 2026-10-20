@@ -3,6 +3,7 @@ from django.contrib import admin
 from django.contrib.admin import SimpleListFilter
 from django.contrib.admin.views.main import ChangeList
 from django.contrib import messages
+from django.db import transaction
 from django.forms import ModelForm, ModelChoiceField
 from django.urls import reverse
 from django.utils.html import format_html
@@ -147,6 +148,48 @@ def toggle_ignored_flag(modeladmin, request, qs):
         rec.save()
 
 
+@admin.action(description="Assign selected transfer to all unassigned expenses")
+def assign_unassigned_expenses(modeladmin, request, qs):
+    with transaction.atomic():
+        records = list(qs.select_for_update()[:2])
+        if len(records) != 1:
+            modeladmin.message_user(
+                request, "Select exactly one cash record.", level=messages.ERROR
+            )
+            return
+
+        record = records[0]
+        if record.category != CashRecord.TR:
+            modeladmin.message_user(
+                request, "The cash record must have category Transfer.", level=messages.ERROR
+            )
+            return
+
+        expenses = list(Expense.objects.select_for_update().filter(cash_transaction__isnull=True))
+        if not expenses:
+            modeladmin.message_user(
+                request, "There are no unassigned expenses.", level=messages.INFO
+            )
+            return
+
+        threshold = -sum(expense.amt for expense in expenses)
+        if not record.amt > threshold:
+            modeladmin.message_user(
+                request,
+                f"The cash record amount must be greater than {threshold:,.2f} "
+                "(the negative sum of unassigned expenses).",
+                level=messages.ERROR,
+            )
+            return
+
+        count = Expense.objects.filter(pk__in=[expense.pk for expense in expenses]).update(
+            cash_transaction=record
+        )
+        modeladmin.message_user(
+            request, f"Assigned cash record to {count} expenses.", level=messages.SUCCESS
+        )
+
+
 class CashRecordChangeList(ChangeList):
     def get_results(self, request):
         super().get_results(request)
@@ -185,7 +228,13 @@ class CashRecordAdmin(admin.ModelAdmin):
     list_filter = ("cleared_f", ActiveTradeAccountFilter, "ignored")
     search_fields = ("account__name", "description")
     ordering = ("account", "-d")
-    actions = [duplicate_record, set_cleared_flag, toggle_ignored_flag, sum_amt]
+    actions = [
+        duplicate_record,
+        set_cleared_flag,
+        toggle_ignored_flag,
+        sum_amt,
+        assign_unassigned_expenses,
+    ]
 
     def get_changelist(self, request, **kwargs):
         return CashRecordChangeList
@@ -250,10 +299,12 @@ def book_expense(modeladmin, request, qs):
             messages.add_message(request, messages.INFO, f"Already booked: {description}")
 
 
-def expense_form_factory(d, a):
+def expense_form_factory(d):
     class CashForm(ModelForm):
         cash_transaction = ModelChoiceField(
-            queryset=CashRecord.objects.filter(account=a, d__gte=d, amt__lte=0).order_by("-d"),
+            queryset=CashRecord.objects.filter(
+                account__name="TBGM", d__gte=d, amt__lte=0
+            ).order_by("-d"),
             required=False,
         )
 
@@ -281,7 +332,7 @@ class ExpenseAdmin(admin.ModelAdmin):
 
     def get_form(self, request, obj=None, **kwargs):
         if obj is not None and obj.d is not None:
-            kwargs["form"] = expense_form_factory(obj.d, obj.account)
+            kwargs["form"] = expense_form_factory(obj.d)
         return super(ExpenseAdmin, self).get_form(request, obj, **kwargs)
 
     def cash_transaction_link(self, obj):
