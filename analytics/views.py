@@ -223,10 +223,37 @@ class TickerView(LoginRequiredMixin, TemplateView):
             except LookupError as error:
                 context["total_pnl_error"] = str(error)
 
+        context["envelope_pnl"] = None
+        context["break_even_price"] = None
         df = copy_trades_df(t=ticker_symbol, active_f=False)
         if not df.empty:
-            df = df.sort_values("dt")
+            df = df.sort_values("dt", kind="stable").reset_index(drop=True)
             df["pos"] = df["q"].cumsum()
+            # The envelope starts after the last flat position across all accounts.
+            flat = df["pos"].apply(is_near_zero)
+            start = df.index[flat][-1] + 1 if flat.any() else 0
+            envelope = df.iloc[start:]
+            if envelope.empty:
+                context["envelope_pnl"] = 0
+            else:
+                exposure = envelope["cs"] * envelope["q"]
+                net_exposure = exposure.sum()
+                if not is_near_zero(net_exposure):
+                    context["break_even_price"] = (
+                        (exposure * envelope["p"]).sum() + envelope["c"].sum()
+                    ) / net_exposure
+                try:
+                    price = context.get("price")
+                    if price is None:
+                        price = get_price(ticker)
+                        context["price"] = price
+                    context["envelope_pnl"] = (
+                        envelope["cs"] * envelope["q"] * (price - envelope["p"])
+                    ).sum() - envelope["c"].sum()
+                except IndexError:
+                    context["envelope_pnl_error"] = (
+                        "Could not get a price for current envelope PnL."
+                    )
             df["value"] = df["q"] * df["p"] * df["cs"]
 
             df = df[["dt", "a", "q", "p", "value", "pos"]]

@@ -55,6 +55,19 @@
             </tr>
             {% endif %}
         {% endif %}
+        {% if envelope_pnl != None %}
+            <tr>
+                <td>Current envelope PnL</td><td>{{ envelope_pnl|floatformat:2|intcomma }}</td>
+            </tr>
+        {% endif %}
+        {% if envelope_pnl_error %}
+            <tr><td>Current envelope PnL</td><td>{{ envelope_pnl_error }}</td></tr>
+        {% endif %}
+        {% if break_even_price != None %}
+            <tr>
+                <td>Break even price</td><td>{{ break_even_price|floatformat:2|intcomma }}</td>
+            </tr>
+        {% endif %}
         {% if total_pnl != None %}
             <tr>
                 <td>Total PnL (all time)</td><td>{{ total_pnl|floatformat:2|intcomma }}</td>
