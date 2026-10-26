@@ -47,13 +47,26 @@
 
         {% if price %}
             <tr>
-                <td>Price</td><td>{{ price|floatformat:2|intcomma }} <a href="{% url 'analytics:ticker_chart' ticker %}">[View Price Chart]</a></td>
+                <td>Price</td><td>{{ price|floatformat:2|intcomma }} (retrieved {{ price_retrieved_at|date:"Y-m-d H:i:s T" }}) <a href="{% url 'analytics:ticker_chart' ticker %}">[View Price Chart]</a></td>
             </tr>
             {% if realizable_pnl %}
             <tr>
                 <td>Realizable PnL</td><td>{{ realizable_pnl|floatformat:2|intcomma }} if we close position today.</td>
             </tr>
             {% endif %}
+        {% endif %}
+        {% if envelope_pnl != None %}
+            <tr>
+                <td>Current envelope PnL</td><td>{{ envelope_pnl|floatformat:2|intcomma }}</td>
+            </tr>
+        {% endif %}
+        {% if envelope_pnl_error %}
+            <tr><td>Current envelope PnL</td><td>{{ envelope_pnl_error }}</td></tr>
+        {% endif %}
+        {% if break_even_price != None %}
+            <tr>
+                <td>Break even price</td><td>{{ break_even_price|floatformat:2|intcomma }}</td>
+            </tr>
         {% endif %}
         {% if total_pnl != None %}
             <tr>
