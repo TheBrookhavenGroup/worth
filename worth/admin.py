@@ -6,6 +6,8 @@ from django.contrib import admin
 
 # The purpose of ALLAdmin is to eliminate password protection for the admin site.
 class ALLAdmin(admin.AdminSite):
+    site_header = "Worth"
+    site_title = "Worth"
     index_template = "admin/index.html"
     enable_nav_sidebar = True
 

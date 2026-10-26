@@ -53,7 +53,7 @@
     <div style="display: flex; align-items: center;">
         {% include "admin/quick_links.html" %}
         <div id="site-name" style="margin-left: 10px;">
-            <a href="{% url 'admin:index' %}">{{ site_header|default:_('Django administration') }}</a>
+            <a href="{% url 'admin:index' %}">{{ site_header|default:"Worth" }}</a>
         </div>
     </div>
 {% endblock %}

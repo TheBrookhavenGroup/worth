@@ -206,6 +206,7 @@ class TickerView(LoginRequiredMixin, TemplateView):
                 cs = ticker.market.cs
                 price = get_price(ticker)
                 context["price"] = price
+                context["price_retrieved_at"] = our_now()
                 context["value"] = cs * pos * price
                 context["realizable_pnl"] = cs * pos * (price - wap)
             except IndexError:
@@ -247,6 +248,7 @@ class TickerView(LoginRequiredMixin, TemplateView):
                     if price is None:
                         price = get_price(ticker)
                         context["price"] = price
+                        context["price_retrieved_at"] = our_now()
                     context["envelope_pnl"] = (
                         envelope["cs"] * envelope["q"] * (price - envelope["p"])
                     ).sum() - envelope["c"].sum()

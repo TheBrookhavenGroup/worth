@@ -47,7 +47,7 @@
 
         {% if price %}
             <tr>
-                <td>Price</td><td>{{ price|floatformat:2|intcomma }} <a href="{% url 'analytics:ticker_chart' ticker %}">[View Price Chart]</a></td>
+                <td>Price</td><td>{{ price|floatformat:2|intcomma }} (retrieved {{ price_retrieved_at|date:"Y-m-d H:i:s T" }}) <a href="{% url 'analytics:ticker_chart' ticker %}">[View Price Chart]</a></td>
             </tr>
             {% if realizable_pnl %}
             <tr>
