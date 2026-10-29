@@ -11,7 +11,15 @@ from django.urls import reverse
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from analytics.pnl import pnl, pnl_summary, pnl_if_closed, ticker_pnl, daily_pnl, format_rec
-from analytics.risk import daily_returns, sharpe, volatility, total_return, annualized_return
+from analytics.risk import (
+    daily_returns,
+    sharpe,
+    volatility,
+    total_return,
+    annualized_return,
+    maximum_drawdown,
+    maximum_drawdown_recovery,
+)
 from analytics.utils import total_realized_gains, income, expenses
 from analytics.models import PPMResult
 from analytics.cash import current_cash_report
@@ -1018,11 +1026,9 @@ class PerformanceView(LoginRequiredMixin, TemplateView):
                 df = df.sort_values(["a", "d"]) if "a" in df.columns else df.sort_values(["d"])  # type: ignore[arg-type]
                 r_numeric = pd.to_numeric(df["r"], errors="coerce").fillna(0.0)
                 if "a" in df.columns and df["a"].nunique() > 1:
-                    df["cr"] = r_numeric.groupby(df["a"]).transform(
-                        lambda s: (1 + s).cumprod() - 1
-                    )
+                    df["cr"] = r_numeric.groupby(df["a"]).transform(lambda s: s.cumsum())
                 else:
-                    df["cr"] = (1 + r_numeric).cumprod() - 1
+                    df["cr"] = r_numeric.cumsum()
             except Exception:
                 # If anything goes wrong, still render table without cumulative return
                 pass
@@ -1033,6 +1039,8 @@ class PerformanceView(LoginRequiredMixin, TemplateView):
             tr = total_return(df)
             ar = annualized_return(df)
             vol = volatility(df)
+            mdd = maximum_drawdown(df)
+            recovery = maximum_drawdown_recovery(df)
 
             def format_metric(val, as_pct=False):
                 if pd.isna(val):
@@ -1052,14 +1060,35 @@ class PerformanceView(LoginRequiredMixin, TemplateView):
             tr_display = format_display(tr, as_pct=True)
             ar_display = format_display(ar, as_pct=True)
             vol_display = format_display(vol, as_pct=True)
-        except Exception:
-            sharpe_display = tr_display = ar_display = vol_display = "—"
 
-        # Place it in the context's generic header slot shown above the table
-        context["d"] = (
-            f"Sharpe: {sharpe_display} | Total Return: {tr_display} | "
-            f"Annualized: {ar_display} | Volatility: {vol_display}"
-        )
+            def format_drawdown(value, days):
+                if pd.isna(value):
+                    return "—"
+                if days is None:
+                    suffix = "not yet recovered"
+                elif pd.isna(days):
+                    suffix = "recovery unavailable"
+                else:
+                    suffix = f"Recovery: {int(days)} days"
+                return f"{format_metric(value, as_pct=True)} ({suffix})"
+
+            if isinstance(mdd, pd.Series):
+                mdd_display = ", ".join(
+                    f"{name}: {format_drawdown(value, recovery[name])}"
+                    for name, value in mdd.items()
+                )
+            else:
+                mdd_display = format_drawdown(mdd, recovery)
+        except Exception:
+            sharpe_display = tr_display = ar_display = vol_display = mdd_display = "—"
+
+        context["summary_metrics"] = [
+            ("Sharpe", sharpe_display),
+            ("Cumulative Return", tr_display),
+            ("Annualized Return", ar_display),
+            ("Volatility", vol_display),
+            ("Max Drawdown", mdd_display),
+        ]
 
         # Format columns:
         # - pnl: 2 decimals
@@ -1109,58 +1138,62 @@ class PerformanceView(LoginRequiredMixin, TemplateView):
         context["data1"] = data
         context["formats1"] = json.dumps(f1)
 
-        # Add YTD returns table
+        # Calendar returns: daily returns add within each month and year.
         if not df.empty and "r" in df.columns:
-            try:
-                ytd_df = df.copy()
-                ytd_df["year"] = pd.to_datetime(ytd_df["d"]).dt.year
-                ytd_df["r"] = pd.to_numeric(ytd_df["r"], errors="coerce").fillna(0.0)
-
-                if "a" in ytd_df.columns and ytd_df["a"].nunique() > 1:
-                    ytd_res = (
-                        ytd_df.groupby(["a", "year"])["r"]
-                        .apply(lambda s: (1 + s).prod() - 1)
-                        .reset_index()
-                    )
-                    ytd_res = ytd_res.pivot(index="year", columns="a", values="r")
-                    ytd_res = ytd_res.sort_index(ascending=False)
-                    ytd_headings = ["Year"] + list(ytd_res.columns)
-                    ytd_data = []
-                    for year, row in ytd_res.iterrows():
-                        ytd_data.append(
-                            [int(year)] + [f"{v * 100:.2f}%" if pd.notna(v) else "—" for v in row]
-                        )
-                else:
-                    ytd_res = (
-                        ytd_df.groupby("year")["r"]
-                        .apply(lambda s: (1 + s).prod() - 1)
-                        .reset_index()
-                    )
-                    ytd_res = ytd_res.sort_values("year", ascending=False)
-                    ytd_headings = ["Year", "Return"]
-                    ytd_data = [
-                        [int(row["year"]), f"{row['r'] * 100:.2f}%"]
-                        for _, row in ytd_res.iterrows()
-                    ]
-
-                context["headings2"] = ytd_headings
-                context["data2"] = ytd_data
-                context["formats2"] = json.dumps(
-                    {
-                        "columnDefs": [
-                            {
-                                "targets": [i for i in range(1, len(ytd_headings))],
-                                "className": "dt-body-right",
-                            }
-                        ],
-                        "ordering": True,
-                        "searching": False,
-                        "paging": False,
-                        "info": False,
-                    }
-                )
-            except Exception:
-                pass
+            monthly_df = df.copy()
+            dates = pd.to_datetime(monthly_df["d"])
+            monthly_df["year"] = dates.dt.year
+            monthly_df["month"] = dates.dt.month
+            monthly_df["r"] = pd.to_numeric(monthly_df["r"], errors="coerce")
+            multiple_accounts = "a" in monthly_df.columns and monthly_df["a"].nunique() > 1
+            headings = ["Year"] + (["Account"] if multiple_accounts else [])
+            headings += [
+                "Jan",
+                "Feb",
+                "Mar",
+                "Apr",
+                "May",
+                "Jun",
+                "Jul",
+                "Aug",
+                "Sep",
+                "Oct",
+                "Nov",
+                "Dec",
+                "Year / YTD",
+            ]
+            group_columns = ["year", "a"] if multiple_accounts else ["year"]
+            data = []
+            for key, yearly in monthly_df.groupby(group_columns, sort=True):
+                year = key[0]
+                row = [int(year)] + ([key[1]] if multiple_accounts else [])
+                monthly = yearly.groupby("month")["r"].sum(min_count=1)
+                for month in range(1, 13):
+                    value = monthly.get(month, float("nan"))
+                    row.append(f"{value * 100:.2f}%" if pd.notna(value) else "—")
+                yearly_return = yearly["r"].sum(min_count=1)
+                row.append(f"{yearly_return * 100:.2f}%" if pd.notna(yearly_return) else "—")
+                data.append(row)
+            data.sort(key=lambda row: -row[0])
+            context["headings2"] = headings
+            context["data2"] = data
+            context["table2_wide"] = True
+            numeric_start = 2 if multiple_accounts else 1
+            context["formats2"] = json.dumps(
+                {
+                    "columnDefs": [
+                        {
+                            "targets": list(range(numeric_start, len(headings))),
+                            "className": "dt-body-right",
+                        }
+                    ],
+                    "order": [[0, "desc"]],
+                    "ordering": True,
+                    "searching": False,
+                    "paging": False,
+                    "info": False,
+                }
+            )
 
         context["title"] = f"Performance ({account})"
         return context
