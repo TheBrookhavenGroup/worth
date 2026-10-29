@@ -165,7 +165,9 @@ def volatility(df: pd.DataFrame, periods_per_year: int = 252) -> pd.Series | flo
 
 def total_return(df: pd.DataFrame) -> pd.Series | float:
     """
-    Compute total return from a DataFrame returned by ``daily_returns()``.
+    Compute simple return by summing daily PnL / daily trade size.
+
+    With constant trade size this equals total PnL / trade size.
     """
     if df is None or df.empty:
         return float("nan")
@@ -182,37 +184,111 @@ def total_return(df: pd.DataFrame) -> pd.Series | float:
         return float("nan")
 
     def tr_from_series(s: pd.Series) -> float:
-        return (1 + s).prod() - 1
+        return s.sum()
 
     if "a" in x.columns and x["a"].nunique() > 1:
         return x.groupby("a")[ret_col].apply(tr_from_series)
     return tr_from_series(x[ret_col])
 
 
-def annualized_return(df: pd.DataFrame, periods_per_year: int = 252) -> pd.Series | float:
+def annualized_return(df: pd.DataFrame, days_per_year: int = 365) -> pd.Series | float:
+    """Annualize simple return using the inclusive calendar-day reporting span.
+
+    Formula: (1 + sum(daily PnL / trade size)) ** (365 / days) - 1.
+    Dates with missing returns still count toward elapsed time. Returns below
+    -100% have no real geometric annualization and yield NaN.
     """
-    Compute annualized return from a DataFrame returned by ``daily_returns()``.
-    """
-    if df is None or df.empty:
+    if df is None or df.empty or "d" not in df.columns:
         return float("nan")
 
     ret_col = "ret" if "ret" in df.columns else ("r" if "r" in df.columns else None)
     if ret_col is None:
         return float("nan")
 
-    x = df[[c for c in [ret_col, "a"] if c in df.columns]].copy()
-    x[ret_col] = pd.to_numeric(x[ret_col], errors="coerce")
-    x = x.dropna(subset=[ret_col])
+    def annualize(group):
+        returns = pd.to_numeric(group[ret_col], errors="coerce").dropna()
+        dates = pd.to_datetime(group["d"], errors="coerce").dropna()
+        if returns.empty or dates.empty:
+            return float("nan")
+        days = (dates.max() - dates.min()).days + 1
+        base = 1 + returns.sum()
+        if base < 0:
+            return float("nan")
+        return base ** (days_per_year / days) - 1
 
-    if x.empty:
+    if "a" in df.columns and df["a"].nunique() > 1:
+        return pd.Series({account: annualize(group) for account, group in df.groupby("a")})
+    return annualize(df)
+
+
+def maximum_drawdown(df: pd.DataFrame) -> pd.Series | float:
+    """Largest peak-to-trough decline, displayed as a positive fraction.
+
+    Use equity = 1 + cumulative sum of daily PnL / trade size, consistent
+    with the performance view's cumulative return. Include starting equity
+    of 1 so an initial loss counts. Sort dates within each account.
+    """
+    if df is None or df.empty:
+        return float("nan")
+    ret_col = "ret" if "ret" in df.columns else ("r" if "r" in df.columns else None)
+    if ret_col is None:
         return float("nan")
 
-    def ann_from_series(s: pd.Series) -> float:
-        if s.empty:
+    def drawdown(group):
+        if "d" in group.columns:
+            group = group.sort_values("d", kind="stable")
+        returns = pd.to_numeric(group[ret_col], errors="coerce").dropna()
+        if returns.empty:
             return float("nan")
-        tr = (1 + s).prod() - 1
-        return (1 + tr) ** (periods_per_year / len(s)) - 1
+        equity = 1 + returns.cumsum()
+        peak = equity.cummax().clip(lower=1.0)
+        return ((peak - equity) / peak).max()
 
-    if "a" in x.columns and x["a"].nunique() > 1:
-        return x.groupby("a")[ret_col].apply(ann_from_series)
-    return ann_from_series(x[ret_col])
+    if "a" in df.columns and df["a"].nunique() > 1:
+        return pd.Series({account: drawdown(group) for account, group in df.groupby("a")})
+    return drawdown(df)
+
+
+def maximum_drawdown_recovery(df: pd.DataFrame) -> pd.Series | float | int | None:
+    """Calendar days from the first deepest trough to regaining its prior peak.
+
+    None means not recovered by the last observation; NaN means unavailable.
+    Zero drawdown has zero recovery days. Ties use the earliest trough.
+    """
+    if df is None or df.empty or "d" not in df.columns:
+        return float("nan")
+    ret_col = "ret" if "ret" in df.columns else ("r" if "r" in df.columns else None)
+    if ret_col is None:
+        return float("nan")
+
+    def recovery(group):
+        work = (
+            pd.DataFrame(
+                {
+                    "d": pd.to_datetime(group["d"], errors="coerce"),
+                    "r": pd.to_numeric(group[ret_col], errors="coerce"),
+                }
+            )
+            .dropna()
+            .sort_values("d", kind="stable")
+            .reset_index(drop=True)
+        )
+        if work.empty:
+            return float("nan")
+        equity = 1 + work["r"].cumsum()
+        peaks = equity.cummax().clip(lower=1.0)
+        drawdowns = (peaks - equity) / peaks
+        trough = drawdowns.idxmax()
+        if drawdowns.iloc[trough] == 0:
+            return 0
+        recovered = equity.iloc[trough + 1 :]
+        recovered = recovered[recovered >= peaks.iloc[trough] - 1e-12]
+        if recovered.empty:
+            return None
+        return (work.loc[recovered.index[0], "d"] - work.loc[trough, "d"]).days
+
+    if "a" in df.columns and df["a"].nunique() > 1:
+        return pd.Series(
+            {account: recovery(group) for account, group in df.groupby("a")}, dtype=object
+        )
+    return recovery(df)
