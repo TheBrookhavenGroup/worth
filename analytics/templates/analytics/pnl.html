@@ -41,6 +41,7 @@
                     <tr>
                         <th>Worth</th>
                         <th>Today</th>
+                        <th>MTD</th>
                         <th>YTD</th>
                     </tr>
                 </thead>
@@ -48,6 +49,7 @@
                     <tr class="text-center" style="font-weight: bold;">
                         <td>${{ total_worth|floatformat:0|intcomma }}</td>
                         <td>{{ total_today|floatformat:0|intcomma }}</td>
+                        <td>{{ total_mtd|floatformat:0|intcomma }}</td>
                         <td>{{ total_ytd|floatformat:0|intcomma }}</td>
                     </tr>
                 </tbody>

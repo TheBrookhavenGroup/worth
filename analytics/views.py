@@ -164,6 +164,7 @@ class PnLView(LoginRequiredMixin, MyFormView):
         context["account_rollups"] = self._build_account_rollups(result)
         context["total_worth"] = total_worth
         context["total_today"] = total_today
+        context["total_mtd"] = result.loc[result["Account"] == "TOTAL", "MTD"].iloc[0]
         context["total_ytd"] = result.loc[result["Account"] == "TOTAL", "YTD"].iloc[0]
 
         # Keep legacy table context available for compatibility/fallback.
@@ -1145,6 +1146,7 @@ class PerformanceView(LoginRequiredMixin, TemplateView):
             monthly_df["year"] = dates.dt.year
             monthly_df["month"] = dates.dt.month
             monthly_df["r"] = pd.to_numeric(monthly_df["r"], errors="coerce")
+            monthly_df["pnl"] = pd.to_numeric(monthly_df["pnl"], errors="coerce")
             multiple_accounts = "a" in monthly_df.columns and monthly_df["a"].nunique() > 1
             headings = ["Year"] + (["Account"] if multiple_accounts else [])
             headings += [
@@ -1164,17 +1166,28 @@ class PerformanceView(LoginRequiredMixin, TemplateView):
             ]
             group_columns = ["year", "a"] if multiple_accounts else ["year"]
             data = []
+            pnl_data = []
             for key, yearly in monthly_df.groupby(group_columns, sort=True):
                 year = key[0]
                 row = [int(year)] + ([key[1]] if multiple_accounts else [])
+                pnl_row = row.copy()
                 monthly = yearly.groupby("month")["r"].sum(min_count=1)
+                monthly_pnl = yearly.groupby("month")["pnl"].sum(min_count=1)
                 for month in range(1, 13):
                     value = monthly.get(month, float("nan"))
                     row.append(f"{value * 100:.2f}%" if pd.notna(value) else "—")
+                    value = monthly_pnl.get(month, float("nan"))
+                    pnl_row.append(f"${round(value / 1000):,}" if pd.notna(value) else "—")
                 yearly_return = yearly["r"].sum(min_count=1)
                 row.append(f"{yearly_return * 100:.2f}%" if pd.notna(yearly_return) else "—")
+                yearly_pnl = yearly["pnl"].sum(min_count=1)
+                pnl_row.append(f"${round(yearly_pnl / 1000):,}" if pd.notna(yearly_pnl) else "—")
                 data.append(row)
+                pnl_data.append(pnl_row)
             data.sort(key=lambda row: -row[0])
+            pnl_data.sort(key=lambda row: -row[0])
+            context["monthly_pnl_headings"] = headings
+            context["monthly_pnl_data"] = pnl_data
             context["headings2"] = headings
             context["data2"] = data
             context["table2_wide"] = True
