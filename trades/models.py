@@ -155,9 +155,9 @@ def bucketed_trades(d=None, t=None, a=None, only_non_qualified=False, active_f=T
 
     Arguments are the same as `copy_trades_df`.
     - Gets a dataframe via `copy_trades_df`.
-    - Adds a `d` column (date) for each trade such that if the trade's
-      timestamp (in America/New_York) is later than the Market.t_close
-      for its ticker, the date is moved to the next business day.
+    - Trades after Market.t_close (America/New_York) belong to the next
+      business day; trades exactly at the close belong to the ending day.
+    - If `d` is supplied, exclude trades assigned to a later trading day.
     """
     df = copy_trades_df(d=d, t=t, a=a, only_non_qualified=only_non_qualified, active_f=active_f)
 
@@ -204,6 +204,8 @@ def bucketed_trades(d=None, t=None, a=None, only_non_qualified=False, active_f=T
     df["d"] = df["d"].apply(
         lambda x: x if isinstance(x, date_cls) else getattr(x, "date", lambda: x)()
     )
+    if d is not None:
+        df = df.loc[df["d"] <= d].copy()
 
     # Drop helper column used for computation
     if "_dt_eastern" in df.columns:
