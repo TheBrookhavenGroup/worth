@@ -204,6 +204,12 @@ class TickerView(LoginRequiredMixin, TemplateView):
 
         pos, wap = weighted_average_price(ticker)
 
+        try:
+            context["price"] = get_price(ticker)
+            context["price_retrieved_at"] = our_now()
+        except IndexError:
+            context["msg"] = "Could not get a price for this ticker."
+
         if is_near_zero(pos):
             context["msg"] = "Zero position."
         else:
@@ -211,25 +217,18 @@ class TickerView(LoginRequiredMixin, TemplateView):
             context["wap"] = wap
             context["basis"] = pos * wap
 
-            try:
+            if "price" in context:
                 cs = ticker.market.cs
-                price = get_price(ticker)
-                context["price"] = price
-                context["price_retrieved_at"] = our_now()
+                price = context["price"]
                 context["value"] = cs * pos * price
                 context["realizable_pnl"] = cs * pos * (price - wap)
-            except IndexError:
-                context["msg"] = "Could not get a price for this ticker."
 
         context["total_pnl"] = None
-        close = DailyPrice.objects.filter(ticker=ticker).order_by("-d").first()
-        if close is None:
-            context["total_pnl_error"] = "No stored closing price available for total PnL."
+        if "price" not in context:
+            context["total_pnl_error"] = "Could not get a price for total PnL."
         else:
             try:
-                context["total_pnl"] = ticker_pnl(ticker, active_f=False, price=close.c)
-                context["total_pnl_price"] = close.c
-                context["total_pnl_date"] = close.d
+                context["total_pnl"] = ticker_pnl(ticker, active_f=False, price=context["price"])
             except LookupError as error:
                 context["total_pnl_error"] = str(error)
 
@@ -252,16 +251,12 @@ class TickerView(LoginRequiredMixin, TemplateView):
                     context["break_even_price"] = (
                         (exposure * envelope["p"]).sum() + envelope["c"].sum()
                     ) / net_exposure
-                try:
-                    price = context.get("price")
-                    if price is None:
-                        price = get_price(ticker)
-                        context["price"] = price
-                        context["price_retrieved_at"] = our_now()
+                if "price" in context:
+                    price = context["price"]
                     context["envelope_pnl"] = (
                         envelope["cs"] * envelope["q"] * (price - envelope["p"])
                     ).sum() - envelope["c"].sum()
-                except IndexError:
+                else:
                     context["envelope_pnl_error"] = (
                         "Could not get a price for current envelope PnL."
                     )
