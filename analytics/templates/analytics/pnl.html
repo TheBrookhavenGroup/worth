@@ -8,35 +8,55 @@
 
 {% block title %}{{ title }}{% endblock title %}
 
+{% block local_css_imports %}
+    <style>
+        .pnl-page { padding: 0; font-size: .875rem; }
+        .pnl-filters { display: flex; flex-wrap: wrap; align-items: flex-end; gap: .4rem .75rem; margin-bottom: .25rem; }
+        .pnl-filters .form-group { margin-bottom: 0; }
+        .pnl-filters label { margin-bottom: .15rem; font-size: .8rem; }
+        .pnl-filters .form-control { height: 2rem; padding: .2rem .4rem; font-size: .875rem; }
+        .pnl-month { width: 9rem; }
+        .pnl-year { width: 6rem; }
+        .pnl-filters .form-text { display: none; }
+        .pnl-actions { display: flex; gap: .35rem; padding-bottom: 0; }
+        .pnl-help, .pnl-note { margin: .25rem 0 .5rem; font-size: .75rem; color: #6c757d; }
+        .pnl-report { width: fit-content; max-width: 100%; overflow-x: auto; }
+        .pnl-date { margin: .25rem 0; }
+        .pnl-page .table { width: auto; margin: 0 0 .5rem; }
+        .pnl-page .table th, .pnl-page .table td { padding: .2rem .5rem; vertical-align: middle; }
+        .pnl-page .table th { white-space: nowrap; }
+        .pnl-page .btn-sm { padding: .2rem .5rem; }
+        .pnl-page .toggle-account-details { padding: .05rem .35rem; font-size: .75rem; }
+        .pnl-page .account-detail-row > td { padding: .25rem .5rem; }
+        .pnl-page .account-detail-row .table { margin-bottom: 0 !important; }
+    </style>
+{% endblock %}
+
 {% block content %}
-    <div class="container">
-        <p>
-        </p>
-
+    <div class="pnl-page">
         {%  load crispy_forms_tags %}
-        <form method="post">
+        <form method="post" class="pnl-filters">
                     {% csrf_token %}
-                    <div class="form-row">
-                        <div class="form-group col-4">
-                            {{ form.account | as_crispy_field }}
+                        <div class="pnl-month">
+                            {{ form.month | as_crispy_field }}
                         </div>
-                        <div class="form-group col-4">
-                            {{ form.days | as_crispy_field }}
+                        <div class="pnl-year">
+                            {{ form.year | as_crispy_field }}
                         </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group col-4">
-                            <input type="submit" class="btn btn-primary">
+                        <div class="pnl-actions">
+                            <input type="submit" class="btn btn-sm btn-primary">
+                            <button type="button" class="btn btn-sm btn-secondary" id="pnl-today"
+                                    data-month="{{ today.month }}" data-year="{{ today.year }}">Today</button>
                         </div>
-                    </div>
         </form>
+        <p class="pnl-help">Past months use the last business day; the current month uses today.</p>
 
-        <div style="width: 850px">
+        <div class="pnl-report">
             {%  block d %}
-                <div class="text-center"><strong>{{ d }}</strong></div>
+                <div class="pnl-date"><strong>{{ d }}</strong></div>
             {% endblock %}
 
-            <table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
+            <table class="table table-sm">
                 <thead>
                     <tr>
                         <th>Worth</th>
@@ -54,10 +74,9 @@
                     </tr>
                 </tbody>
             </table>
-            <br>
 
             {% if account_rollups %}
-                <table class="table table-sm" style="width: auto !important; margin-left: auto; margin-right: auto;">
+                <table class="table table-sm">
                     <thead>
                         <tr>
                             <th>Account</th>
@@ -118,11 +137,15 @@
             {% else %}
                 {% include 'table.html' with table_id="table_id1" data=data1 headings=headings1 %}
             {% endif %}
-            <p>Value shown for futures positions is the unrealized gain.</p>
+            <p class="pnl-note">Value shown for futures positions is the unrealized gain.</p>
         </div>
     </div>
     <script type="text/javascript">
     document.addEventListener("DOMContentLoaded", function () {
+        document.getElementById("pnl-today").addEventListener("click", function () {
+            document.getElementById("{{ form.month.id_for_label|escapejs }}").value = this.dataset.month;
+            document.getElementById("{{ form.year.id_for_label|escapejs }}").value = this.dataset.year;
+        });
         document.querySelectorAll(".toggle-account-details").forEach(function (btn) {
             btn.addEventListener("click", function () {
                 var targetId = btn.getAttribute("data-target");
