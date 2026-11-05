@@ -1,4 +1,7 @@
+from calendar import month_name
+
 from django import forms
+from tbgutils.dt import our_now
 from accounts.models import Account
 from trades.models import Trade
 
@@ -11,12 +14,19 @@ def list_accounts_without_trades(active_f=True):
 
 
 class PnLForm(forms.Form):
-    account = forms.ModelChoiceField(queryset=None, required=False)
-    days = forms.IntegerField(min_value=0, required=False, help_text="How many days back?")
+    month = forms.TypedChoiceField(
+        choices=[(month, month_name[month]) for month in range(1, 13)],
+        coerce=int,
+        help_text="Past months use the last business day; the current month uses today.",
+    )
+    year = forms.TypedChoiceField(coerce=int)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["account"].queryset = Account.objects.filter(active_f=True).all()
+        today = our_now().date()
+        self.fields["year"].choices = [(year, year) for year in range(today.year, 1899, -1)]
+        self.fields["month"].initial = today.month
+        self.fields["year"].initial = today.year
 
 
 class CheckingForm(forms.Form):

@@ -52,8 +52,7 @@ class PnLView(LoginRequiredMixin, MyFormView):
     form_class = PnLForm
     success_url = "."
     title = "PnL"
-    account = None
-    days = None
+    month = None
 
     @staticmethod
     def _build_account_rollups(result):
@@ -125,12 +124,6 @@ class PnLView(LoginRequiredMixin, MyFormView):
         days = getter("days")
         active_f = bool(getter("active_f", True))
 
-        if self.days:
-            days = self.days
-
-        if self.account:
-            account = self.account
-
         if days is not None:
             try:
                 if days.lower() == "lbd":
@@ -159,7 +152,20 @@ class PnLView(LoginRequiredMixin, MyFormView):
             else:
                 d = our_now().date()
 
+        if self.month:
+            today = our_now().date()
+            if (self.month.year, self.month.month) == (today.year, today.month):
+                d = today
+            else:
+                next_month = (self.month.replace(day=28) + timedelta(days=4)).replace(day=1)
+                d = prior_business_day(next_month)
+
+        if not context["form"].is_bound:
+            context["form"].initial["month"] = d.month
+            context["form"].initial["year"] = d.year
+
         context["d"] = d
+        context["today"] = our_now().date()
         result, total_worth, total_today, _ = pnl(d=d, a=account, active_f=active_f)
         context["account_rollups"] = self._build_account_rollups(result)
         context["total_worth"] = total_worth
@@ -175,8 +181,7 @@ class PnLView(LoginRequiredMixin, MyFormView):
 
     def form_valid(self, form):
         data = form.cleaned_data
-        self.account = data["account"]
-        self.days = data["days"]
+        self.month = date(data["year"], data["month"], 1)
         return self.render_to_response(self.get_context_data(form=form))
 
 
