@@ -25,7 +25,7 @@ from analytics.models import PPMResult
 from analytics.cash import current_cash_report
 from analytics.forms import PnLForm
 from trades.ib_flex import get_trades
-from trades.models import copy_trades_df
+from trades.models import bucketed_trades
 from trades.utils import weighted_average_price
 from tbgutils.dt import lbd_prior_month, our_now, prior_business_day
 from tbgutils.str import is_near_zero, cround
@@ -239,14 +239,16 @@ class TickerView(LoginRequiredMixin, TemplateView):
 
         context["envelope_pnl"] = None
         context["break_even_price"] = None
-        df = copy_trades_df(t=ticker_symbol, active_f=False)
+        today = our_now().date()
+        df = bucketed_trades(t=ticker_symbol, active_f=False)
         if not df.empty:
             df = df.sort_values("dt", kind="stable").reset_index(drop=True)
             df["pos"] = df["q"].cumsum()
             # The envelope starts after the last flat position across all accounts.
-            flat = df["pos"].apply(is_near_zero)
-            start = df.index[flat][-1] + 1 if flat.any() else 0
-            envelope = df.iloc[start:]
+            asof = df.loc[df["d"] <= today]
+            flat = asof["pos"].apply(is_near_zero)
+            start = flat[flat].index[-1] + 1 if flat.any() else 0
+            envelope = asof.loc[asof.index >= start]
             if envelope.empty:
                 context["envelope_pnl"] = 0
             else:
@@ -266,24 +268,60 @@ class TickerView(LoginRequiredMixin, TemplateView):
                         "Could not get a price for current envelope PnL."
                     )
             df["value"] = df["q"] * df["p"] * df["cs"]
+            marks = {}
+            for trading_day in df["d"].unique():
+                if trading_day >= today:
+                    marks[trading_day] = context.get("price", float("nan"))
+                else:
+                    try:
+                        mark = get_price(ticker, d=trading_day)
+                    except (IndexError, LookupError):
+                        mark = None
+                    marks[trading_day] = mark if mark else float("nan")
+            mark_prices = df["d"].map(marks)
+            # Keep the closing trade in its envelope; reset on the following row.
+            flat = df["pos"].apply(is_near_zero)
+            envelope_id = flat.shift(fill_value=False).cumsum()
+            exposure = df["q"] * df["cs"]
+            net_exposure = exposure.groupby(envelope_id).cumsum()
+            # Flat rows need no quote to show the completed envelope's PnL.
+            marked_value = net_exposure * mark_prices
+            marked_value = marked_value.mask(net_exposure.apply(is_near_zero), 0)
+            df["envelope_pnl"] = (
+                marked_value
+                - df["value"].groupby(envelope_id).cumsum()
+                - df["c"].groupby(envelope_id).cumsum()
+            )
+            df["trade_pnl"] = df["envelope_pnl"].where(flat)
 
-            df = df[["dt", "a", "q", "p", "value", "pos"]]
+            df = df[["dt", "a", "q", "p", "pos", "value", "envelope_pnl", "trade_pnl"]]
 
-            def trade_formatter(dt, a, q, p, v, pos):
+            def trade_formatter(dt, a, q, p, pos, v, envelope_pnl, trade_pnl):
                 return [
                     dt.strftime("%Y-%m-%d %H:%M"),
                     a,
                     cround(q),
                     cround(p),
-                    cround(v),
                     cround(pos),
+                    cround(v),
+                    cround(envelope_pnl) if pd.notna(envelope_pnl) else "—",
+                    cround(trade_pnl) if pd.notna(trade_pnl) else "",
                 ]
 
             context["trades_headings"], context["trades_data"], context["trades_formats"] = (
                 df_to_jqtable(df, formatter=trade_formatter)
             )
 
-            context["trades_headings"] = ["Date", "Account", "Q", "P", "Value", "Pos"]
+            context["trades_headings"] = [
+                "Date",
+                "Account",
+                "Q",
+                "P",
+                "Pos",
+                "Value",
+                "ENVELOPE PNL",
+                "Trade PnL",
+            ]
 
         return context
 
