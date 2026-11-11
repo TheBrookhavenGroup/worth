@@ -19,7 +19,6 @@
         .pnl-year { width: 6rem; }
         .pnl-filters .form-text { display: none; }
         .pnl-actions { display: flex; gap: .35rem; padding-bottom: 0; }
-        .pnl-help, .pnl-note { margin: .25rem 0 .5rem; font-size: .75rem; color: #6c757d; }
         .pnl-report { width: fit-content; max-width: 100%; overflow-x: auto; }
         .pnl-date { margin: .25rem 0; }
         .pnl-page .table { width: auto; margin: 0 0 .5rem; }
@@ -49,7 +48,6 @@
                                     data-month="{{ today.month }}" data-year="{{ today.year }}">Today</button>
                         </div>
         </form>
-        <p class="pnl-help">Past months use the last business day; the current month uses today.</p>
 
         <div class="pnl-report">
             {%  block d %}
@@ -137,7 +135,6 @@
             {% else %}
                 {% include 'table.html' with table_id="table_id1" data=data1 headings=headings1 %}
             {% endif %}
-            <p class="pnl-note">Value shown for futures positions is the unrealized gain.</p>
         </div>
     </div>
     <script type="text/javascript">

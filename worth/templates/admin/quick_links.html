@@ -59,15 +59,7 @@
     </button>
     <div class="dropdown-menu" aria-labelledby="hamburgerMenu">
 
-      <div class="dropdown-submenu">
-        <a class="dropdown-item dropdown-toggle" href="#">PnL</a>
-        <div class="dropdown-menu">
-          <a class="dropdown-item" target="_blank" href="{% url 'analytics:pnl' %}">Today</a>
-          <a class="dropdown-item" target="_blank" href="{% url 'analytics:pnl' %}?days=lbd">PnL LBD</a>
-          <a class="dropdown-item" target="_blank" href="{% url 'analytics:pnl' %}?d=1">PnL Last Month</a>
-          <a class="dropdown-item" target="_blank" href="{% url 'analytics:pnl' %}?d=2">PnL 2 Months Ago</a>
-        </div>
-      </div>
+      <a class="dropdown-item" target="_blank" href="{% url 'analytics:pnl' %}">PnL</a>
 
       <div class="dropdown-submenu">
         <a class="dropdown-item dropdown-toggle" href="#">Account</a>
@@ -103,7 +95,6 @@
         <a class="dropdown-item dropdown-toggle" href="#">Annual Analysis</a>
         <div class="dropdown-menu">
           <a class="dropdown-item" target="_blank" href="{% url 'analytics:pnlifclosed' %}">PnL If Closed</a>
-          <a class="dropdown-item" target="_blank" href="{% url 'accounts:receivables' %}">Receivables</a>
           <a class="dropdown-item" target="_blank" href="{% url 'analytics:incomeexpense' %}">Income/Expense</a>
           <a class="dropdown-item" target="_blank" href="{% url 'analytics:realized' %}">Taxable This Year</a>
         </div>

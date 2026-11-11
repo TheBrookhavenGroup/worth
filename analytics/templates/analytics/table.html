@@ -38,6 +38,8 @@
             font-weight: 700;
             border-left: 2px solid #a5b8c9;
         }
+        .daily-details > summary { cursor: pointer; }
+        .daily-details > summary h2 { display: inline; }
     </style>
 {% endblock %}
 
@@ -62,8 +64,8 @@
             {% if data2 %}
                 {% if table2_note %}<p>{{ table2_note }}</p>{% endif %}
                 {% if table2_wide %}
-                    <h2>Monthly returns</h2>
-                    <table class="monthly-returns" aria-label="Monthly returns by year">
+                    <h2>Returns</h2>
+                    <table class="monthly-returns" aria-label="Returns by year">
                         <thead>
                             <tr>
                                 {% for heading in headings2 %}
@@ -95,7 +97,7 @@
             {% endif %}
 
             {% if monthly_pnl_data %}
-                <h2>Monthly PnL ($ thousands)</h2>
+                <h2>PnL ($ thousands)</h2>
                 <table class="monthly-returns" aria-label="Monthly PnL by year in thousands of dollars">
                     <thead>
                         <tr>
@@ -121,8 +123,22 @@
                 <br>
             {% endif %}
 
+            {% if collapse_daily %}
+                <details class="daily-details">
+                    <summary><h2>Daily</h2></summary>
+            {% endif %}
             {% firstof formats1 formats "{}" as table1_formats %}
             {% include 'table.html' with table_id="table_id1" data=data1 headings=headings1 formats=table1_formats %}
+            {% if collapse_daily %}
+                </details>
+                <script>
+                    document.querySelector(".daily-details").addEventListener("toggle", function () {
+                        if (this.open) {
+                            $("#table_id1").DataTable().columns.adjust();
+                        }
+                    });
+                </script>
+            {% endif %}
         </div>
     </div>
 {% endblock content %}

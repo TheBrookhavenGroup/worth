@@ -6,7 +6,6 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView, FormView
 from tbgutils.dt import eom
 from accounts.statement_utils import ib_statements
-from .utils import get_receivables
 from .forms import AccountForm, CashTransferForm, DifferenceForm
 from .models import Account, CashRecord
 from analytics.cash import cash_sums
@@ -40,16 +39,6 @@ class AccountsView(LoginRequiredMixin, FormView):
             Account.objects.filter(id__in=ids).update(reconciled_f=True)
 
         return render(request, self.template_name, context)
-
-
-class ReceivablesView(LoginRequiredMixin, TemplateView):
-    template_name = "analytics/table.html"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["headings1"], context["data1"], context["formats"] = get_receivables()
-        context["title"] = "Receivables"
-        return context
 
 
 class CashTransferView(LoginRequiredMixin, FormView):

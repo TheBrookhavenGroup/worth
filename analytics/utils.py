@@ -1,12 +1,13 @@
 from datetime import date
 import json
 import pandas as pd
+from django.db.models import Sum
 from moneycounter import realized_gains
 from tbgutils.dt import lbd_prior_month
 from tbgutils.str import cround
 from trades.models import get_non_qualified_equity_trades_df, NOT_FUTURES_EXCHANGES
 from trades.utils import pnl_asof
-from accounts.models import get_expenses_df, get_income_df
+from accounts.models import Expense, get_income_df
 
 
 def format_realized_rec(a, t, realized):
@@ -87,23 +88,26 @@ def format_expense_rec(vendor, description, amount):
 
 
 def expenses(year):
-    expenses_df = get_expenses_df(year)
+    qs = Expense.objects.all()
+    if year is not None:
+        qs = qs.filter(paid__year=year)
+    rows = (
+        qs.values("vendor__name", "vendor__description")
+        .annotate(amt=Sum("amt"))
+        .order_by("vendor__name")
+    )
+    expenses_df = pd.DataFrame.from_records(
+        list(rows), columns=["vendor__name", "vendor__description", "amt"]
+    ).rename(columns={"vendor__name": "vendor", "vendor__description": "description"})
 
     if len(expenses_df):
-        expenses_df = expenses_df.pivot_table(
-            index=["description", "vendor"], values="amt", aggfunc="sum"
-        )
-        expenses_df = expenses_df.reset_index().set_index(["vendor", "description"])
-        expenses_df = expenses_df.sort_index()
-        expenses_df = expenses_df.reset_index()
-
         # Add row with total of amount
         total = pd.DataFrame(
             {"vendor": ["Total"], "description": [""], "amt": [expenses_df.amt.sum()]}
         )
         expenses_df = pd.concat([expenses_df, total])
     else:
-        expenses_df = pd.DataFrame(columns=["description", "vendor", "amt"])
+        expenses_df = pd.DataFrame(columns=["vendor", "description", "amt"])
 
     formats = json.dumps(
         {

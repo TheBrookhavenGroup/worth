@@ -49,6 +49,10 @@ def get_tbg_account_id():
     return get_tbg_account().id
 
 
+def get_tbgm_account_id():
+    return Account.objects.get(name="TBGM").pk
+
+
 class Receivable(models.Model):
     account = models.ForeignKey(Account, on_delete=models.CASCADE, default=get_tbg_account_id)
     invoiced = models.DateField(default=date.today)
@@ -185,7 +189,7 @@ def copy_cash_df(d=None, a=None, pivot=False, active_f=True, cleared=False):
 
 
 class Expense(models.Model):
-    account = models.ForeignKey(Account, on_delete=models.CASCADE, default=get_tbg_account)
+    account = models.ForeignKey(Account, on_delete=models.CASCADE, default=get_tbgm_account_id)
     vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE)
     d = models.DateField()
     description = models.CharField(max_length=180)
