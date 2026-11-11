@@ -28,8 +28,16 @@
                 {% endfor %}
             </select>
 
-            <label for="n_months" style="margin-left:10px;">Months back:</label>
-            <input type="number" id="n_months" name="n_months" min="1" value="{{ selected_n_months }}" />
+            <span style="margin-left:10px;">Start month:</span>
+            <span id="month-picker" style="display:inline-block;position:relative;">
+                <input type="hidden" id="start_month" name="start_month" value="{{ selected_start_month }}" data-max="{{ max_start_month }}" />
+                <button type="button" id="month-picker-toggle" aria-expanded="false" aria-controls="month-calendar" aria-label="Choose start month"></button>
+                <div id="month-calendar" hidden style="position:absolute;top:100%;left:0;z-index:1000;background:white;border:1px solid #ccc;padding:12px;box-shadow:0 2px 8px #ccc;width:240px;">
+                    <label for="calendar-year">Year:</label>
+                    <select id="calendar-year"></select>
+                    <div id="calendar-months" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px;"></div>
+                </div>
+            </span>
 
             <button type="submit" style="margin-left:10px;">Update</button>
         </form>
@@ -37,4 +45,72 @@
     <p>
         {{ plot_div | safe }}
     </p>
+    <script>
+        (function () {
+            const picker = document.getElementById("month-picker");
+            const input = document.getElementById("start_month");
+            const toggle = document.getElementById("month-picker-toggle");
+            const calendar = document.getElementById("month-calendar");
+            const yearSelect = document.getElementById("calendar-year");
+            const months = document.getElementById("calendar-months");
+            const maxYear = Number(input.dataset.max.slice(0, 4));
+            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+            for (let year = maxYear; year >= 1900; year--) {
+                yearSelect.add(new Option(year, year));
+            }
+            function updateLabel() {
+                toggle.textContent = monthNames[Number(input.value.slice(5)) - 1] + " " + input.value.slice(0, 4) + " ▾";
+            }
+            function closeCalendar() {
+                calendar.hidden = true;
+                toggle.setAttribute("aria-expanded", "false");
+            }
+            function renderMonths() {
+                months.replaceChildren();
+                monthNames.forEach(function (name, index) {
+                    const value = yearSelect.value + "-" + String(index + 1).padStart(2, "0");
+                    const button = document.createElement("button");
+                    button.type = "button";
+                    button.textContent = name.slice(0, 3);
+                    button.setAttribute("aria-label", name + " " + yearSelect.value);
+                    button.setAttribute("aria-pressed", String(value === input.value));
+                    button.disabled = value > input.dataset.max;
+                    if (value === input.value) {
+                        button.style.fontWeight = "bold";
+                        button.style.outline = "2px solid #007bff";
+                    }
+                    button.addEventListener("click", function () {
+                        input.value = value;
+                        updateLabel();
+                        closeCalendar();
+                        toggle.focus();
+                    });
+                    months.appendChild(button);
+                });
+            }
+            toggle.addEventListener("click", function () {
+                if (!calendar.hidden) {
+                    closeCalendar();
+                    return;
+                }
+                yearSelect.value = input.value.slice(0, 4);
+                renderMonths();
+                calendar.hidden = false;
+                toggle.setAttribute("aria-expanded", "true");
+                yearSelect.focus();
+            });
+            yearSelect.addEventListener("change", renderMonths);
+            document.addEventListener("click", function (event) {
+                if (!picker.contains(event.target)) closeCalendar();
+            });
+            picker.addEventListener("keydown", function (event) {
+                if (event.key === "Escape") {
+                    closeCalendar();
+                    toggle.focus();
+                }
+            });
+            updateLabel();
+        })();
+    </script>
 {% endblock content %}

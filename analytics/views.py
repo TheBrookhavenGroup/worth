@@ -166,8 +166,15 @@ class PnLView(LoginRequiredMixin, MyFormView):
 
         context["d"] = d
         context["today"] = our_now().date()
-        result, total_worth, total_today, _ = pnl(d=d, a=account, active_f=active_f)
-        context["account_rollups"] = self._build_account_rollups(result)
+        # Totals include closed accounts: a balance that was withdrawn during
+        # the year must not erase the account's performance for that year.
+        # Dormant accounts with zero balances contribute zero to these totals.
+        result, total_worth, total_today, _ = pnl(d=d, a=account, active_f=False)
+        display_result = result
+        if active_f:
+            active_accounts = Account.objects.filter(active_f=True).values_list("name", flat=True)
+            display_result = result[result["Account"].isin([*active_accounts, "TOTAL", "ALL COH"])]
+        context["account_rollups"] = self._build_account_rollups(display_result)
         context["total_worth"] = total_worth
         context["total_today"] = total_today
         context["total_mtd"] = result.loc[result["Account"] == "TOTAL", "MTD"].iloc[0]
@@ -175,7 +182,7 @@ class PnLView(LoginRequiredMixin, MyFormView):
 
         # Keep legacy table context available for compatibility/fallback.
         context["headings1"], context["data1"], context["formats"] = df_to_jqtable(
-            df=result, formatter=format_rec
+            df=display_result, formatter=format_rec
         )
         return context
 
@@ -335,11 +342,22 @@ class ValueChartView(LoginRequiredMixin, TemplateView):
 
         getter = self.request.GET.get
 
-        d = datetime.today().date()
-        n_months = getter("n_months")
+        d = our_now().date()
+        today = d
+        start_month = date(today.year - 1, 12, 1)
+        requested_start = getter("start_month")
+        if requested_start:
+            try:
+                selected_start = datetime.strptime(requested_start, "%Y-%m").date()
+                if selected_start > today.replace(day=1):
+                    raise ValueError("Start month is in the future")
+                start_month = selected_start
+            except ValueError:
+                messages.error(
+                    self.request, "Choose a valid start month no later than the current month."
+                )
 
-        if n_months is None:
-            n_months = 24
+        n_months = (today.year - start_month.year) * 12 + today.month - start_month.month
 
         x_axis = [d, prior_business_day(d)] + [
             d := lbd_prior_month(d) for i in range(int(n_months))
@@ -383,7 +401,8 @@ class ValueChartView(LoginRequiredMixin, TemplateView):
         context["title"] = self.title
         context["accounts"] = Account.objects.filter(active_f=True).order_by("name")
         context["selected_account"] = account or ""
-        context["selected_n_months"] = int(n_months)
+        context["selected_start_month"] = start_month.strftime("%Y-%m")
+        context["max_start_month"] = today.strftime("%Y-%m")
 
         return context
 
@@ -1049,6 +1068,7 @@ class PerformanceView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context["collapse_daily"] = True
         # Default account is MarcIB; allow override via query string ?a=
         request = self.request
         account = request.GET.get("a", "MarcIB") if request else "MarcIB"
@@ -1200,7 +1220,7 @@ class PerformanceView(LoginRequiredMixin, TemplateView):
                 "Oct",
                 "Nov",
                 "Dec",
-                "Year / YTD",
+                "YTD",
             ]
             group_columns = ["year", "a"] if multiple_accounts else ["year"]
             data = []
