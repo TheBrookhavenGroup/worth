@@ -5,6 +5,7 @@ from plotly.offline import plot
 import plotly.graph_objs as go
 
 from django.http import HttpResponse
+from django.utils import timezone
 import pandas as pd
 from django.views.generic import TemplateView, FormView
 from django.urls import reverse
@@ -1268,4 +1269,5 @@ class PerformanceView(LoginRequiredMixin, TemplateView):
 
         context["title"] = "Brookhaven Event Driven Strategy (BEDS)"
         context["title_in_content"] = True
+        context["generated_at"] = timezone.now()
         return context

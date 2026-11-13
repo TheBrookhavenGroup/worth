@@ -87,6 +87,9 @@
                     </button>
                 </div>
             {% endif %}
+            {% if generated_at %}
+                <p class="text-muted"><time datetime="{{ generated_at|date:'c' }}">{{ generated_at|date:"Y-m-d H:i:s T" }}</time></p>
+            {% endif %}
             {%  block d %}
                 {% if summary_metrics %}
                     <ul>
