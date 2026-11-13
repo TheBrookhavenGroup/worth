@@ -37,7 +37,7 @@
 <body>
 <div style="display: flex; align-items: center; margin-bottom: 20px;">
     {% include "admin/quick_links.html" with navbar_color_class="navbar-light" %}
-    <h1 style="margin: 0 0 0 10px;">{{ title }}</h1>
+    {% if not title_in_content %}<h1 style="margin: 0 0 0 10px;">{{ title }}</h1>{% endif %}
 </div>
 
 {% if messages %}

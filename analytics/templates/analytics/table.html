@@ -40,6 +40,31 @@
         }
         .daily-details > summary { cursor: pointer; }
         .daily-details > summary h2 { display: inline; }
+        .table-sections h2 { font-size: 1.25rem; }
+        .performance-heading {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .performance-heading h1 { flex: 1; }
+        {% if title_in_content %}
+        @media print {
+            body > div:not(.container),
+            .performance-print-button,
+            .performance-print-exclude { display: none !important; }
+            .container {
+                width: 100% !important;
+                max-width: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            .performance-heading h1 { font-size: 20pt; }
+            .monthly-returns { font-size: 8pt; }
+            .monthly-returns thead { display: table-header-group; }
+            .monthly-returns tr { break-inside: avoid; }
+            h2 { break-after: avoid; }
+        }
+        {% endif %}
     </style>
 {% endblock %}
 
@@ -48,7 +73,20 @@
         <p>
         </p>
 
-        <div style="width: 100%; max-width: 1100px">
+        <div class="table-sections" style="width: 100%; max-width: 1100px">
+            {% if title_in_content %}
+                <div class="performance-heading">
+                    <h1>{{ title }}</h1>
+                    <button type="button" class="btn btn-outline-secondary performance-print-button"
+                            onclick="window.print()" aria-label="Print performance report" title="Print performance report">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                             fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false">
+                            <path d="M6 9V3h12v6M6 18H3V9h18v9h-3M6 14h12v7H6z" />
+                            <path d="M17 11h1" />
+                        </svg>
+                    </button>
+                </div>
+            {% endif %}
             {%  block d %}
                 {% if summary_metrics %}
                     <ul>
@@ -96,6 +134,7 @@
                 <br>
             {% endif %}
 
+            <div class="performance-print-exclude">
             {% if monthly_pnl_data %}
                 <h2>PnL ($ thousands)</h2>
                 <table class="monthly-returns" aria-label="Monthly PnL by year in thousands of dollars">
@@ -139,6 +178,7 @@
                     });
                 </script>
             {% endif %}
+            </div>
         </div>
     </div>
 {% endblock content %}
