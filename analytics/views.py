@@ -1266,6 +1266,6 @@ class PerformanceView(LoginRequiredMixin, TemplateView):
                 }
             )
 
-        context["title"] = "BEDS Brookhaven Event Driven Strategy (BEDS)"
+        context["title"] = "Brookhaven Event Driven Strategy (BEDS)"
         context["title_in_content"] = True
         return context
