@@ -74,6 +74,7 @@
             </table>
 
             {% if account_rollups %}
+                {% url 'admin:accounts_cashrecord_changelist' as cash_admin_url %}
                 <table class="table table-sm">
                     <thead>
                         <tr>
@@ -88,7 +89,7 @@
                     <tbody>
                         {% for rollup in account_rollups %}
                             <tr class="text-nowrap">
-                                <td><strong>{{ rollup.account }}</strong></td>
+                                <td><strong><a href="{{ cash_admin_url }}?active={{ rollup.account_id }}">{{ rollup.account }}</a></strong></td>
                                 <td class="text-right">{{ rollup.value|floatformat:0|intcomma }}</td>
                                 <td class="text-right">{{ rollup.today|floatformat:0|intcomma }}</td>
                                 <td class="text-right">{{ rollup.mtd|floatformat:0|intcomma }}</td>

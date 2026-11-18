@@ -56,7 +56,7 @@ class PnLView(LoginRequiredMixin, MyFormView):
     month = None
 
     @staticmethod
-    def _build_account_rollups(result):
+    def _build_account_rollups(result, account_ids):
         if result is None or result.empty:
             return []
 
@@ -108,6 +108,7 @@ class PnLView(LoginRequiredMixin, MyFormView):
             rollups.append(
                 {
                     "account": account,
+                    "account_id": account_ids[account],
                     "value": totals["Value"],
                     "today": totals["Today"],
                     "mtd": totals["MTD"],
@@ -171,11 +172,14 @@ class PnLView(LoginRequiredMixin, MyFormView):
         # the year must not erase the account's performance for that year.
         # Dormant accounts with zero balances contribute zero to these totals.
         result, total_worth, total_today, _ = pnl(d=d, a=account, active_f=False)
+        accounts = Account.objects.all()
+        if active_f:
+            accounts = accounts.filter(active_f=True)
+        account_ids = dict(accounts.values_list("name", "id"))
         display_result = result
         if active_f:
-            active_accounts = Account.objects.filter(active_f=True).values_list("name", flat=True)
-            display_result = result[result["Account"].isin([*active_accounts, "TOTAL", "ALL COH"])]
-        context["account_rollups"] = self._build_account_rollups(display_result)
+            display_result = result[result["Account"].isin([*account_ids, "TOTAL", "ALL COH"])]
+        context["account_rollups"] = self._build_account_rollups(display_result, account_ids)
         context["total_worth"] = total_worth
         context["total_today"] = total_today
         context["total_mtd"] = result.loc[result["Account"] == "TOTAL", "MTD"].iloc[0]
