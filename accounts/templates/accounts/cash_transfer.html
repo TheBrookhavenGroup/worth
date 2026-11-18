@@ -1,10 +1,27 @@
 {% extends "base.html" %}
 
 {% block content %}
+{% if transfer %}
+    <h2>Cash transfer completed</h2>
+    <dl>
+        <dt>Transaction date</dt>
+        <dd>{{ transfer.date }}</dd>
+        <dt>From account</dt>
+        <dd>{{ transfer.from_account }}</dd>
+        <dt>To account</dt>
+        <dd>{{ transfer.to_account }}</dd>
+        <dt>Amount</dt>
+        <dd>{{ transfer.amount }}</dd>
+    </dl>
+    <a href="{% url 'accounts:cash_transfer' %}" class="btn btn-primary btn-sm">
+        Submit another transfer
+    </a>
+{% else %}
     <form method="post">
     {% csrf_token %}
         {{ form.as_p }}
         <input type="submit" value="Submit" class="btn btn-primary btn-sm">
     </form>
+{% endif %}
 
 {% endblock content %}

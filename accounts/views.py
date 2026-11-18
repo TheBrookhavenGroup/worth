@@ -2,6 +2,7 @@ from datetime import date, timedelta
 from django.contrib import messages
 from django.shortcuts import render
 from django.db import transaction, IntegrityError
+from django.urls import reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView, FormView
 from tbgutils.dt import eom
@@ -44,42 +45,55 @@ class AccountsView(LoginRequiredMixin, FormView):
 class CashTransferView(LoginRequiredMixin, FormView):
     template_name = "accounts/cash_transfer.html"
     form_class = CashTransferForm
-    success_url = "/accounts/cash_transfer/"
+    success_url = reverse_lazy("accounts:cash_transfer")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["title"] = "Cash Transfer"
         return context
 
-    def post(self, request, *args, **kwargs):
-        form = self.form_class(request.POST)
-        if form.is_valid():
-            d = form.cleaned_data["d"]
-            from_accnt = form.cleaned_data["from_account"]
-            to_accnt = form.cleaned_data["to_account"]
-            amt = form.cleaned_data["amt"]
-            s = f"{d} from_account: {from_accnt}, to_account: {to_accnt}, amt: {amt}"
-            try:
-                with transaction.atomic():
-                    CashRecord.objects.create(
-                        d=d,
-                        account=from_accnt,
-                        amt=-amt,
-                        category=CashRecord.TR,
-                        description=f"Transfer to {to_accnt}",
-                    )
-                    CashRecord.objects.create(
-                        d=d,
-                        account=to_accnt,
-                        amt=amt,
-                        category=CashRecord.TR,
-                        description=f"Transfer from {from_accnt}",
-                    )
-                messages.add_message(request, messages.INFO, s)
-            except IntegrityError:
-                messages.add_message(request, messages.ERROR, f"FAILED: {s}")
+    def get(self, request, *args, **kwargs):
+        if "completed" in request.GET:
+            transfer = request.session.get("cash_transfer_summary")
+            if transfer:
+                return self.render_to_response({"title": "Cash Transfer", "transfer": transfer})
+        return super().get(request, *args, **kwargs)
 
-        return render(request, self.template_name, {"form": form})
+    def get_success_url(self):
+        return f"{self.success_url}?completed"
+
+    def form_valid(self, form):
+        d = form.cleaned_data["d"]
+        from_account = form.cleaned_data["from_account"]
+        to_account = form.cleaned_data["to_account"]
+        amount = form.cleaned_data["amt"]
+        try:
+            with transaction.atomic():
+                CashRecord.objects.create(
+                    d=d,
+                    account=from_account,
+                    amt=-amount,
+                    category=CashRecord.TR,
+                    description=f"Transfer to {to_account}",
+                )
+                CashRecord.objects.create(
+                    d=d,
+                    account=to_account,
+                    amt=amount,
+                    category=CashRecord.TR,
+                    description=f"Transfer from {from_account}",
+                )
+        except IntegrityError:
+            messages.error(self.request, "The cash transfer could not be saved.")
+            return self.form_invalid(form)
+
+        self.request.session["cash_transfer_summary"] = {
+            "date": d.isoformat(),
+            "from_account": str(from_account),
+            "to_account": str(to_account),
+            "amount": f"{amount:,.2f}",
+        }
+        return super().form_valid(form)
 
 
 class DifferenceView(LoginRequiredMixin, FormView):
