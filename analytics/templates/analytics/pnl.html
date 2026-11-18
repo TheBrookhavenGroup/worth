@@ -143,6 +143,7 @@
         document.getElementById("pnl-today").addEventListener("click", function () {
             document.getElementById("{{ form.month.id_for_label|escapejs }}").value = this.dataset.month;
             document.getElementById("{{ form.year.id_for_label|escapejs }}").value = this.dataset.year;
+            this.form.requestSubmit();
         });
         document.querySelectorAll(".toggle-account-details").forEach(function (btn) {
             btn.addEventListener("click", function () {

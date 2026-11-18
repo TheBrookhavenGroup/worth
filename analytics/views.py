@@ -172,13 +172,16 @@ class PnLView(LoginRequiredMixin, MyFormView):
         # the year must not erase the account's performance for that year.
         # Dormant accounts with zero balances contribute zero to these totals.
         result, total_worth, total_today, _ = pnl(d=d, a=account, active_f=False)
-        accounts = Account.objects.all()
-        if active_f:
-            accounts = accounts.filter(active_f=True)
-        account_ids = dict(accounts.values_list("name", "id"))
+        accounts = list(Account.objects.values_list("name", "id", "active_f"))
+        account_ids = {name: pk for name, pk, _ in accounts}
         display_result = result
         if active_f:
-            display_result = result[result["Account"].isin([*account_ids, "TOTAL", "ALL COH"])]
+            visible_accounts = {name for name, _, is_active in accounts if is_active}
+            account_values = result.groupby("Account")["Value"].sum()
+            # Worth is displayed in whole dollars.
+            visible_accounts.update(account_values[account_values.abs().ge(0.5)].index)
+            visible_accounts.update(("TOTAL", "ALL COH"))
+            display_result = result[result["Account"].isin(visible_accounts)]
         context["account_rollups"] = self._build_account_rollups(display_result, account_ids)
         context["total_worth"] = total_worth
         context["total_today"] = total_today
