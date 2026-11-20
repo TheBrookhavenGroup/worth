@@ -438,11 +438,11 @@ def daily_pnl(a=None, start=None, end=None):
     # All trades (bucketed to trading day) for the specified account
     trades_all = bucketed_trades(a=a)
 
-    # Establish date range (inclusive) to cover all business days
+    # Mark positions through today by default, even after the last trade.
     if start is None and end is None:
         if trades_all is not None and len(trades_all):
             start = trades_all["d"].min()
-            end = trades_all["d"].max()
+            end = our_now().date()
         else:
             # No trades at all and no range specified -> nothing to do
             empty_pnl = pd.DataFrame(columns=["d", "a", "pnl"])  # empty
